@@ -23,8 +23,8 @@ WORKDIR /app
 COPY --from=build /workspace/build/install/washflow-api/ /app/
 RUN chown -R app:app /app
 
-ENV PORT=8080
-EXPOSE 8080
+ENV PORT=7000
+EXPOSE 7000
 
 USER app
 ENTRYPOINT ["/app/bin/washflow-api"]

@@ -4,7 +4,7 @@ name: washflow-local
 nodes:
   - role: control-plane
     extraPortMappings:
-      # washflow-api Service (NodePort) -> http://localhost:8080
+      # washflow-api Service (NodePort) -> http://localhost:7000
       - containerPort: 30080
-        hostPort: 8080
+        hostPort: 7000
         protocol: TCP

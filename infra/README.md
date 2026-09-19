@@ -20,8 +20,10 @@ make argocd-port-forward   # UI at https://localhost:8081 (admin / `make argocd-
 make argo-port-forward     # UI at https://localhost:2746
 ```
 
-The app itself is reachable at http://localhost:8080 once Argo CD has synced
-`infra/k8s/local` (NodePort 30080, mapped by `infra/kind/kind-config.yaml`).
+The app itself is reachable at http://localhost:7000 once Argo CD has synced
+`infra/k8s/local` (NodePort 30080, mapped by `infra/kind/kind-config.yaml`) -
+same port as `make run`, since 8080 is the default lots of other local
+services (Spring Boot, etc.) already grab.
 
 Windows note: `kind`'s Podman provider is a Go binary that aborts its PATH
 search when it hits a malformed PATH entry (this machine has one, from an
