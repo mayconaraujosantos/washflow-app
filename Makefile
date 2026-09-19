@@ -168,8 +168,11 @@ ci:
 deploy-prod:
 	argo submit -n argo --from workflowtemplate/washflow-deploy-railway -p revision=main --watch
 
+## Uses kubectl's own base64decode template function instead of piping to
+## the external `base64` binary, which isn't on PATH in every shell/terminal
+## this might run from (e.g. plain cmd.exe).
 argocd-password:
-	kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+	kubectl -n argocd get secret argocd-initial-admin-secret -o go-template='{{.data.password | base64decode}}'
 	@echo ""
 
 argocd-port-forward:
