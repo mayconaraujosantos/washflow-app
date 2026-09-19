@@ -38,7 +38,16 @@ dependencies {
     implementation("io.javalin:javalin-rendering:7.0.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.0")
-    
+
+    // OpenAPI/Swagger: @OpenApi-annotated routes get compiled (no reflection)
+    // into a spec served at /openapi, with Swagger UI at /swagger. Pinned to
+    // the same version as io.javalin:javalin above - the plugins call
+    // Javalin's internal router API directly, so a newer plugin version than
+    // the Javalin version in use fails at startup with a NoSuchMethodError.
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:7.0.0")
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:7.0.0")
+    annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:7.0.0")
+
     // Logs
     implementation("org.slf4j:slf4j-simple:2.0.13")
     

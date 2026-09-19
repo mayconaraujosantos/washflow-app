@@ -8,8 +8,14 @@ import com.washflow.infra.db.jdbi.JdbiFactory;
 import com.washflow.main.adapters.JavalinRouteAdapter;
 import com.washflow.main.routes.ServiceOrderRoutes;
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinJackson;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.plugin.OpenApiPlugin;
+import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -36,6 +42,18 @@ public class Main {
                                   .registerModule(new JavaTimeModule())
                                   .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)));
 
+              // OpenAPI spec at /openapi, Swagger UI at /swagger - built from
+              // the @OpenApi annotations on the handler methods below and on
+              // ServiceOrderRoutes.register, compiled in (no reflection).
+              config.registerPlugin(
+                  new OpenApiPlugin(
+                      pluginConfig ->
+                          pluginConfig.withDefinitionConfiguration(
+                              (version, schema) ->
+                                  schema.info(
+                                      info -> info.title("Washflow API").version("1.0.0")))));
+              config.registerPlugin(new SwaggerPlugin());
+
               // The built PWA (web/dist) is copied onto the classpath under
               // /static by the processResources Gradle task - not into
               // src/main/resources on disk - so this must check the classpath,
@@ -52,19 +70,8 @@ public class Main {
 
               config.routes.apiBuilder(
                   () -> {
-                    get(
-                        "/api/health",
-                        ctx -> {
-                          String database = checkDatabase(jdbi);
-                          var body = new LinkedHashMap<String, String>();
-                          body.put("status", "ok");
-                          body.put("service", "washflow-api");
-                          body.put("database", database);
-                          ctx.json(body);
-                        });
-                    get(
-                        "/api/hello",
-                        ctx -> ctx.json(Map.of("message", "Hello from Javalin + React PWA")));
+                    get("/api/health", ctx -> health(ctx, jdbi));
+                    get("/api/hello", Main::hello);
 
                     ServiceOrderRoutes.register(jdbi);
                   });
@@ -105,6 +112,28 @@ public class Main {
 
     int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "7000"));
     app.start(port);
+  }
+
+  @OpenApi(
+      path = "/api/health",
+      methods = HttpMethod.GET,
+      summary = "Liveness and database connectivity check",
+      responses = @OpenApiResponse(status = "200"))
+  private static void health(Context ctx, Jdbi jdbi) {
+    var body = new LinkedHashMap<String, String>();
+    body.put("status", "ok");
+    body.put("service", "washflow-api");
+    body.put("database", checkDatabase(jdbi));
+    ctx.json(body);
+  }
+
+  @OpenApi(
+      path = "/api/hello",
+      methods = HttpMethod.GET,
+      summary = "Sample greeting endpoint",
+      responses = @OpenApiResponse(status = "200"))
+  private static void hello(Context ctx) {
+    ctx.json(Map.of("message", "Hello from Javalin + React PWA"));
   }
 
   private static String checkDatabase(Jdbi jdbi) {
