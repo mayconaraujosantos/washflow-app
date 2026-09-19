@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: washflow-deploy-railway
+  namespace: argo
+spec:
+  entrypoint: deploy
+  arguments:
+    parameters:
+      - name: repo
+        value: https://github.com/mayconaraujosantos/washflow-app.git
+      - name: revision
+        value: main
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+  templates:
+    - name: deploy
+      steps:
+        - - name: checkout
+            template: checkout
+        - - name: railway-up
+            template: railway-up
+
+    - name: checkout
+      container:
+        image: alpine/git:2.47.1
+        command: [sh, -c]
+        args:
+          - git clone --depth 1 --branch "{{workflow.parameters.revision}}" "{{workflow.parameters.repo}}" /workspace/src
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # Mirrors the old GitHub Actions "Deploy to Railway" job: installs the
+    # Railway CLI and runs `railway up` against production, using the
+    # railway-credentials Secret (see README.md in this directory).
+    - name: railway-up
+      container:
+        image: node:22-alpine
+        workingDir: /workspace/src
+        command: [sh, -c]
+        args:
+          - |
+            set -eu
+            apk add --no-cache curl bash >/dev/null
+            bash <(curl -fsSL railway.com/install.sh)
+            ~/.railway/bin/railway up --ci --service "$RAILWAY_SERVICE_ID" --environment production
+        envFrom:
+          - secretRef:
+              name: railway-credentials
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}

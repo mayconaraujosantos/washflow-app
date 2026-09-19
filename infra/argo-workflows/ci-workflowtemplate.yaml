@@ -1,0 +1,73 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: washflow-ci
+  namespace: argo
+spec:
+  entrypoint: ci
+  arguments:
+    parameters:
+      - name: repo
+        value: https://github.com/mayconaraujosantos/washflow-app.git
+      - name: revision
+        value: develop
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+  templates:
+    - name: ci
+      steps:
+        - - name: checkout
+            template: checkout
+        - - name: quality-backend
+            template: quality-backend
+          - name: quality-frontend
+            template: quality-frontend
+        - - name: build-image
+            template: build-image
+
+    - name: checkout
+      container:
+        image: alpine/git:2.47.1
+        command: [sh, -c]
+        args:
+          - git clone --depth 1 --branch "{{workflow.parameters.revision}}" "{{workflow.parameters.repo}}" /workspace/src
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # Mirrors the "quality" job's backend step from the old GitHub Actions workflow.
+    - name: quality-backend
+      container:
+        image: gradle:9.7.1-jdk21
+        workingDir: /workspace/src
+        command: [gradle, test, --no-daemon, --console=plain]
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # Mirrors the "quality" job's frontend step (lint).
+    - name: quality-frontend
+      container:
+        image: oven/bun:1.3.14
+        workingDir: /workspace/src/web
+        command: [sh, -c]
+        args:
+          - bun install --frozen-lockfile && bun run lint
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # Mirrors the "container" job: validates the Dockerfile builds, without
+    # needing a registry or a Docker/Podman socket inside the cluster.
+    - name: build-image
+      container:
+        image: gcr.io/kaniko-project/executor:v1.23.2
+        args:
+          - --dockerfile=/workspace/src/Dockerfile
+          - --context=dir:///workspace/src
+          - --no-push
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
