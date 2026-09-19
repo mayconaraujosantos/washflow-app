@@ -7,7 +7,7 @@ Railway.
 | Component      | Role                                                           |
 | --------------- | --------------------------------------------------------------- |
 | kind            | Local Kubernetes cluster, backed by Podman (`infra/kind/`)      |
-| Argo Workflows  | CI: backend tests, frontend lint, Dockerfile build check         |
+| Argo Workflows  | CI: backend tests+coverage, formatting, frontend lint, build check, optional SonarCloud |
 | Argo CD         | GitOps CD: syncs `infra/k8s/local` onto the cluster (staging)   |
 | Railway CLI     | Production deploy, run as an Argo Workflow                      |
 
@@ -45,6 +45,32 @@ subprocess; the Makefile already routes `kind` through it on Windows.
   an Argo Workflow (`infra/argo-workflows/deploy-railway-workflowtemplate.yaml`).
   This used to fire automatically on push in GitHub Actions; here it's a
   deliberate, manual step since there's no webhook receiver watching this repo.
+
+## Code quality: JaCoCo, Spotless, SonarCloud
+
+- `make test` runs the backend suite and generates a JaCoCo report
+  (`build/reports/jacoco/test/html/index.html`); `make coverage` just points
+  you at it.
+- `make lint` now also runs `spotlessCheck` (google-java-format) alongside the
+  frontend lint; `make format` applies it. CI (`make ci`) checks formatting
+  the same way - a misformatted file fails the pipeline.
+- SonarCloud analysis is wired up but **off by default** in `make ci`
+  (`runSonar=false`) until you do the one-time setup below.
+
+### One-time: SonarCloud
+
+1. Go to [sonarcloud.io](https://sonarcloud.io), sign in with GitHub, and
+   import `mayconaraujosantos/washflow-app` (it's public, so analysis is free).
+2. If SonarCloud assigns a different project/organization key than the
+   defaults in `build.gradle.kts` (`sonar.projectKey` /
+   `sonar.organization`), update them there to match.
+3. Generate a token (My Account → Security) and create the secret:
+   ```
+   kubectl -n argo create secret generic sonar-credentials \
+     --from-literal=SONAR_TOKEN=<token>
+   ```
+4. Run it: `argo submit -n argo --from workflowtemplate/washflow-ci -p revision=develop -p runSonar=true --watch`,
+   or locally without the cluster at all: `SONAR_TOKEN=<token> make sonar`.
 
 ## One-time: Railway credentials for `make deploy-prod`
 
