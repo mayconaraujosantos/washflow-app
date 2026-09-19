@@ -16,7 +16,10 @@ spec:
     spec:
       containers:
         - name: washflow-api
-          image: washflow-api:local
+          # podman tags locally-built images under "localhost/" when no
+          # registry is given - kind loads that image as-is, so the
+          # Deployment has to reference it under that same name.
+          image: localhost/washflow-api:local
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
