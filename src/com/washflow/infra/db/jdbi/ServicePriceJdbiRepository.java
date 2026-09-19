@@ -1,20 +1,20 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.BuscarServicoPrecoPorIdRepository;
-import com.washflow.domain.entities.ServicoPreco;
+import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
+import com.washflow.domain.entities.ServicePrice;
 import java.util.Optional;
 import org.jdbi.v3.core.Jdbi;
 
-public class ServicoPrecoJdbiRepository implements BuscarServicoPrecoPorIdRepository {
+public class ServicePriceJdbiRepository implements LoadServicePriceByIdRepository {
 
   private final Jdbi jdbi;
 
-  public ServicoPrecoJdbiRepository(Jdbi jdbi) {
+  public ServicePriceJdbiRepository(Jdbi jdbi) {
     this.jdbi = jdbi;
   }
 
   @Override
-  public Optional<ServicoPreco> buscarPorId(int id) {
+  public Optional<ServicePrice> loadById(int id) {
     return jdbi.withHandle(
         handle ->
             handle
@@ -23,7 +23,7 @@ public class ServicoPrecoJdbiRepository implements BuscarServicoPrecoPorIdReposi
                 .bind("id", id)
                 .map(
                     (rs, ctx) ->
-                        new ServicoPreco(
+                        new ServicePrice(
                             rs.getInt("id"),
                             rs.getString("nome"),
                             rs.getBigDecimal("preco"),

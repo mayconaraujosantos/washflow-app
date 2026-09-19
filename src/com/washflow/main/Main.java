@@ -3,9 +3,10 @@ package com.washflow.main;
 import static io.javalin.apibuilder.ApiBuilder.get;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import com.washflow.main.adapters.JavalinRouteAdapter;
-import com.washflow.main.routes.AtendimentoRoutes;
+import com.washflow.main.routes.ServiceOrderRoutes;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinJackson;
@@ -22,13 +23,18 @@ public class Main {
         Javalin.create(
             config -> {
               config.router.ignoreTrailingSlashes = true;
-                // Keep date values in ISO-8601 string form instead of raw epoch
-                // timestamps.
+              // Without JavaTimeModule, java.time.Instant fields (e.g.
+              // ServiceOrder's) blow up serialization with an
+              // InvalidDefinitionException; without disabling
+              // WRITE_DATES_AS_TIMESTAMPS they'd serialize as raw epoch
+              // floats instead of ISO-8601 strings.
               config.jsonMapper(
                   new JavalinJackson()
                       .updateMapper(
                           mapper ->
-                        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)));
+                              mapper
+                                  .registerModule(new JavaTimeModule())
+                                  .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)));
 
               // The built PWA (web/dist) is copied onto the classpath under
               // /static by the processResources Gradle task - not into
@@ -60,7 +66,7 @@ public class Main {
                         "/api/hello",
                         ctx -> ctx.json(Map.of("message", "Hello from Javalin + React PWA")));
 
-                    AtendimentoRoutes.register(jdbi);
+                    ServiceOrderRoutes.register(jdbi);
                   });
 
               // Real files (JS bundle, manifest, service worker) are already

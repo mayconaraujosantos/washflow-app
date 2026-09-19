@@ -1,21 +1,21 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.BuscarVeiculoPorIdRepository;
-import com.washflow.domain.entities.Veiculo;
+import com.washflow.data.protocols.db.LoadVehicleByIdRepository;
+import com.washflow.domain.entities.Vehicle;
 import java.util.Optional;
 import java.util.UUID;
 import org.jdbi.v3.core.Jdbi;
 
-public class VeiculoJdbiRepository implements BuscarVeiculoPorIdRepository {
+public class VehicleJdbiRepository implements LoadVehicleByIdRepository {
 
   private final Jdbi jdbi;
 
-  public VeiculoJdbiRepository(Jdbi jdbi) {
+  public VehicleJdbiRepository(Jdbi jdbi) {
     this.jdbi = jdbi;
   }
 
   @Override
-  public Optional<Veiculo> buscarPorId(UUID id) {
+  public Optional<Vehicle> loadById(UUID id) {
     return jdbi.withHandle(
         handle ->
             handle
@@ -24,7 +24,7 @@ public class VeiculoJdbiRepository implements BuscarVeiculoPorIdRepository {
                 .bind("id", id)
                 .map(
                     (rs, ctx) ->
-                        new Veiculo(
+                        new Vehicle(
                             (UUID) rs.getObject("id"),
                             (UUID) rs.getObject("cliente_id"),
                             rs.getString("placa"),
