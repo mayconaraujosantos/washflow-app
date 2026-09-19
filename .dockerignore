@@ -1,0 +1,12 @@
+.git
+.github
+.gradle
+.idea
+.vscode
+build
+web/node_modules
+web/dist
+web/coverage
+.env
+.env.*
+*.log
