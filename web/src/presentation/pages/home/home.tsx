@@ -10,8 +10,9 @@ export function Home({ loadHealthStatus }: Props) {
   const [status, setStatus] = useState('checking...')
 
   useEffect(() => {
-    loadHealthStatus.load()
-      .then(result => setStatus(result.status))
+    loadHealthStatus
+      .load()
+      .then((result) => setStatus(result.status))
       .catch(() => setStatus('offline'))
   }, [loadHealthStatus])
 
@@ -30,8 +31,12 @@ export function Home({ loadHealthStatus }: Props) {
         </div>
 
         <div className="actions">
-          <a href="/api/health" className="primary-btn">Health check</a>
-          <a href="/api/hello" className="secondary-btn">API hello</a>
+          <a href="/api/health" className="primary-btn">
+            Health check
+          </a>
+          <a href="/api/hello" className="secondary-btn">
+            API hello
+          </a>
         </div>
       </section>
     </main>

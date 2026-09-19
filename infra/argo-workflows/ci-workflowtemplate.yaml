@@ -83,14 +83,14 @@ spec:
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
 
-    # Mirrors the "quality" job's frontend step (lint).
+    # Mirrors the "quality" job's frontend step: lint + formatting check.
     - name: quality-frontend
       container:
         image: oven/bun:1.3.14
         workingDir: /workspace/src/web
         command: [sh, -c]
         args:
-          - bun install --frozen-lockfile && bun run lint
+          - bun install --frozen-lockfile && bun run lint && bun run format:check
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
 

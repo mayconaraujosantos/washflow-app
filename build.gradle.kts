@@ -84,9 +84,12 @@ sonar {
         property("sonar.projectKey", "mayconaraujosantos_washflow-app")
         property("sonar.organization", "mayconaraujosantos")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.sources", "src")
+        // Both the backend ("src") and the frontend ("web/src") are analyzed
+        // as one SonarCloud project - it's a single deployable app, and
+        // SonarCloud's JS/TS analyzer picks up .ts/.tsx files automatically.
+        property("sonar.sources", "src,web/src")
         property("sonar.tests", "src/test")
-        property("sonar.exclusions", "web/**")
+        property("sonar.exclusions", "web/dist/**,web/node_modules/**,web/coverage/**")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
     }
 }

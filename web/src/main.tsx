@@ -4,7 +4,5 @@ import '@/presentation/styles/global.css'
 import { makeHomePage } from '@/main/factories/pages/make-home-page'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    {makeHomePage()}
-  </StrictMode>,
+  <StrictMode>{makeHomePage()}</StrictMode>,
 )

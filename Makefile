@@ -39,8 +39,9 @@ help:
 	@echo "                 install/offline behavior, including on your phone."
 	@echo "  make build     Build the frontend only (web/dist), nothing started."
 	@echo "  make test      Run the backend test suite (+ JaCoCo coverage report)."
-	@echo "  make lint      Lint the frontend + check backend formatting (Spotless)."
-	@echo "  make format    Auto-format the backend with Spotless (google-java-format)."
+	@echo "  make lint      Lint + check formatting for both frontend (ESLint/Prettier)"
+	@echo "                 and backend (Spotless)."
+	@echo "  make format    Auto-format frontend (Prettier) and backend (Spotless)."
 	@echo "  make coverage  Print where the JaCoCo HTML coverage report landed."
 	@echo "  make sonar     Run a SonarCloud analysis (needs SONAR_TOKEN, see infra/README.md)."
 	@echo "  make stop      Best-effort: kill whatever is still holding"
@@ -94,10 +95,11 @@ test:
 	gradle test --console=plain
 
 lint:
-	cd web && bun run lint
+	cd web && bun run lint && bun run format:check
 	gradle spotlessCheck --console=plain
 
 format:
+	cd web && bun run format
 	gradle spotlessApply --console=plain
 
 coverage: test

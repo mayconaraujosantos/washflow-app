@@ -14,7 +14,7 @@ export default defineConfig({
         'icons/icon.svg',
         'icons/icon-180.png',
         'icons/icon-192.png',
-        'icons/icon-512.png'
+        'icons/icon-512.png',
       ],
       manifest: {
         name: 'Washflow',
@@ -32,25 +32,25 @@ export default defineConfig({
             src: '/icons/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any'
+            purpose: 'any',
           },
           {
             src: '/icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
+            purpose: 'maskable',
+          },
+        ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}']
-      }
-    })
+        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+      },
+    }),
   ],
   resolve: {
     alias: {
-      '@': path.resolve(import.meta.dirname, './src')
-    }
+      '@': path.resolve(import.meta.dirname, './src'),
+    },
   },
   server: {
     port: 5173,
@@ -59,7 +59,7 @@ export default defineConfig({
       // In production the Javalin server serves both the built SPA and
       // /api/* from the same origin (see infra/http). This proxy makes
       // `bun run dev` behave the same way against the local backend.
-      '/api': 'http://localhost:7000'
-    }
-  }
+      '/api': 'http://localhost:7000',
+    },
+  },
 })
