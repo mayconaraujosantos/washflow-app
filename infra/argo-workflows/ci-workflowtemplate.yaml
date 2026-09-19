@@ -28,8 +28,8 @@ spec:
             template: quality-backend
           - name: quality-frontend
             template: quality-frontend
-        - - name: build-image
-            template: build-image
+        - - name: build-check
+            template: build-check
 
     - name: checkout
       container:
@@ -40,12 +40,22 @@ spec:
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
 
-    # Mirrors the "quality" job's backend step from the old GitHub Actions workflow.
+    # Mirrors the "quality" job's backend step from the old GitHub Actions
+    # workflow. `gradle test` depends on the bunInstall/bunBuild tasks (the
+    # frontend gets bundled into the backend's resources), so Bun has to be
+    # on PATH here too - same as the old workflow's separate setup-bun step.
     - name: quality-backend
       container:
         image: gradle:9.7.1-jdk21
         workingDir: /workspace/src
-        command: [gradle, test, --no-daemon, --console=plain]
+        command: [sh, -c]
+        args:
+          - |
+            set -eu
+            apt-get update -qq && apt-get install --no-install-recommends -y -qq curl unzip >/dev/null
+            curl -fsSL https://bun.sh/install | bash >/dev/null
+            ln -s /root/.bun/bin/bun /usr/local/bin/bun
+            gradle test --no-daemon --console=plain
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
 
@@ -60,14 +70,24 @@ spec:
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
 
-    # Mirrors the "container" job: validates the Dockerfile builds, without
-    # needing a registry or a Docker/Podman socket inside the cluster.
-    - name: build-image
+    # Mirrors the "container" job's intent (validate the app packages
+    # cleanly) without an in-cluster image build: kaniko v1.23.2 hits a
+    # reproducible "duplicate class" javac error on this Dockerfile's
+    # multi-stage COPY that plain `podman build`/`docker build` does not
+    # (confirmed against an isolated fresh clone) - a kaniko snapshotting
+    # quirk, not a project bug. `make image-local` (plain podman, on your
+    # machine) is what actually builds and loads the deployable image.
+    - name: build-check
       container:
-        image: gcr.io/kaniko-project/executor:v1.23.2
+        image: gradle:9.7.1-jdk21
+        workingDir: /workspace/src
+        command: [sh, -c]
         args:
-          - --dockerfile=/workspace/src/Dockerfile
-          - --context=dir:///workspace/src
-          - --no-push
+          - |
+            set -eu
+            apt-get update -qq && apt-get install --no-install-recommends -y -qq curl unzip >/dev/null
+            curl -fsSL https://bun.sh/install | bash >/dev/null
+            ln -s /root/.bun/bin/bun /usr/local/bin/bun
+            gradle installDist --no-daemon --console=plain
         volumeMounts:
           - {name: workspace, mountPath: /workspace}

@@ -65,7 +65,7 @@ dev: install
 	@$(MAKE) -j2 dev-backend dev-frontend
 
 dev-backend:
-	true && gradle run --console=plain
+	gradle run --console=plain
 
 dev-frontend:
 	cd web && bun run dev
@@ -82,12 +82,12 @@ run:
 	@echo "Plain http://<lan-ip> works fine in a phone's browser, but Chrome/Android"
 	@echo "will only offer 'Add to Home screen' over HTTPS or on the deployed Railway URL."
 	@echo ""
-	true && gradle run --console=plain
+	gradle run --console=plain
 
 start: run
 
 test:
-	true && gradle test --console=plain
+	gradle test --console=plain
 
 lint:
 	cd web && bun run lint
@@ -104,7 +104,7 @@ ip:
 	@echo "On your phone (same Wi-Fi as this PC): http://<one-of-the-ips-above>:$(BACKEND_PORT)"
 
 clean:
-	true && gradle clean --console=plain
+	gradle clean --console=plain
 	rm -rf web/dist
 
 ## Local CI/CD: kind (via Podman) + Argo CD (GitOps) + Argo Workflows (pipelines).
