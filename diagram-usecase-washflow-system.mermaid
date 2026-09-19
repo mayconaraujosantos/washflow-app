@@ -1,0 +1,40 @@
+graph TD
+    %% Estilos
+    classDef cliente fill:#d4ebf2,stroke:#333,stroke-width:2px;
+    classDef lavador fill:#ffe5b4,stroke:#333,stroke-width:2px;
+    classDef gerente fill:#d1e7dd,stroke:#333,stroke-width:2px;
+    classDef status fill:#f8d7da,stroke:#f5c2c7,stroke-width:1px,stroke-dasharray: 5 5;
+
+    %% Canal do Cliente
+    subgraph C1 [1. VISÃO DO CLIENTE - PWA]
+        A[Acessa Link/QR Code] --> B[Escolhe Lavagem, Data/Hora]
+        B --> C[Confirma Agendamento]
+        C -->|Status: AGENDADO| D(Acompanha Status no Celular)
+    end
+
+    %% Canal do Gerente (Entrada)
+    subgraph G1 [3. VISÃO DO GERENTE - Painel]
+        C --> E[Vê Carro na Fila do Dia]
+        E --> F[Recebe o Carro no Pátio]
+        F -->|Status: NO PÁTIO| G[Designa Lavador ou deixa na Fila]
+    end
+
+    %% Canal do Lavador
+    subgraph L1 [2. VISÃO DO LAVADOR - PWA]
+        G --> H[Vê Carro Disponível no PWA]
+        H --> I[Clica em 'Iniciar Lavagem']
+        I -->|Status: EM LAVAGEM| J[Realiza o Serviço]
+        J --> K[Clica em 'Concluir Lavagem']
+    end
+
+    %% Canal do Gerente / Cliente (Saída)
+    K -->|Status: PRONTO| L(Notificação para o Cliente)
+    K --> M[Gerente Valida a Lavagem]
+    M --> N[Realiza a Cobrança / Recebe PGTO]
+    N -->|Status: FINALIZADO| O[Libera o Carro]
+    O --> P[Sistema calcula comissão do Lavador]
+
+    %% Aplicando Classes
+    class A,B,C,D cliente;
+    class H,I,J,K lavador;
+    class E,F,G,M,n,O,P gerente;
