@@ -29,9 +29,15 @@ dependencies {
     // spring-boot-starter-jdbc) usado pelo JdbiFactory.
     implementation("com.zaxxer:HikariCP:7.1.0")
 
+    // Migrações de schema (o mesmo papel do Flyway/Liquibase auto-configurados
+    // pelo Spring Boot) - roda contra o mesmo DataSource do JdbiFactory.
+    implementation("org.flywaydb:flyway-core:11.8.2")
+    implementation("org.flywaydb:flyway-database-postgresql:11.8.2")
+
     // Suporte a JSON usando Jackson
     implementation("io.javalin:javalin-rendering:7.0.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.0")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.0")
     
     // Logs
     implementation("org.slf4j:slf4j-simple:2.0.13")
@@ -39,6 +45,9 @@ dependencies {
     // Testes
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.mockito:mockito-core:5.18.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
 }
 
 application {

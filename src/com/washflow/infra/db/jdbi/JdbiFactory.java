@@ -4,8 +4,11 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.net.URI;
 import javax.sql.DataSource;
+import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Builds the app's single {@link Jdbi} instance - the same job {@code spring-boot-starter-jdbc}
@@ -19,6 +22,8 @@ import org.jdbi.v3.sqlobject.SqlObjectPlugin;
  */
 public final class JdbiFactory {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(JdbiFactory.class);
+
   // Matches docker-compose.yml's `postgres` service - the local dev default
   // when no DB_* / DATABASE_URL env vars override it.
   private static final String LOCAL_DEFAULT = "washflow";
@@ -26,7 +31,21 @@ public final class JdbiFactory {
   private JdbiFactory() {}
 
   public static Jdbi create() {
-    return Jdbi.create(createDataSource()).installPlugin(new SqlObjectPlugin());
+    DataSource dataSource = createDataSource();
+    migrate(dataSource);
+    return Jdbi.create(dataSource).installPlugin(new SqlObjectPlugin());
+  }
+
+  private static void migrate(DataSource dataSource) {
+    try {
+      Flyway.configure().dataSource(dataSource).load().migrate();
+    } catch (RuntimeException e) {
+      // Same "don't block startup" reasoning as initializationFailTimeout
+      // below - Postgres might just not be up yet (e.g. before `make
+      // db-up`). Every query will fail until it is; that's the DB health
+      // check's job to surface, not startup's.
+      LOGGER.warn("Skipping Flyway migration - database not reachable yet: {}", e.getMessage());
+    }
   }
 
   public static DataSource createDataSource() {

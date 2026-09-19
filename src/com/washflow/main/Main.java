@@ -2,9 +2,13 @@ package com.washflow.main;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.washflow.infra.db.jdbi.JdbiFactory;
+import com.washflow.main.adapters.JavalinRouteAdapter;
+import com.washflow.main.routes.AtendimentoRoutes;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
+import io.javalin.json.JavalinJackson;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,6 +22,13 @@ public class Main {
         Javalin.create(
             config -> {
               config.router.ignoreTrailingSlashes = true;
+                // Keep date values in ISO-8601 string form instead of raw epoch
+                // timestamps.
+              config.jsonMapper(
+                  new JavalinJackson()
+                      .updateMapper(
+                          mapper ->
+                        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)));
 
               // The built PWA (web/dist) is copied onto the classpath under
               // /static by the processResources Gradle task - not into
@@ -48,15 +59,24 @@ public class Main {
                     get(
                         "/api/hello",
                         ctx -> ctx.json(Map.of("message", "Hello from Javalin + React PWA")));
+
+                    AtendimentoRoutes.register(jdbi);
                   });
 
               // Real files (JS bundle, manifest, service worker) are already
               // served by the static handler above. Anything else falls here -
-              // either a client-side route the SPA should handle, or a
-              // genuinely missing API endpoint.
+              // either a client-side route the SPA should handle, a genuinely
+              // missing API endpoint, or a matched route/controller that
+              // deliberately returned 404 (e.g. HttpHelper.notFound()) - that
+              // last case already wrote its own JSON body, which this handler
+              // must leave alone instead of overwriting.
               config.routes.error(
                   404,
                   ctx -> {
+                    if (ctx.attribute(JavalinRouteAdapter.CONTROLLER_HANDLED_ATTRIBUTE) != null) {
+                      return;
+                    }
+
                     if (ctx.path().startsWith("/api/")) {
                       ctx.contentType("text/plain").result("Not found");
                       return;
