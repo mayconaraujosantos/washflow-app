@@ -1,4 +1,2 @@
-/**
- * Unit tests for validators.
- */
+/** Unit tests for validators. */
 package com.washflow.validation;

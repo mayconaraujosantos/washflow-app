@@ -23,7 +23,8 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev dev-backend dev-frontend build run start test lint stop ip clean \
+.PHONY: help install dev dev-backend dev-frontend build run start test lint format \
+	coverage sonar stop ip clean \
 	cluster-up cluster-down cluster-status image-local argocd-install argocd-password \
 	argocd-port-forward argo-install argo-port-forward ci deploy-prod
 
@@ -37,8 +38,11 @@ help:
 	@echo "                 single origin (:$(BACKEND_PORT)). Use this to test"
 	@echo "                 install/offline behavior, including on your phone."
 	@echo "  make build     Build the frontend only (web/dist), nothing started."
-	@echo "  make test      Run the backend test suite."
-	@echo "  make lint      Lint the frontend."
+	@echo "  make test      Run the backend test suite (+ JaCoCo coverage report)."
+	@echo "  make lint      Lint the frontend + check backend formatting (Spotless)."
+	@echo "  make format    Auto-format the backend with Spotless (google-java-format)."
+	@echo "  make coverage  Print where the JaCoCo HTML coverage report landed."
+	@echo "  make sonar     Run a SonarCloud analysis (needs SONAR_TOKEN, see infra/README.md)."
 	@echo "  make stop      Best-effort: kill whatever is still holding"
 	@echo "                 :$(BACKEND_PORT) / :$(FRONTEND_PORT) (in case Ctrl+C didn't)."
 	@echo "  make ip        List LAN IPs to open on your phone (same Wi-Fi)."
@@ -91,6 +95,17 @@ test:
 
 lint:
 	cd web && bun run lint
+	gradle spotlessCheck --console=plain
+
+format:
+	gradle spotlessApply --console=plain
+
+coverage: test
+	@echo "HTML report: build/reports/jacoco/test/html/index.html"
+
+## Needs a SonarCloud token: export SONAR_TOKEN=... first (see infra/README.md).
+sonar:
+	gradle sonar -Dsonar.token=$(SONAR_TOKEN) --console=plain
 
 stop:
 ifeq ($(DETECTED_OS),Windows)

@@ -1,6 +1,9 @@
 plugins {
     java
     application
+    jacoco
+    id("com.diffplug.spotless") version "8.10.2"
+    id("org.sonarqube") version "7.4.0.8496"
 }
 
 group = "com.washflow"
@@ -55,6 +58,37 @@ sourceSets {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+spotless {
+    java {
+        target("src/**/*.java")
+        googleJavaFormat("1.19.2")
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "mayconaraujosantos_washflow-app")
+        property("sonar.organization", "mayconaraujosantos")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.sources", "src")
+        property("sonar.tests", "src/test")
+        property("sonar.exclusions", "web/**")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+    }
 }
 
 val frontendDir = file("web")

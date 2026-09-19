@@ -11,6 +11,11 @@ spec:
         value: https://github.com/mayconaraujosantos/washflow-app.git
       - name: revision
         value: develop
+      # SonarCloud needs the sonar-credentials Secret (SONAR_TOKEN) - see
+      # infra/README.md. Off by default so `make ci` keeps working for
+      # everyday feature work before that's set up.
+      - name: runSonar
+        value: "false"
   volumeClaimTemplates:
     - metadata:
         name: workspace
@@ -28,7 +33,10 @@ spec:
             template: quality-backend
           - name: quality-frontend
             template: quality-frontend
-        - - name: build-check
+        - - name: sonar
+            template: sonar
+            when: "{{workflow.parameters.runSonar}} == true"
+          - name: build-check
             template: build-check
 
     - name: checkout
@@ -55,7 +63,23 @@ spec:
             apt-get update -qq && apt-get install --no-install-recommends -y -qq curl unzip >/dev/null
             curl -fsSL https://bun.sh/install | bash >/dev/null
             ln -s /root/.bun/bin/bun /usr/local/bin/bun
-            gradle test --no-daemon --console=plain
+            gradle test spotlessCheck --no-daemon --console=plain
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # SonarCloud analysis. Reads the classes/coverage report quality-backend
+    # already produced on the shared workspace - doesn't need Bun, and
+    # doesn't force a recompile. Skipped unless runSonar=true (see above).
+    - name: sonar
+      container:
+        image: gradle:9.7.1-jdk21
+        workingDir: /workspace/src
+        command: [sh, -c]
+        args:
+          - gradle sonar --no-daemon --console=plain -Dsonar.token=$SONAR_TOKEN
+        envFrom:
+          - secretRef:
+              name: sonar-credentials
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
 

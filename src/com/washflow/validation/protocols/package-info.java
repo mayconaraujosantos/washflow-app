@@ -1,4 +1,2 @@
-/**
- * The {@code Validation} contract implemented by every validator.
- */
+/** The {@code Validation} contract implemented by every validator. */
 package com.washflow.validation.protocols;
