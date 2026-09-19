@@ -30,6 +30,42 @@ search when it hits a malformed PATH entry (this machine has one, from an
 installer). `scripts/win-clean-path.ps1` sanitizes PATH for just that
 subprocess; the Makefile already routes `kind` through it on Windows.
 
+Windows note 2: if `podman ps`/`docker-compose ps` suddenly start failing with
+connection-refused or EOF errors, and `podman machine list` still claims it's
+"Currently running", the WSL2 utility VM got suspended mid-session (Windows
+does this after inactivity) and the SSH/named-pipe tunnel died without the
+machine noticing. Fix: `wsl --shutdown` (closes Podman Desktop's tray app
+first if open), then `podman machine start`. Anything that was running
+inside it (the kind cluster, the postgres container) stops and needs
+restarting (`make db-up`; the kind node usually needs a full
+`make cluster-down && make cluster-up` since its clock skews across the
+suspend and Kubernetes' certs start rejecting requests).
+
+## Database (Postgres)
+
+`docker-compose.yml` has a `postgres` service (talks to Podman through its
+Docker-API-compatible pipe - no `podman-compose` needed):
+
+```
+make db-up     # Postgres on localhost:5432, db/user/password all "washflow"
+make db-down
+make db-logs
+```
+
+`JdbiFactory` (`src/com/washflow/infra/db/jdbi/JdbiFactory.java`) builds the
+app's `Jdbi` + Hikari pool from the environment - the same role
+`application.properties` plays for `spring-boot-starter-jdbc`:
+
+- Discrete `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD`, all
+  defaulting to `docker-compose.yml`'s `postgres` service - so `make dev` /
+  `make run` connect with zero configuration once `make db-up` has run.
+- Or a single `DATABASE_URL` (`postgres://user:pass@host:port/db`), the form
+  Railway injects for its Postgres plugin - takes priority when set.
+
+Startup never blocks on Postgres being reachable (`initializationFailTimeout
+= -1`), so `make dev`/`gradle test` still work without `make db-up`. Live
+status shows up in `GET /api/health`'s `database` field (`"up"`/`"down"`).
+
 ## Day to day (git flow)
 
 - **feature/\***: `make ci` before opening a PR — runs the same checks Argo

@@ -2,13 +2,18 @@ package com.washflow.main;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 
+import com.washflow.infra.db.jdbi.JdbiFactory;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import org.jdbi.v3.core.Jdbi;
 
 public class Main {
   public static void main(String[] args) {
+    Jdbi jdbi = JdbiFactory.create();
+
     Javalin app =
         Javalin.create(
             config -> {
@@ -32,7 +37,14 @@ public class Main {
                   () -> {
                     get(
                         "/api/health",
-                        ctx -> ctx.json(Map.of("status", "ok", "service", "washflow-api")));
+                        ctx -> {
+                          String database = checkDatabase(jdbi);
+                          var body = new LinkedHashMap<String, String>();
+                          body.put("status", "ok");
+                          body.put("service", "washflow-api");
+                          body.put("database", database);
+                          ctx.json(body);
+                        });
                     get(
                         "/api/hello",
                         ctx -> ctx.json(Map.of("message", "Hello from Javalin + React PWA")));
@@ -67,5 +79,14 @@ public class Main {
 
     int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "7000"));
     app.start(port);
+  }
+
+  private static String checkDatabase(Jdbi jdbi) {
+    try {
+      jdbi.withHandle(handle -> handle.execute("SELECT 1"));
+      return "up";
+    } catch (RuntimeException e) {
+      return "down";
+    }
   }
 }

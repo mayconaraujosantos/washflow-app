@@ -23,6 +23,11 @@ dependencies {
 
     // Driver do Banco de Dados (CORRIGIDO: Parênteses e aspas duplas)
     implementation("com.h2database:h2:2.2.224")
+    implementation("org.postgresql:postgresql:42.7.13")
+
+    // Pool de conexões (o mesmo papel que o Spring Boot cobre "de graça" via
+    // spring-boot-starter-jdbc) usado pelo JdbiFactory.
+    implementation("com.zaxxer:HikariCP:7.1.0")
 
     // Suporte a JSON usando Jackson
     implementation("io.javalin:javalin-rendering:7.0.0")

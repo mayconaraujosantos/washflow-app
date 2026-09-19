@@ -24,7 +24,7 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help install dev dev-backend dev-frontend build run start test lint format \
-	coverage sonar stop ip clean \
+	coverage sonar stop ip clean db-up db-down db-logs \
 	cluster-up cluster-down cluster-status image-local argocd-install argocd-password \
 	argocd-port-forward argo-install argo-port-forward ci deploy-prod
 
@@ -48,6 +48,11 @@ help:
 	@echo "                 :$(BACKEND_PORT) / :$(FRONTEND_PORT) (in case Ctrl+C didn't)."
 	@echo "  make ip        List LAN IPs to open on your phone (same Wi-Fi)."
 	@echo "  make clean     Remove build output (build/, web/dist)."
+	@echo ""
+	@echo "Database (Postgres via docker-compose - see infra/README.md):"
+	@echo "  make db-up     Start Postgres (:5432) in the background."
+	@echo "  make db-down   Stop it (data survives in the postgres-data volume)."
+	@echo "  make db-logs   Follow the Postgres container logs."
 	@echo ""
 	@echo "Local CI/CD (kind + Argo, replaces GitHub Actions):"
 	@echo "  make cluster-up          Create the local kind cluster and install Argo CD + Argo Workflows."
@@ -123,6 +128,18 @@ ip:
 clean:
 	gradle clean --console=plain
 	rm -rf web/dist
+
+## `docker-compose` here talks to Podman's Docker-API-compatible pipe
+## (Podman Desktop's "Docker compatibility" mode) - no podman-compose needed.
+db-up:
+	docker-compose up -d postgres
+	@echo "Postgres on localhost:5432 (db/user/password: washflow) - 'make dev'/'make run' will find it via JdbiFactory's defaults."
+
+db-down:
+	docker-compose stop postgres
+
+db-logs:
+	docker-compose logs -f postgres
 
 ## Local CI/CD: kind (via Podman) + Argo CD (GitOps) + Argo Workflows (pipelines).
 ## Production still deploys to Railway (see `make deploy-prod`); Argo CD only
