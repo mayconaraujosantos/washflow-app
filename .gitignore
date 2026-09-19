@@ -1,0 +1,51 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Java build output
+out/
+*.class
+
+# Frontend dependencies and build output
+web/node_modules/
+web/dist/
+web/coverage/
+
+# Lockfiles from unsupported package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# CI/CD configuration must remain versioned
+!/.github/
+!/.github/**
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+
+# IDEs and local editor settings
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
