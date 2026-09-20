@@ -1,7 +1,5 @@
 package com.washflow.application;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.application.adapters.JavalinRouteAdapter;
@@ -9,16 +7,11 @@ import com.washflow.application.routes.ServiceOrderRoutes;
 import com.washflow.application.routes.SystemRoutes;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import io.javalin.Javalin;
-import io.javalin.http.Context;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinJackson;
-import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.OpenApi;
-import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import org.jdbi.v3.core.Jdbi;
 
 public class Application {
@@ -43,8 +36,8 @@ public class Application {
                                   .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)));
 
               // OpenAPI spec at /openapi, Swagger UI at /swagger - built from
-              // the @OpenApi annotations on the handler methods below and on
-              // ServiceOrderRoutes.register, compiled in (no reflection).
+              // the @OpenApi annotations on the route registration methods
+              // below, compiled in (no reflection).
               config.registerPlugin(
                   new OpenApiPlugin(
                       pluginConfig ->
@@ -71,8 +64,6 @@ public class Application {
               config.routes.apiBuilder(
                   () -> {
                     SystemRoutes.register(jdbi);
-                    get("/api/hello", Application::hello);
-
                     ServiceOrderRoutes.register(jdbi);
                   });
 
@@ -112,14 +103,5 @@ public class Application {
 
     int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "7000"));
     app.start(port);
-  }
-
-  @OpenApi(
-      path = "/api/hello",
-      methods = HttpMethod.GET,
-      summary = "Sample greeting endpoint",
-      responses = @OpenApiResponse(status = "200"))
-  private static void hello(Context ctx) {
-    ctx.json(Map.of("message", "Hello from Javalin + React PWA"));
   }
 }

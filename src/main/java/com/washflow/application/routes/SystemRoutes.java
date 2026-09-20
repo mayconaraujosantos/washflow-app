@@ -4,6 +4,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.factories.controllers.HealthControllerFactory;
+import com.washflow.application.factories.controllers.HelloControllerFactory;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiResponse;
@@ -16,6 +17,7 @@ public final class SystemRoutes {
   /** Called from inside {@code config.routes.apiBuilder(...)} in Application. */
   public static void register(Jdbi jdbi) {
     registerHealth(jdbi);
+    registerHello();
   }
 
   @OpenApi(
@@ -25,5 +27,14 @@ public final class SystemRoutes {
       responses = @OpenApiResponse(status = "200"))
   private static void registerHealth(Jdbi jdbi) {
     get("/api/health", JavalinRouteAdapter.adapt(HealthControllerFactory.make(jdbi)));
+  }
+
+  @OpenApi(
+      path = "/api/hello",
+      methods = HttpMethod.GET,
+      summary = "Sample greeting endpoint",
+      responses = @OpenApiResponse(status = "200"))
+  private static void registerHello() {
+    get("/api/hello", JavalinRouteAdapter.adapt(HelloControllerFactory.make()));
   }
 }
