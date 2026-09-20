@@ -3,6 +3,8 @@ package com.washflow.infra.db.jdbi;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.net.URI;
+import java.sql.Connection;
+import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
@@ -19,6 +21,14 @@ import org.slf4j.LoggerFactory;
  * like Railway inject; otherwise falls back to discrete {@code DB_HOST}/{@code DB_PORT}/{@code
  * DB_NAME}/{@code DB_USER}/{@code DB_PASSWORD} vars, defaulting to {@code docker-compose.yml}'s
  * {@code postgres} service for local dev.
+ *
+ * <p>If Postgres can't be reached at startup, falls back to an in-memory H2 database instead of
+ * failing - useful for local dev/demo without {@code make db-up}. The fallback is decided once at
+ * startup; it doesn't watch for Postgres coming back or going down mid-run. H2 runs in {@code
+ * MODE=PostgreSQL} against {@code db/migration-h2}, a copy of the Postgres migrations with the
+ * handful of Postgres-only bits (e.g. {@code gen_random_uuid()}, {@code TIMESTAMPTZ}) swapped for
+ * H2 equivalents - kept in sync by hand since Flyway can't share one script across dialects that
+ * differ this much.
  */
 public final class JdbiFactory {
 
@@ -27,6 +37,9 @@ public final class JdbiFactory {
   // Matches docker-compose.yml's `postgres` service - the local dev default
   // when no DB_* / DATABASE_URL env vars override it.
   private static final String LOCAL_DEFAULT = "washflow";
+
+  private static final String H2_JDBC_URL =
+      "jdbc:h2:mem:washflow;MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
 
   private JdbiFactory() {}
 
@@ -37,18 +50,42 @@ public final class JdbiFactory {
   }
 
   private static void migrate(DataSource dataSource) {
+    String location = isH2(dataSource) ? "classpath:db/migration-h2" : "classpath:db/migration";
     try {
-      Flyway.configure().dataSource(dataSource).load().migrate();
+      Flyway.configure().dataSource(dataSource).locations(location).load().migrate();
     } catch (RuntimeException e) {
       // Same "don't block startup" reasoning as initializationFailTimeout
-      // below - Postgres might just not be up yet (e.g. before `make
+      // below - the database might just not be up yet (e.g. before `make
       // db-up`). Every query will fail until it is; that's the DB health
       // check's job to surface, not startup's.
       LOGGER.warn("Skipping Flyway migration - database not reachable yet: {}", e.getMessage());
     }
   }
 
+  private static boolean isH2(DataSource dataSource) {
+    return dataSource instanceof HikariDataSource hikari
+        && hikari.getJdbcUrl().startsWith("jdbc:h2:");
+  }
+
   public static DataSource createDataSource() {
+    HikariDataSource postgres = createPostgresDataSource();
+    if (isReachable(postgres)) {
+      return postgres;
+    }
+    LOGGER.warn("Postgres unreachable at {} - falling back to in-memory H2", postgres.getJdbcUrl());
+    postgres.close();
+    return createH2DataSource();
+  }
+
+  private static boolean isReachable(HikariDataSource dataSource) {
+    try (Connection ignored = dataSource.getConnection()) {
+      return true;
+    } catch (SQLException e) {
+      return false;
+    }
+  }
+
+  private static HikariDataSource createPostgresDataSource() {
     var env = System.getenv();
     String jdbcUrl;
     String user;
@@ -78,14 +115,29 @@ public final class JdbiFactory {
     config.setPassword(password);
     config.setPoolName("washflow-pool");
     config.setMaximumPoolSize(10);
-    // Keep it short: a health check should fail fast, not hang for Hikari's
-    // 30s default while Postgres is down.
+    // Keep it short: the reachability probe below (and a down-Postgres
+    // health check) should fail fast, not hang for Hikari's 30s default.
     config.setConnectionTimeout(3000);
-    // Don't block app startup if Postgres isn't reachable yet (e.g. local
-    // `gradle run` before `make db-up`) - Hikari keeps retrying in the
-    // background and only throws once a connection is actually requested.
+    // Don't block on pool construction itself - createDataSource() decides
+    // reachability with an explicit getConnection() probe right after this
+    // returns, so a slow/absent Postgres surfaces as a quick H2 fallback
+    // instead of a hung startup.
     config.setInitializationFailTimeout(-1);
 
+    return new HikariDataSource(config);
+  }
+
+  private static HikariDataSource createH2DataSource() {
+    HikariConfig config = new HikariConfig();
+    config.setJdbcUrl(H2_JDBC_URL);
+    config.setUsername("sa");
+    config.setPassword("");
+    config.setPoolName("washflow-h2-fallback-pool");
+    // Keep at least one connection open for the lifetime of the pool - an
+    // in-memory H2 database is dropped once its last connection closes, and
+    // MODE=PostgreSQL's DB_CLOSE_DELAY=-1 only protects a single JVM-wide
+    // named instance, not this pool's own connection churn.
+    config.setMinimumIdle(1);
     return new HikariDataSource(config);
   }
 }
