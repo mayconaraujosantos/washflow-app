@@ -27,7 +27,12 @@ public final class JavalinRouteAdapter {
       Map<String, Object> body;
       try {
         body = ctx.bodyAsClass(Map.class);
-      } catch (RuntimeException e) {
+      } catch (Exception e) {
+        // ctx.bodyAsClass throws Jackson's MismatchedInputException on an
+        // empty body (e.g. every GET request) - a checked IOException under
+        // Jackson's JacksonException, not a RuntimeException, even though
+        // Kotlin lets it fly here undeclared. Catching only RuntimeException
+        // let it through as an uncaught 500.
         body = Map.of();
       }
 
