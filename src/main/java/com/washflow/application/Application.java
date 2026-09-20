@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.routes.ServiceOrderRoutes;
+import com.washflow.application.routes.SystemRoutes;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -17,7 +18,6 @@ import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jdbi.v3.core.Jdbi;
 
@@ -70,7 +70,7 @@ public class Application {
 
               config.routes.apiBuilder(
                   () -> {
-                    get("/api/health", ctx -> health(ctx, jdbi));
+                    SystemRoutes.register(jdbi);
                     get("/api/hello", Application::hello);
 
                     ServiceOrderRoutes.register(jdbi);
@@ -115,33 +115,11 @@ public class Application {
   }
 
   @OpenApi(
-      path = "/api/health",
-      methods = HttpMethod.GET,
-      summary = "Liveness and database connectivity check",
-      responses = @OpenApiResponse(status = "200"))
-  private static void health(Context ctx, Jdbi jdbi) {
-    var body = new LinkedHashMap<String, String>();
-    body.put("status", "ok");
-    body.put("service", "washflow-api");
-    body.put("database", checkDatabase(jdbi));
-    ctx.json(body);
-  }
-
-  @OpenApi(
       path = "/api/hello",
       methods = HttpMethod.GET,
       summary = "Sample greeting endpoint",
       responses = @OpenApiResponse(status = "200"))
   private static void hello(Context ctx) {
     ctx.json(Map.of("message", "Hello from Javalin + React PWA"));
-  }
-
-  private static String checkDatabase(Jdbi jdbi) {
-    try {
-      jdbi.withHandle(handle -> handle.execute("SELECT 1"));
-      return "up";
-    } catch (RuntimeException e) {
-      return "down";
-    }
   }
 }
