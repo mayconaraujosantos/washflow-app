@@ -1,12 +1,12 @@
-package com.washflow.main;
+package com.washflow.application;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.washflow.application.adapters.JavalinRouteAdapter;
+import com.washflow.application.routes.ServiceOrderRoutes;
 import com.washflow.infra.db.jdbi.JdbiFactory;
-import com.washflow.main.adapters.JavalinRouteAdapter;
-import com.washflow.main.routes.ServiceOrderRoutes;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.staticfiles.Location;
@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jdbi.v3.core.Jdbi;
 
-public class Main {
+public class Application {
   public static void main(String[] args) {
     Jdbi jdbi = JdbiFactory.create();
 
@@ -71,7 +71,7 @@ public class Main {
               config.routes.apiBuilder(
                   () -> {
                     get("/api/health", ctx -> health(ctx, jdbi));
-                    get("/api/hello", Main::hello);
+                    get("/api/hello", Application::hello);
 
                     ServiceOrderRoutes.register(jdbi);
                   });
@@ -95,7 +95,7 @@ public class Main {
                       return;
                     }
 
-                    var resource = Main.class.getResource("/static/index.html");
+                    var resource = Application.class.getResource("/static/index.html");
                     if (resource == null) {
                       ctx.contentType("text/html")
                           .result(

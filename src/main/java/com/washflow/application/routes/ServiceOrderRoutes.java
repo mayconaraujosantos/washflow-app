@@ -1,10 +1,10 @@
-package com.washflow.main.routes;
+package com.washflow.application.routes;
 
 import static io.javalin.apibuilder.ApiBuilder.post;
 
+import com.washflow.application.adapters.JavalinRouteAdapter;
+import com.washflow.application.factories.controllers.ScheduleServiceOrderControllerFactory;
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.main.adapters.JavalinRouteAdapter;
-import com.washflow.main.factories.controllers.ScheduleServiceOrderControllerFactory;
 import com.washflow.presentation.controllers.scheduleserviceorder.ScheduleServiceOrderRequest;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
@@ -17,7 +17,7 @@ public final class ServiceOrderRoutes {
 
   private ServiceOrderRoutes() {}
 
-  /** Called from inside {@code config.routes.apiBuilder(...)} in Main. */
+  /** Called from inside {@code config.routes.apiBuilder(...)} in Application. */
   @OpenApi(
       path = "/api/service-orders",
       methods = HttpMethod.POST,

@@ -1,4 +1,4 @@
-package com.washflow.main.adapters;
+package com.washflow.application.adapters;
 
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public final class JavalinRouteAdapter {
 
-  // Lets the shared 404 error handler in Main tell "a controller matched and
+  // Lets the shared 404 error handler in Application tell "a controller matched and
   // deliberately returned 404" (leave its JSON body alone) apart from "no
   // route matched at all" (Javalin already wrote its own default body by
   // then, so checking ctx.result() can't tell the two apart).

@@ -1,6 +1,6 @@
-package com.washflow.main.factories.controllers;
+package com.washflow.application.factories.controllers;
 
-import com.washflow.main.factories.usecases.ScheduleServiceOrderFactory;
+import com.washflow.application.factories.usecases.ScheduleServiceOrderFactory;
 import com.washflow.presentation.controllers.scheduleserviceorder.ScheduleServiceOrderController;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.validation.protocols.Validation;

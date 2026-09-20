@@ -1,4 +1,4 @@
-package com.washflow.main.factories.usecases;
+package com.washflow.application.factories.usecases;
 
 import com.washflow.data.usecases.scheduleserviceorder.DbScheduleServiceOrder;
 import com.washflow.domain.usecases.ScheduleServiceOrder;
