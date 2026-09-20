@@ -48,7 +48,12 @@ export default defineConfig({
         // full-page navigation (including /swagger, /openapi, /api/*) as an
         // SPA route and serves index.html instead of letting it reach the
         // Javalin backend that shares this same origin/port in production.
-        navigateFallbackDenylist: [/^\/api\//, /^\/swagger/, /^\/openapi/, /^\/webjars\//],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/swagger/,
+          /^\/openapi/,
+          /^\/webjars\//,
+        ],
       },
     }),
   ],
