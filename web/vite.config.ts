@@ -44,6 +44,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Without this, the SW's catch-all NavigationRoute treats every
+        // full-page navigation (including /swagger, /openapi, /api/*) as an
+        // SPA route and serves index.html instead of letting it reach the
+        // Javalin backend that shares this same origin/port in production.
+        navigateFallbackDenylist: [/^\/api\//, /^\/swagger/, /^\/openapi/, /^\/webjars\//],
       },
     }),
   ],
