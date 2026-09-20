@@ -2,7 +2,7 @@ package com.washflow.application;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.washflow.application.adapters.JavalinRouteAdapter;
+import com.washflow.application.adapters.SpaFallbackHandler;
 import com.washflow.application.routes.ServiceOrderRoutes;
 import com.washflow.application.routes.SystemRoutes;
 import com.washflow.infra.db.jdbi.JdbiFactory;
@@ -11,7 +11,6 @@ import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinJackson;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
-import java.nio.charset.StandardCharsets;
 import org.jdbi.v3.core.Jdbi;
 
 public class Application {
@@ -67,38 +66,7 @@ public class Application {
                     ServiceOrderRoutes.register(jdbi);
                   });
 
-              // Real files (JS bundle, manifest, service worker) are already
-              // served by the static handler above. Anything else falls here -
-              // either a client-side route the SPA should handle, a genuinely
-              // missing API endpoint, or a matched route/controller that
-              // deliberately returned 404 (e.g. HttpHelper.notFound()) - that
-              // last case already wrote its own JSON body, which this handler
-              // must leave alone instead of overwriting.
-              config.routes.error(
-                  404,
-                  ctx -> {
-                    if (ctx.attribute(JavalinRouteAdapter.CONTROLLER_HANDLED_ATTRIBUTE) != null) {
-                      return;
-                    }
-
-                    if (ctx.path().startsWith("/api/")) {
-                      ctx.contentType("text/plain").result("Not found");
-                      return;
-                    }
-
-                    var resource = Application.class.getResource("/static/index.html");
-                    if (resource == null) {
-                      ctx.contentType("text/html")
-                          .result(
-                              "<html><body><h1>Washflow API</h1><p>Backend is running. Frontend build not generated yet.</p></body></html>");
-                      return;
-                    }
-
-                    try (var input = resource.openStream()) {
-                      ctx.contentType("text/html")
-                          .result(new String(input.readAllBytes(), StandardCharsets.UTF_8));
-                    }
-                  });
+              config.routes.error(404, SpaFallbackHandler::handle);
             });
 
     int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "7000"));
