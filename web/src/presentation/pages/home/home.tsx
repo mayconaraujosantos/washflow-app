@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { LoadHealthStatus } from '@/domain/usecases/load-health-status'
 import './home.css'
 
@@ -31,7 +32,10 @@ export function Home({ loadHealthStatus }: Props) {
         </div>
 
         <div className="actions">
-          <a href="/api/health" className="primary-btn">
+          <Link to="/qrcodes/cliente" className="primary-btn">
+            QR Code · Cliente
+          </Link>
+          <a href="/api/health" className="secondary-btn">
             Health check
           </a>
           <a href="/api/hello" className="secondary-btn">
