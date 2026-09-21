@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.application.adapters.SpaFallbackHandler;
 import com.washflow.application.routes.ServiceOrderRoutes;
+import com.washflow.application.routes.ServicePriceRoutes;
 import com.washflow.application.routes.SystemRoutes;
+import com.washflow.application.routes.UserRoutes;
+import com.washflow.application.routes.VehicleRoutes;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -64,6 +67,9 @@ public class Application {
                   () -> {
                     SystemRoutes.register(jdbi);
                     ServiceOrderRoutes.register(jdbi);
+                    ServicePriceRoutes.register(jdbi);
+                    UserRoutes.register(jdbi);
+                    VehicleRoutes.register(jdbi);
                   });
 
               config.routes.error(404, SpaFallbackHandler::handle);
