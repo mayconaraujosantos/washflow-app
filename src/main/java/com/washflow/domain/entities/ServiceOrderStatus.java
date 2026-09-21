@@ -22,4 +22,14 @@ public enum ServiceOrderStatus {
   public String dbValue() {
     return dbValue;
   }
+
+  /** Reverses {@link #dbValue()} - used by repositories mapping a stored {@code status} column. */
+  public static ServiceOrderStatus fromDbValue(String dbValue) {
+    for (ServiceOrderStatus status : values()) {
+      if (status.dbValue.equals(dbValue)) {
+        return status;
+      }
+    }
+    throw new IllegalArgumentException("Unknown service order status: " + dbValue);
+  }
 }
