@@ -90,6 +90,59 @@ h1 {
   box-shadow: 0 0 10px rgba(52, 211, 153, 0.9);
 }
 
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.profile-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(148, 163, 184, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  text-align: center;
+}
+
+.profile-card h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: #f8fafc;
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-actions a {
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.profile-actions a:hover {
+  transform: translateY(-1px);
+}
+
+.profile-link-primary {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+}
+
+.profile-link-secondary {
+  background: rgba(148, 163, 184, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
 .actions {
   display: flex;
   gap: 12px;
