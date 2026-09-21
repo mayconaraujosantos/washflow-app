@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 public final class HttpHelper {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpHelper.class);
+  private static final String ERROR = "error";
 
   private HttpHelper() {}
 
@@ -18,15 +19,23 @@ public final class HttpHelper {
   }
 
   public static HttpResponse badRequest(Exception error) {
-    return new HttpResponse(400, Map.of("error", error.getMessage()));
+    return new HttpResponse(400, Map.of(ERROR, error.getMessage()));
   }
 
   public static HttpResponse notFound(Exception error) {
-    return new HttpResponse(404, Map.of("error", error.getMessage()));
+    return new HttpResponse(404, Map.of(ERROR, error.getMessage()));
+  }
+
+  public static HttpResponse conflict(Exception error) {
+    return new HttpResponse(409, Map.of(ERROR, error.getMessage()));
+  }
+
+  public static HttpResponse forbidden(Exception error) {
+    return new HttpResponse(403, Map.of(ERROR, error.getMessage()));
   }
 
   public static HttpResponse serverError(Exception error) {
     LOGGER.error("Unhandled controller error", new ServerError(error));
-    return new HttpResponse(500, Map.of("error", "Internal server error"));
+    return new HttpResponse(500, Map.of(ERROR, "Internal server error"));
   }
 }

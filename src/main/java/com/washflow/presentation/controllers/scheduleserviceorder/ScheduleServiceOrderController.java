@@ -1,6 +1,9 @@
 package com.washflow.presentation.controllers.scheduleserviceorder;
 
+import com.washflow.domain.errors.InsufficientLeadTimeError;
+import com.washflow.domain.errors.OutsideBusinessHoursError;
 import com.washflow.domain.errors.ServicePriceNotFoundError;
+import com.washflow.domain.errors.SlotFullyBookedError;
 import com.washflow.domain.errors.VehicleNotFoundError;
 import com.washflow.domain.usecases.ScheduleServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -40,10 +43,15 @@ public class ScheduleServiceOrderController implements Controller {
               new ScheduleServiceOrder.Params(vehicleId, servicePriceId, scheduledAt));
 
       return HttpHelper.ok(serviceOrder);
-    } catch (DateTimeParseException | IllegalArgumentException e) {
+    } catch (DateTimeParseException
+        | IllegalArgumentException
+        | OutsideBusinessHoursError
+        | InsufficientLeadTimeError e) {
       return HttpHelper.badRequest(e);
     } catch (VehicleNotFoundError | ServicePriceNotFoundError e) {
       return HttpHelper.notFound(e);
+    } catch (SlotFullyBookedError e) {
+      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }
