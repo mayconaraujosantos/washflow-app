@@ -1,6 +1,6 @@
 import os from 'node:os'
 import path from 'node:path'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -98,5 +98,9 @@ export default defineConfig({
       // `bun run dev` behave the same way against the local backend.
       '/api': 'http://localhost:7000',
     },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
   },
 })
