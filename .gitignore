@@ -41,6 +41,7 @@ logs/
 .classpath
 .project
 .settings/
+.factorypath
 bin/
 
 # Operating system files
