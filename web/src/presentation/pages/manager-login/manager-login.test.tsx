@@ -66,8 +66,6 @@ describe('ManagerLogin', () => {
         'Este telefone ainda não foi promovido a gerente',
       ),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Entrar' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument()
   })
 })

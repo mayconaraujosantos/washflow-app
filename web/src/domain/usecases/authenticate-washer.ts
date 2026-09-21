@@ -1,9 +1,7 @@
 import { UserModel } from '@/domain/models/user-model'
 
 export interface AuthenticateWasher {
-  auth: (
-    params: AuthenticateWasher.Params,
-  ) => Promise<AuthenticateWasher.Model>
+  auth: (params: AuthenticateWasher.Params) => Promise<AuthenticateWasher.Model>
 }
 
 export namespace AuthenticateWasher {

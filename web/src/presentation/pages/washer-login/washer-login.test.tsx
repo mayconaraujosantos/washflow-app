@@ -64,8 +64,6 @@ describe('WasherLogin', () => {
     expect(
       await screen.findByText('Telefone já cadastrado com outro perfil'),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Entrar' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument()
   })
 })
