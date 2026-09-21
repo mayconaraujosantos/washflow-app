@@ -8,7 +8,9 @@ export class FetchHttpClient<T = unknown> implements HttpClient<T> {
   async request(data: HttpRequest): Promise<HttpResponse<T>> {
     const response = await fetch(data.url, {
       method: data.method,
-      headers: data.headers,
+      headers: data.body
+        ? { 'Content-Type': 'application/json', ...data.headers }
+        : data.headers,
       body: data.body ? JSON.stringify(data.body) : undefined,
     })
 

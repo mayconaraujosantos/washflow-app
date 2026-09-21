@@ -1,9 +1,36 @@
+import os from 'node:os'
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Auto-detects this machine's LAN IPv4 address once, at dev-server/build
+// start - the same address Vite itself prints as "Network:" when `bun run
+// dev` starts (host: '0.0.0.0' below). Baked into the bundle as __LAN_IP__
+// so the QR-code login page (see main/config/reachable-origin.ts) can swap
+// out `localhost` for something a phone on the same Wi-Fi can actually
+// reach, instead of silently generating an unscannable QR code.
+function findLanAddress(): string | undefined {
+  const virtualAdapterPattern =
+    /vEthernet|Loopback|WSL|Docker|VirtualBox|VMware|Tailscale/i
+
+  for (const [name, addresses] of Object.entries(os.networkInterfaces())) {
+    if (virtualAdapterPattern.test(name)) continue
+
+    for (const address of addresses ?? []) {
+      if (address.family === 'IPv4' && !address.internal) {
+        return address.address
+      }
+    }
+  }
+
+  return undefined
+}
+
 export default defineConfig({
+  define: {
+    __LAN_IP__: JSON.stringify(findLanAddress()),
+  },
   plugins: [
     react(),
     VitePWA({
