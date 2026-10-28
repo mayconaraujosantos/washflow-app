@@ -25,6 +25,7 @@ services:
       - "7000:7000"
     environment:
       PORT: 7000
+      APP_ENV: development
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: washflow

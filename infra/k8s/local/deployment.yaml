@@ -26,6 +26,8 @@ spec:
           env:
             - name: PORT
               value: "7000"
+            - name: APP_ENV
+              value: development
           readinessProbe:
             httpGet:
               path: /api/health

@@ -24,6 +24,7 @@ COPY --from=build /workspace/build/install/washflow-api/ /app/
 RUN chown -R app:app /app
 
 ENV PORT=7000
+ENV APP_ENV=production
 EXPOSE 7000
 
 USER app

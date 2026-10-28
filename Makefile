@@ -23,7 +23,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev dev-backend dev-frontend build run start test lint format \
+.PHONY: help install dev dev-backend dev-frontend build run start test lint format generate-auth-secret seed-test-users \
 	coverage sonar stop ip clean db-up db-down db-logs \
 	cluster-up cluster-down cluster-status image-local argocd-install argocd-password \
 	argocd-port-forward argo-install argo-port-forward ci deploy-prod
@@ -38,6 +38,8 @@ help:
 	@echo "                 single origin (:$(BACKEND_PORT)). Use this to test"
 	@echo "                 install/offline behavior, including on your phone."
 	@echo "  make build     Build the frontend only (web/dist), nothing started."
+	@echo "  make generate-auth-secret  Generate AUTH_TOKEN_SECRET in the local .env file."
+	@echo "  make seed-test-users  Create local-only customer, washer, and manager test accounts."
 	@echo "  make test      Run the backend test suite (+ JaCoCo coverage report)."
 	@echo "  make lint      Lint + check formatting for both frontend (ESLint/Prettier)"
 	@echo "                 and backend (Spotless)."
@@ -67,6 +69,12 @@ help:
 
 install:
 	cd web && bun install
+
+generate-auth-secret:
+	@bun scripts/generate-auth-secret.mjs
+
+seed-test-users:
+	@bun scripts/seed-test-users.mjs
 
 ## Fast iteration: hot reload on both ends. Open http://localhost:$(FRONTEND_PORT)
 ## in the browser you're coding with. Not representative of the installed PWA -
