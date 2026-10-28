@@ -8,12 +8,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.CreateWasherCommissionRepository;
+import com.washflow.data.protocols.db.FinalizeServiceOrderRepository;
 import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
 import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
-import com.washflow.data.protocols.db.UpdateServiceOrderStatusRepository;
+import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.ServicePayment;
 import com.washflow.domain.entities.ServicePrice;
 import com.washflow.domain.entities.WasherCommission;
 import com.washflow.domain.errors.InvalidServiceOrderStatusError;
@@ -40,8 +41,7 @@ class DbFinalizeServiceOrderTest {
 
   @Mock private LoadServiceOrderByIdRepository loadServiceOrderByIdRepository;
   @Mock private LoadServicePriceByIdRepository loadServicePriceByIdRepository;
-  @Mock private UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository;
-  @Mock private CreateWasherCommissionRepository createWasherCommissionRepository;
+  @Mock private FinalizeServiceOrderRepository finalizeServiceOrderRepository;
 
   private DbFinalizeServiceOrder sut;
   private FinalizeServiceOrder.Params params;
@@ -54,12 +54,11 @@ class DbFinalizeServiceOrderTest {
         new DbFinalizeServiceOrder(
             loadServiceOrderByIdRepository,
             loadServicePriceByIdRepository,
-            updateServiceOrderStatusRepository,
-            createWasherCommissionRepository);
+            finalizeServiceOrderRepository);
 
     UUID serviceOrderId = UUID.randomUUID();
     UUID washerId = UUID.randomUUID();
-    params = new FinalizeServiceOrder.Params(serviceOrderId);
+    params = new FinalizeServiceOrder.Params(serviceOrderId, PaymentMethod.PIX);
     Instant now = Instant.parse("2026-09-20T10:00:00Z");
     readyServiceOrder =
         new ServiceOrder(
@@ -76,7 +75,7 @@ class DbFinalizeServiceOrderTest {
   }
 
   @Test
-  void movesToDoneAndCreditsWasherCommissionWhenServiceOrderIsReady() throws Exception {
+  void recordsPaymentAndCreditsCommissionWhenServiceOrderIsReady() throws Exception {
     when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
         .thenReturn(Optional.of(readyServiceOrder));
     when(loadServicePriceByIdRepository.loadById(readyServiceOrder.servicePriceId()))
@@ -91,8 +90,7 @@ class DbFinalizeServiceOrderTest {
             readyServiceOrder.scheduledAt(),
             readyServiceOrder.createdAt(),
             Instant.now());
-    when(updateServiceOrderStatusRepository.updateStatus(
-            params.serviceOrderId(), ServiceOrderStatus.DONE, readyServiceOrder.washerId()))
+    when(finalizeServiceOrderRepository.finalizeSale(any(), any(), any()))
         .thenReturn(doneServiceOrder);
 
     ServiceOrder result = sut.finalize(params);
@@ -100,11 +98,17 @@ class DbFinalizeServiceOrderTest {
     assertEquals(ServiceOrderStatus.DONE, result.status());
     ArgumentCaptor<WasherCommission> commissionCaptor =
         ArgumentCaptor.forClass(WasherCommission.class);
-    verify(createWasherCommissionRepository).create(commissionCaptor.capture());
+    ArgumentCaptor<ServicePayment> paymentCaptor = ArgumentCaptor.forClass(ServicePayment.class);
+    verify(finalizeServiceOrderRepository)
+        .finalizeSale(any(), paymentCaptor.capture(), commissionCaptor.capture());
     WasherCommission commission = commissionCaptor.getValue();
+    ServicePayment payment = paymentCaptor.getValue();
     assertEquals(readyServiceOrder.id(), commission.serviceOrderId());
     assertEquals(readyServiceOrder.washerId(), commission.washerId());
     assertEquals(servicePrice.washerCommission(), commission.amount());
+    assertEquals(readyServiceOrder.id(), payment.serviceOrderId());
+    assertEquals(PaymentMethod.PIX, payment.method());
+    assertEquals(servicePrice.price(), payment.amount());
   }
 
   @Test
@@ -113,10 +117,7 @@ class DbFinalizeServiceOrderTest {
         .thenReturn(Optional.empty());
 
     assertThrows(ServiceOrderNotFoundError.class, () -> sut.finalize(params));
-    verifyNoInteractions(
-        loadServicePriceByIdRepository,
-        updateServiceOrderStatusRepository,
-        createWasherCommissionRepository);
+    verifyNoInteractions(loadServicePriceByIdRepository, finalizeServiceOrderRepository);
   }
 
   @Test
@@ -135,10 +136,7 @@ class DbFinalizeServiceOrderTest {
         .thenReturn(Optional.of(stillWashing));
 
     assertThrows(InvalidServiceOrderStatusError.class, () -> sut.finalize(params));
-    verifyNoInteractions(
-        loadServicePriceByIdRepository,
-        updateServiceOrderStatusRepository,
-        createWasherCommissionRepository);
+    verifyNoInteractions(loadServicePriceByIdRepository, finalizeServiceOrderRepository);
   }
 
   @Test
@@ -149,7 +147,6 @@ class DbFinalizeServiceOrderTest {
         .thenReturn(Optional.empty());
 
     assertThrows(ServicePriceNotFoundError.class, () -> sut.finalize(params));
-    verify(updateServiceOrderStatusRepository, never()).updateStatus(any(), any(), any());
-    verifyNoInteractions(createWasherCommissionRepository);
+    verify(finalizeServiceOrderRepository, never()).finalizeSale(any(), any(), any());
   }
 }

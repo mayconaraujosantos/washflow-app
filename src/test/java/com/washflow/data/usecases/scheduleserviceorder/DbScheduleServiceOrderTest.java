@@ -2,6 +2,7 @@ package com.washflow.data.usecases.scheduleserviceorder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -42,9 +43,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class DbScheduleServiceOrderTest {
 
-  // Monday 2026-01-05, 09:00 America/Sao_Paulo (UTC-3).
-  private static final Instant NOW = Instant.parse("2026-01-05T12:00:00Z");
-  private static final Clock CLOCK = Clock.fixed(NOW, ZoneId.of("America/Sao_Paulo"));
+  // Monday 2026-01-05, 09:00 America/Manaus (UTC-4).
+  private static final Instant NOW = Instant.parse("2026-01-05T13:00:00Z");
+  private static final Clock CLOCK = Clock.fixed(NOW, ZoneId.of("America/Manaus"));
   private static final int MAX_VEHICLES_PER_HOUR = 3;
 
   @Mock private LoadVehicleByIdRepository loadVehicleByIdRepository;
@@ -72,7 +73,7 @@ class DbScheduleServiceOrderTest {
             MAX_VEHICLES_PER_HOUR);
 
     UUID vehicleId = UUID.randomUUID();
-    // Monday 2026-01-05, 11:00 local - within business hours, well past the 30min lead time.
+    // Monday 2026-01-05, 10:00 Manaus time - within business hours and past the lead time.
     params = new ScheduleServiceOrder.Params(vehicleId, 1, Instant.parse("2026-01-05T14:00:00Z"));
     vehicle = new Vehicle(vehicleId, UUID.randomUUID(), "ABC1D23", "Onix", "Prata");
     servicePrice =
@@ -130,7 +131,7 @@ class DbScheduleServiceOrderTest {
 
   @Test
   void throwsOutsideBusinessHoursWhenScheduledAfterClosing() {
-    // Monday 2026-01-05, 19:00 local - after the 18:00 close.
+    // Monday 2026-01-05, 18:00 Manaus time - at closing time.
     var afterHoursParams =
         new ScheduleServiceOrder.Params(
             params.vehicleId(), params.servicePriceId(), Instant.parse("2026-01-05T22:00:00Z"));
@@ -140,11 +141,24 @@ class DbScheduleServiceOrderTest {
   }
 
   @Test
+  void rejectsTimeBeforeOpeningInManausEvenWhenUtcHourIsWithinBusinessHours() {
+    // 11:00Z is 07:00 in Manaus.
+    var beforeOpeningParams =
+        new ScheduleServiceOrder.Params(
+            params.vehicleId(), params.servicePriceId(), Instant.parse("2026-01-05T11:00:00Z"));
+
+    OutsideBusinessHoursError error =
+        assertThrows(OutsideBusinessHoursError.class, () -> sut.schedule(beforeOpeningParams));
+    assertTrue(error.getMessage().contains("07:00 Manaus time"));
+    verifyNoInteractions(loadVehicleByIdRepository, createServiceOrderRepository);
+  }
+
+  @Test
   void throwsInsufficientLeadTimeWhenLessThan30MinutesAhead() {
-    // 10 minutes after NOW - still within business hours (09:10 local), just too soon.
+    // 10 minutes after NOW - still within business hours (09:10 Manaus time), just too soon.
     var tooSoonParams =
         new ScheduleServiceOrder.Params(
-            params.vehicleId(), params.servicePriceId(), Instant.parse("2026-01-05T12:10:00Z"));
+            params.vehicleId(), params.servicePriceId(), Instant.parse("2026-01-05T13:10:00Z"));
 
     assertThrows(InsufficientLeadTimeError.class, () -> sut.schedule(tooSoonParams));
     verifyNoInteractions(loadVehicleByIdRepository, createServiceOrderRepository);
