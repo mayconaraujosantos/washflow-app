@@ -4,7 +4,6 @@ import com.washflow.data.usecases.finalizeserviceorder.DbFinalizeServiceOrder;
 import com.washflow.domain.usecases.FinalizeServiceOrder;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
-import com.washflow.infra.db.jdbi.WasherCommissionJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 
 /**
@@ -19,9 +18,6 @@ public final class FinalizeServiceOrderFactory {
   public static FinalizeServiceOrder make(Jdbi jdbi) {
     ServiceOrderJdbiRepository serviceOrderRepository = new ServiceOrderJdbiRepository(jdbi);
     return new DbFinalizeServiceOrder(
-        serviceOrderRepository,
-        new ServicePriceJdbiRepository(jdbi),
-        serviceOrderRepository,
-        new WasherCommissionJdbiRepository(jdbi));
+        serviceOrderRepository, new ServicePriceJdbiRepository(jdbi), serviceOrderRepository);
   }
 }

@@ -1,5 +1,6 @@
 package com.washflow.domain.usecases;
 
+import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.errors.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.ServiceOrderNotFoundError;
@@ -17,5 +18,5 @@ public interface FinalizeServiceOrder {
   ServiceOrder finalize(Params params)
       throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError, ServicePriceNotFoundError;
 
-  record Params(UUID serviceOrderId) {}
+  record Params(UUID serviceOrderId, PaymentMethod paymentMethod) {}
 }

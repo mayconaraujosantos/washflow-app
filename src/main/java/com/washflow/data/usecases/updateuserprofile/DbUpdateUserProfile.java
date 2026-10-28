@@ -32,7 +32,7 @@ public class DbUpdateUserProfile implements UpdateUserProfile {
             .orElseThrow(() -> new UserNotFoundError(params.requestedByUserId()));
 
     if (requestedBy.profile() != UserProfile.MANAGER) {
-      throw new ForbiddenError("Only a manager can update another user's profile");
+      throw new ForbiddenError("Only a manager can change account profiles");
     }
 
     loadUserByIdRepository

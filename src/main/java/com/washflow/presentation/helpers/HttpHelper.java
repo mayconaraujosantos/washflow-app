@@ -34,6 +34,10 @@ public final class HttpHelper {
     return new HttpResponse(403, Map.of(ERROR, error.getMessage()));
   }
 
+  public static HttpResponse unauthorized(Exception error) {
+    return new HttpResponse(401, Map.of(ERROR, error.getMessage()));
+  }
+
   public static HttpResponse serverError(Exception error) {
     LOGGER.error("Unhandled controller error", new ServerError(error));
     return new HttpResponse(500, Map.of(ERROR, "Internal server error"));

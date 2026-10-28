@@ -4,6 +4,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.patch;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
+import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.factories.controllers.CheckInServiceOrderControllerFactory;
 import com.washflow.application.factories.controllers.CompleteServiceOrderControllerFactory;
@@ -13,6 +14,7 @@ import com.washflow.application.factories.controllers.ListServiceOrdersByCustome
 import com.washflow.application.factories.controllers.ScheduleServiceOrderControllerFactory;
 import com.washflow.application.factories.controllers.StartServiceOrderControllerFactory;
 import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.presentation.controllers.finalizeserviceorder.FinalizeServiceOrderRequest;
 import com.washflow.presentation.controllers.scheduleserviceorder.ScheduleServiceOrderRequest;
 import com.washflow.presentation.controllers.startserviceorder.StartServiceOrderRequest;
 import io.javalin.openapi.HttpMethod;
@@ -32,8 +34,8 @@ public final class ServiceOrderRoutes {
   private ServiceOrderRoutes() {}
 
   /** Called from inside {@code config.routes.apiBuilder(...)} in Application. */
-  public static void register(Jdbi jdbi) {
-    registerSchedule(jdbi);
+  public static void register(Jdbi jdbi, AppConfig appConfig) {
+    registerSchedule(jdbi, appConfig);
     registerCheckIn(jdbi);
     registerStart(jdbi);
     registerComplete(jdbi);
@@ -54,13 +56,15 @@ public final class ServiceOrderRoutes {
         @OpenApiResponse(
             status = "400",
             description =
-                "Missing/malformed field, outside business hours (Mon-Sat 08:00-18:00), or"
+                "Missing/malformed field, outside Manaus business hours (Mon-Sat 08:00-18:00), or"
                     + " under 30min lead time"),
         @OpenApiResponse(status = "404", description = "Vehicle or service price not found"),
         @OpenApiResponse(status = "409", description = "Time slot fully booked")
       })
-  private static void registerSchedule(Jdbi jdbi) {
-    post(BASE_PATH, JavalinRouteAdapter.adapt(ScheduleServiceOrderControllerFactory.make(jdbi)));
+  private static void registerSchedule(Jdbi jdbi, AppConfig appConfig) {
+    post(
+        BASE_PATH,
+        JavalinRouteAdapter.adapt(ScheduleServiceOrderControllerFactory.make(jdbi, appConfig)));
   }
 
   @OpenApi(
@@ -124,9 +128,11 @@ public final class ServiceOrderRoutes {
   @OpenApi(
       path = BY_ID_PATH,
       methods = HttpMethod.PATCH,
-      summary = "Close out the sale and credit the washer's commission (PRONTO -> FINALIZADO)",
+      summary = "Register manual payment and washer commission (PRONTO -> FINALIZADO)",
       tags = {"Service Orders"},
       pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      requestBody =
+          @OpenApiRequestBody(content = @OpenApiContent(from = FinalizeServiceOrderRequest.class)),
       responses = {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = ServiceOrder.class)),
         @OpenApiResponse(status = "400", description = "Malformed service order id"),

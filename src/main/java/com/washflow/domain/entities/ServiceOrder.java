@@ -18,4 +18,18 @@ public record ServiceOrder(
     ServiceOrderStatus status,
     Instant scheduledAt,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    String pauseReason) {
+
+  public ServiceOrder(
+      UUID id,
+      UUID vehicleId,
+      int servicePriceId,
+      UUID washerId,
+      ServiceOrderStatus status,
+      Instant scheduledAt,
+      Instant createdAt,
+      Instant updatedAt) {
+    this(id, vehicleId, servicePriceId, washerId, status, scheduledAt, createdAt, updatedAt, null);
+  }
+}

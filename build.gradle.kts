@@ -50,7 +50,12 @@ dependencies {
 
     // Logs
     implementation("org.slf4j:slf4j-simple:2.0.13")
-    
+
+    // Optional local environment file; production configuration still comes from environment vars.
+    implementation("io.github.cdimascio:dotenv-java:3.2.0")
+    implementation("com.auth0:java-jwt:4.5.0")
+    implementation("at.favre.lib:bcrypt:0.10.2")
+
     // Testes
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

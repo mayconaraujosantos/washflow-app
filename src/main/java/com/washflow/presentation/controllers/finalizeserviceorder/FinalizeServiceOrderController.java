@@ -1,5 +1,6 @@
 package com.washflow.presentation.controllers.finalizeserviceorder;
 
+import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.errors.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.ServiceOrderNotFoundError;
 import com.washflow.domain.errors.ServicePriceNotFoundError;
@@ -22,9 +23,17 @@ public class FinalizeServiceOrderController implements Controller {
   public HttpResponse handle(HttpRequest request) {
     try {
       UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
+      String paymentMethodValue = (String) request.body().get("paymentMethod");
+      if (paymentMethodValue == null || paymentMethodValue.isBlank()) {
+        return HttpHelper.badRequest(
+            new IllegalArgumentException("Forma de pagamento obrigatória"));
+      }
+      PaymentMethod paymentMethod =
+          PaymentMethod.valueOf(paymentMethodValue.toUpperCase(java.util.Locale.ROOT));
 
       var serviceOrder =
-          finalizeServiceOrder.finalize(new FinalizeServiceOrder.Params(serviceOrderId));
+          finalizeServiceOrder.finalize(
+              new FinalizeServiceOrder.Params(serviceOrderId, paymentMethod));
 
       return HttpHelper.ok(serviceOrder);
     } catch (IllegalArgumentException e) {

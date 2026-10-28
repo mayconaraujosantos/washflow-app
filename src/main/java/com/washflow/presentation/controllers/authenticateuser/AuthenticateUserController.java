@@ -1,8 +1,10 @@
 package com.washflow.presentation.controllers.authenticateuser;
 
 import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.errors.InvalidCredentialsError;
 import com.washflow.domain.errors.ManagerSelfRegistrationNotAllowedError;
 import com.washflow.domain.errors.UserProfileMismatchError;
+import com.washflow.domain.errors.WasherSelfRegistrationNotAllowedError;
 import com.washflow.domain.usecases.AuthenticateUser;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -41,13 +43,24 @@ public class AuthenticateUserController implements Controller {
 
       String phone = (String) request.body().get("phone");
       String name = (String) request.body().get("name");
+      String password = (String) request.body().get("password");
 
-      var user = authenticateUser.authenticate(new AuthenticateUser.Params(phone, name, profile));
+      if (password.length() < 8) {
+        return HttpHelper.badRequest(
+            new IllegalArgumentException("Senha deve ter no mínimo 8 caracteres"));
+      }
+      var user =
+          authenticateUser.authenticate(
+              new AuthenticateUser.Params(phone, name, password, profile));
 
       return HttpHelper.ok(user);
+    } catch (InvalidCredentialsError e) {
+      return HttpHelper.unauthorized(e);
     } catch (UserProfileMismatchError e) {
       return HttpHelper.conflict(e);
     } catch (ManagerSelfRegistrationNotAllowedError e) {
+      return HttpHelper.forbidden(e);
+    } catch (WasherSelfRegistrationNotAllowedError e) {
       return HttpHelper.forbidden(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

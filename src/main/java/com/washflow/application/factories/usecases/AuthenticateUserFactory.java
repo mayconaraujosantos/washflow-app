@@ -1,8 +1,10 @@
 package com.washflow.application.factories.usecases;
 
+import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.authenticateuser.DbAuthenticateUser;
 import com.washflow.domain.usecases.AuthenticateUser;
 import com.washflow.infra.db.jdbi.UserJdbiRepository;
+import com.washflow.infra.security.BCryptPasswordHasher;
 import org.jdbi.v3.core.Jdbi;
 
 /**
@@ -14,8 +16,14 @@ public final class AuthenticateUserFactory {
 
   private AuthenticateUserFactory() {}
 
-  public static AuthenticateUser make(Jdbi jdbi) {
+  public static AuthenticateUser make(Jdbi jdbi, AppConfig appConfig) {
     UserJdbiRepository userRepository = new UserJdbiRepository(jdbi);
-    return new DbAuthenticateUser(userRepository, userRepository);
+    return new DbAuthenticateUser(
+        userRepository,
+        userRepository,
+        userRepository,
+        userRepository,
+        new BCryptPasswordHasher(),
+        appConfig);
   }
 }

@@ -32,9 +32,8 @@ import java.util.UUID;
  */
 public class DbScheduleServiceOrder implements ScheduleServiceOrder {
 
-  // The shop's local timezone - business hours and slot boundaries are evaluated against this,
-  // not UTC. Brazil suspended DST nationally in 2019, so this stays at a fixed UTC-3 offset.
-  private static final ZoneId STORE_ZONE = ZoneId.of("America/Sao_Paulo");
+  // Business hours and slot boundaries follow the shop's local civil time, not the server timezone.
+  private static final ZoneId STORE_ZONE = ZoneId.of("America/Manaus");
   private static final int OPENING_HOUR = 8;
   private static final int CLOSING_HOUR = 18;
   private static final Duration MIN_LEAD_TIME = Duration.ofMinutes(30);

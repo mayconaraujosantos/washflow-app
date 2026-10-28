@@ -3,11 +3,14 @@ package com.washflow.application;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.application.adapters.SpaFallbackHandler;
+import com.washflow.application.routes.OperationsRoutes;
 import com.washflow.application.routes.ServiceOrderRoutes;
 import com.washflow.application.routes.ServicePriceRoutes;
 import com.washflow.application.routes.SystemRoutes;
 import com.washflow.application.routes.UserRoutes;
 import com.washflow.application.routes.VehicleRoutes;
+import com.washflow.application.security.AuthTokenService;
+import com.washflow.application.security.AuthorizationMiddleware;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -18,12 +21,22 @@ import org.jdbi.v3.core.Jdbi;
 
 public class Application {
   public static void main(String[] args) {
-    Jdbi jdbi = JdbiFactory.create();
+    AppConfig appConfig = AppConfig.load();
+    Jdbi jdbi = JdbiFactory.create(appConfig);
+    AuthorizationMiddleware authorizationMiddleware =
+        new AuthorizationMiddleware(new AuthTokenService(appConfig.tokenSecret()), jdbi);
 
     Javalin app =
         Javalin.create(
             config -> {
               config.router.ignoreTrailingSlashes = true;
+              config.router.handlerWrapper(
+                  endpoint ->
+                      ctx -> {
+                        if (authorizationMiddleware.authorize(ctx)) {
+                          endpoint.handler.handle(ctx);
+                        }
+                      });
               // Without JavaTimeModule, java.time.Instant fields (e.g.
               // ServiceOrder's) blow up serialization with an
               // InvalidDefinitionException; without disabling
@@ -66,16 +79,16 @@ public class Application {
               config.routes.apiBuilder(
                   () -> {
                     SystemRoutes.register(jdbi);
-                    ServiceOrderRoutes.register(jdbi);
+                    OperationsRoutes.register(jdbi);
+                    ServiceOrderRoutes.register(jdbi, appConfig);
                     ServicePriceRoutes.register(jdbi);
-                    UserRoutes.register(jdbi);
+                    UserRoutes.register(jdbi, appConfig);
                     VehicleRoutes.register(jdbi);
                   });
 
               config.routes.error(404, SpaFallbackHandler::handle);
             });
 
-    int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "7000"));
-    app.start(port);
+    app.start(appConfig.port());
   }
 }

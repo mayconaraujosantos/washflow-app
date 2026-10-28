@@ -1,11 +1,11 @@
 package com.washflow.data.usecases.finalizeserviceorder;
 
-import com.washflow.data.protocols.db.CreateWasherCommissionRepository;
+import com.washflow.data.protocols.db.FinalizeServiceOrderRepository;
 import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
 import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
-import com.washflow.data.protocols.db.UpdateServiceOrderStatusRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.ServicePayment;
 import com.washflow.domain.entities.ServicePrice;
 import com.washflow.domain.entities.WasherCommission;
 import com.washflow.domain.errors.InvalidServiceOrderStatusError;
@@ -23,18 +23,15 @@ public class DbFinalizeServiceOrder implements FinalizeServiceOrder {
 
   private final LoadServiceOrderByIdRepository loadServiceOrderByIdRepository;
   private final LoadServicePriceByIdRepository loadServicePriceByIdRepository;
-  private final UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository;
-  private final CreateWasherCommissionRepository createWasherCommissionRepository;
+  private final FinalizeServiceOrderRepository finalizeServiceOrderRepository;
 
   public DbFinalizeServiceOrder(
       LoadServiceOrderByIdRepository loadServiceOrderByIdRepository,
       LoadServicePriceByIdRepository loadServicePriceByIdRepository,
-      UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository,
-      CreateWasherCommissionRepository createWasherCommissionRepository) {
+      FinalizeServiceOrderRepository finalizeServiceOrderRepository) {
     this.loadServiceOrderByIdRepository = loadServiceOrderByIdRepository;
     this.loadServicePriceByIdRepository = loadServicePriceByIdRepository;
-    this.updateServiceOrderStatusRepository = updateServiceOrderStatusRepository;
-    this.createWasherCommissionRepository = createWasherCommissionRepository;
+    this.finalizeServiceOrderRepository = finalizeServiceOrderRepository;
   }
 
   @Override
@@ -54,18 +51,20 @@ public class DbFinalizeServiceOrder implements FinalizeServiceOrder {
             .loadById(serviceOrder.servicePriceId())
             .orElseThrow(() -> new ServicePriceNotFoundError(serviceOrder.servicePriceId()));
 
-    ServiceOrder finalizedServiceOrder =
-        updateServiceOrderStatusRepository.updateStatus(
-            params.serviceOrderId(), ServiceOrderStatus.DONE, serviceOrder.washerId());
-
-    createWasherCommissionRepository.create(
+    Instant receivedAt = Instant.now();
+    return finalizeServiceOrderRepository.finalizeSale(
+        serviceOrder,
+        new ServicePayment(
+            UUID.randomUUID(),
+            serviceOrder.id(),
+            params.paymentMethod(),
+            servicePrice.price(),
+            receivedAt),
         new WasherCommission(
             UUID.randomUUID(),
             serviceOrder.id(),
             serviceOrder.washerId(),
             servicePrice.washerCommission(),
-            Instant.now()));
-
-    return finalizedServiceOrder;
+            receivedAt));
   }
 }

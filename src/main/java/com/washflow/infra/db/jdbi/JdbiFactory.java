@@ -1,5 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
+import com.washflow.application.AppConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.net.URI;
@@ -22,13 +23,11 @@ import org.slf4j.LoggerFactory;
  * DB_NAME}/{@code DB_USER}/{@code DB_PASSWORD} vars, defaulting to {@code docker-compose.yml}'s
  * {@code postgres} service for local dev.
  *
- * <p>If Postgres can't be reached at startup, falls back to an in-memory H2 database instead of
- * failing - useful for local dev/demo without {@code make db-up}. The fallback is decided once at
- * startup; it doesn't watch for Postgres coming back or going down mid-run. H2 runs in {@code
- * MODE=PostgreSQL} against {@code db/migration-h2}, a copy of the Postgres migrations with the
- * handful of Postgres-only bits (e.g. {@code gen_random_uuid()}, {@code TIMESTAMPTZ}) swapped for
- * H2 equivalents - kept in sync by hand since Flyway can't share one script across dialects that
- * differ this much.
+ * <p>If Postgres can't be reached at startup, development falls back to an in-memory H2 database;
+ * production fails startup. The development fallback is decided once at startup and does not
+ * recover if Postgres becomes available later. H2 runs in {@code MODE=PostgreSQL} against {@code
+ * db/migration-h2}, a copy of the Postgres migrations with dialect-specific differences kept in
+ * sync by hand.
  */
 public final class JdbiFactory {
 
@@ -43,8 +42,8 @@ public final class JdbiFactory {
 
   private JdbiFactory() {}
 
-  public static Jdbi create() {
-    DataSource dataSource = createDataSource();
+  public static Jdbi create(AppConfig appConfig) {
+    DataSource dataSource = createDataSource(appConfig);
     migrate(dataSource);
     return Jdbi.create(dataSource).installPlugin(new SqlObjectPlugin());
   }
@@ -54,11 +53,11 @@ public final class JdbiFactory {
     try {
       Flyway.configure().dataSource(dataSource).locations(location).load().migrate();
     } catch (RuntimeException e) {
-      // Same "don't block startup" reasoning as initializationFailTimeout
-      // below - the database might just not be up yet (e.g. before `make
-      // db-up`). Every query will fail until it is; that's the DB health
-      // check's job to surface, not startup's.
-      LOGGER.warn("Skipping Flyway migration - database not reachable yet: {}", e.getMessage());
+      if (dataSource instanceof HikariDataSource hikari) {
+        hikari.close();
+      }
+      throw new IllegalStateException(
+          "Database migration failed; refusing to start with an incomplete schema", e);
     }
   }
 
@@ -67,10 +66,15 @@ public final class JdbiFactory {
         && hikari.getJdbcUrl().startsWith("jdbc:h2:");
   }
 
-  public static DataSource createDataSource() {
-    HikariDataSource postgres = createPostgresDataSource();
+  public static DataSource createDataSource(AppConfig appConfig) {
+    HikariDataSource postgres = createPostgresDataSource(appConfig);
     if (isReachable(postgres)) {
       return postgres;
+    }
+    if (appConfig.isProduction()) {
+      postgres.close();
+      throw new IllegalStateException(
+          "Configured PostgreSQL database is unreachable in production");
     }
     LOGGER.warn("Postgres unreachable at {} - falling back to in-memory H2", postgres.getJdbcUrl());
     postgres.close();
@@ -85,13 +89,12 @@ public final class JdbiFactory {
     }
   }
 
-  private static HikariDataSource createPostgresDataSource() {
-    var env = System.getenv();
+  private static HikariDataSource createPostgresDataSource(AppConfig appConfig) {
     String jdbcUrl;
-    String user;
-    String password;
 
-    String databaseUrl = env.get("DATABASE_URL");
+    String databaseUrl = appConfig.databaseUrl();
+    String user = appConfig.databaseUser();
+    String password = appConfig.databasePassword();
     if (databaseUrl != null && !databaseUrl.isBlank()) {
       URI uri = URI.create(databaseUrl);
       String[] credentials =
@@ -101,12 +104,13 @@ public final class JdbiFactory {
       int port = uri.getPort() > 0 ? uri.getPort() : 5432;
       jdbcUrl = "jdbc:postgresql://" + uri.getHost() + ":" + port + uri.getPath();
     } else {
-      String host = env.getOrDefault("DB_HOST", "localhost");
-      String port = env.getOrDefault("DB_PORT", "5432");
-      String name = env.getOrDefault("DB_NAME", LOCAL_DEFAULT);
-      jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + name;
-      user = env.getOrDefault("DB_USER", LOCAL_DEFAULT);
-      password = env.getOrDefault("DB_PASSWORD", LOCAL_DEFAULT);
+      jdbcUrl =
+          "jdbc:postgresql://"
+              + appConfig.databaseHost()
+              + ":"
+              + appConfig.databasePort()
+              + "/"
+              + appConfig.databaseName();
     }
 
     HikariConfig config = new HikariConfig();

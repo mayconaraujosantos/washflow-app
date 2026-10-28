@@ -1,5 +1,6 @@
 package com.washflow.application.factories.controllers;
 
+import com.washflow.application.AppConfig;
 import com.washflow.application.factories.usecases.AuthenticateUserFactory;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.presentation.controllers.authenticateuser.AuthenticateUserController;
@@ -15,12 +16,12 @@ public final class AuthenticateWasherControllerFactory {
 
   private AuthenticateWasherControllerFactory() {}
 
-  public static Controller make(Jdbi jdbi) {
+  public static Controller make(Jdbi jdbi, AppConfig appConfig) {
     Validation validation =
         new ValidationComposite(
-            List.of(new RequiredFieldValidation("phone"), new RequiredFieldValidation("name")));
+            List.of(new RequiredFieldValidation("phone"), new RequiredFieldValidation("password")));
 
     return new AuthenticateUserController(
-        AuthenticateUserFactory.make(jdbi), validation, UserProfile.WASHER);
+        AuthenticateUserFactory.make(jdbi, appConfig), validation, UserProfile.WASHER);
   }
 }

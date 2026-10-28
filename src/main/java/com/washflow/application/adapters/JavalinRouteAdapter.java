@@ -1,5 +1,8 @@
 package com.washflow.application.adapters;
 
+import com.washflow.application.security.AuthTokenService;
+import com.washflow.application.security.AuthenticatedSession;
+import com.washflow.domain.entities.User;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
@@ -21,8 +24,24 @@ public final class JavalinRouteAdapter {
 
   private JavalinRouteAdapter() {}
 
-  @SuppressWarnings("unchecked")
   public static Handler adapt(Controller controller) {
+    return adapt(controller, response -> response.body());
+  }
+
+  public static Handler adaptAuthenticated(Controller controller, AuthTokenService tokenService) {
+    return adapt(
+        controller,
+        response -> {
+          if (response.statusCode() == 200 && response.body() instanceof User user) {
+            return new AuthenticatedSession(user, tokenService.issue(user));
+          }
+          return response.body();
+        });
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Handler adapt(
+      Controller controller, java.util.function.Function<HttpResponse, Object> responseBody) {
     return ctx -> {
       Map<String, Object> body;
       try {
@@ -40,7 +59,7 @@ public final class JavalinRouteAdapter {
       HttpResponse response = controller.handle(request);
 
       ctx.attribute(CONTROLLER_HANDLED_ATTRIBUTE, Boolean.TRUE);
-      ctx.status(response.statusCode()).json(response.body());
+      ctx.status(response.statusCode()).json(responseBody.apply(response));
     };
   }
 }

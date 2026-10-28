@@ -4,5 +4,5 @@ import com.washflow.domain.entities.User;
 
 public interface CreateUserRepository {
 
-  User create(User user);
+  User create(User user, String passwordHash);
 }

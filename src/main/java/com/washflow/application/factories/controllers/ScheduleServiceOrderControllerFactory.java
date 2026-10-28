@@ -1,5 +1,6 @@
 package com.washflow.application.factories.controllers;
 
+import com.washflow.application.AppConfig;
 import com.washflow.application.factories.usecases.ScheduleServiceOrderFactory;
 import com.washflow.presentation.controllers.scheduleserviceorder.ScheduleServiceOrderController;
 import com.washflow.presentation.protocols.Controller;
@@ -13,7 +14,7 @@ public final class ScheduleServiceOrderControllerFactory {
 
   private ScheduleServiceOrderControllerFactory() {}
 
-  public static Controller make(Jdbi jdbi) {
+  public static Controller make(Jdbi jdbi, AppConfig appConfig) {
     Validation validation =
         new ValidationComposite(
             List.of(
@@ -21,6 +22,7 @@ public final class ScheduleServiceOrderControllerFactory {
                 new RequiredFieldValidation("servicePriceId"),
                 new RequiredFieldValidation("scheduledAt")));
 
-    return new ScheduleServiceOrderController(ScheduleServiceOrderFactory.make(jdbi), validation);
+    return new ScheduleServiceOrderController(
+        ScheduleServiceOrderFactory.make(jdbi, appConfig), validation);
   }
 }
