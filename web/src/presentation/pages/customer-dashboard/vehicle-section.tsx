@@ -1,6 +1,7 @@
 import { SubmitEvent, useState } from 'react'
 import { CreateVehicle } from '@/domain/usecases/create-vehicle'
 import { VehicleModel } from '@/domain/models/vehicle-model'
+import { UiIcon } from '@/presentation/components/ui-icon'
 
 type Props = Readonly<{
   vehicles: VehicleModel[]
@@ -46,7 +47,12 @@ export function VehicleSection({
 
   return (
     <section className="dashboard-section">
-      <h2>Meus veículos</h2>
+      <h2 className="section-title">
+        <span className="section-icon">
+          <UiIcon name="car" />
+        </span>
+        Meus veículos
+      </h2>
 
       {vehicles.length === 0 ? (
         <p className="empty-state">Nenhum veículo cadastrado ainda.</p>
@@ -54,6 +60,9 @@ export function VehicleSection({
         <ul className="vehicle-list">
           {vehicles.map((vehicle) => (
             <li key={vehicle.id}>
+              <span className="vehicle-icon" aria-hidden="true">
+                <UiIcon name="car" size={18} />
+              </span>
               <span className="vehicle-plate">{vehicle.plate}</span>
               <span className="vehicle-details">
                 {[vehicle.model, vehicle.color].filter(Boolean).join(' · ') ||
@@ -85,6 +94,7 @@ export function VehicleSection({
           placeholder="Cor (opcional)"
         />
         <button type="submit" className="primary-btn" disabled={loading}>
+          <span aria-hidden="true">+</span>
           {loading ? 'Salvando...' : 'Adicionar veículo'}
         </button>
       </form>

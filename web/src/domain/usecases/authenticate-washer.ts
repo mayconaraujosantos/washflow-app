@@ -1,4 +1,4 @@
-import { UserModel } from '@/domain/models/user-model'
+import { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 
 export interface AuthenticateWasher {
   auth: (params: AuthenticateWasher.Params) => Promise<AuthenticateWasher.Model>
@@ -7,8 +7,8 @@ export interface AuthenticateWasher {
 export namespace AuthenticateWasher {
   export type Params = {
     phone: string
-    name: string
+    password: string
   }
 
-  export type Model = UserModel
+  export type Model = AuthenticatedSessionModel
 }

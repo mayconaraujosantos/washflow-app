@@ -1,7 +1,7 @@
 // Mirrors ServiceOrderStatus's Java-side names (com.washflow.domain.entities.ServiceOrderStatus)
 // - Jackson serializes the enum by name, not by its Portuguese dbValue().
 export type ServiceOrderStatus =
-  'SCHEDULED' | 'WAITING_IN_YARD' | 'WASHING' | 'READY' | 'DONE'
+  'SCHEDULED' | 'WAITING_IN_YARD' | 'WASHING' | 'PAUSED' | 'READY' | 'DONE'
 
 export type ServiceOrderModel = {
   id: string
@@ -12,4 +12,5 @@ export type ServiceOrderModel = {
   scheduledAt: string
   createdAt: string
   updatedAt: string
+  pauseReason?: 'LUNCH' | 'RESTROOM' | 'OTHER' | null
 }

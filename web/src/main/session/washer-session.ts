@@ -1,17 +1,17 @@
-import { UserModel } from '@/domain/models/user-model'
+import { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 
 const STORAGE_KEY = 'washflow:washer-session'
 
-export function saveWasherSession(user: UserModel): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+export function saveWasherSession(session: AuthenticatedSessionModel): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
 }
 
-export function loadWasherSession(): UserModel | null {
+export function loadWasherSession(): AuthenticatedSessionModel | null {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) return null
 
   try {
-    return JSON.parse(raw) as UserModel
+    return JSON.parse(raw) as AuthenticatedSessionModel
   } catch {
     return null
   }

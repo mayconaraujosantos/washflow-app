@@ -3,6 +3,8 @@ import { ScheduleServiceOrder } from '@/domain/usecases/schedule-service-order'
 import { ServiceOrderModel } from '@/domain/models/service-order-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { VehicleModel } from '@/domain/models/vehicle-model'
+import { toManausInstant } from '@/main/config/business-time'
+import { UiIcon } from '@/presentation/components/ui-icon'
 
 type Props = Readonly<{
   vehicles: VehicleModel[]
@@ -31,15 +33,10 @@ export function ScheduleSection({
     setLoading(true)
 
     try {
-      // datetime-local has no timezone info - `new Date(...)` reads it as the
-      // browser's local time, and toISOString() converts that to the correct
-      // absolute instant. DbScheduleServiceOrder then judges business hours
-      // against that instant in the shop's own timezone (America/Sao_Paulo),
-      // not the customer's - the physically correct behavior either way.
       const serviceOrder = await scheduleServiceOrder.schedule({
         vehicleId,
         servicePriceId: Number(servicePriceId),
-        scheduledAt: new Date(scheduledAt).toISOString(),
+        scheduledAt: toManausInstant(scheduledAt),
       })
       onScheduled(serviceOrder)
       setSuccess('Lavagem agendada com sucesso!')
@@ -53,7 +50,12 @@ export function ScheduleSection({
 
   return (
     <section className="dashboard-section">
-      <h2>Agendar lavagem</h2>
+      <h2 className="section-title">
+        <span className="section-icon">
+          <UiIcon name="calendar" />
+        </span>
+        Agendar lavagem
+      </h2>
 
       {vehicles.length === 0 ? (
         <p className="empty-state">Cadastre um veículo antes de agendar.</p>
@@ -97,7 +99,7 @@ export function ScheduleSection({
           </label>
 
           <label>
-            <span>Data e horário</span>
+            <span>Data e horário (Manaus)</span>
             <input
               type="datetime-local"
               value={scheduledAt}
@@ -110,6 +112,7 @@ export function ScheduleSection({
           {success && <p className="success-message">{success}</p>}
 
           <button type="submit" className="primary-btn" disabled={loading}>
+            <UiIcon name="calendar" size={17} />
             {loading ? 'Agendando...' : 'Agendar'}
           </button>
         </form>

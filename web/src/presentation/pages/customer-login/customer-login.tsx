@@ -12,6 +12,7 @@ export function CustomerLogin({ authenticateCustomer }: Props) {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -21,8 +22,8 @@ export function CustomerLogin({ authenticateCustomer }: Props) {
     setLoading(true)
 
     try {
-      const user = await authenticateCustomer.auth({ name, phone })
-      saveCustomerSession(user)
+      const session = await authenticateCustomer.auth({ name, phone, password })
+      saveCustomerSession(session)
       navigate('/cliente')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar')
@@ -61,6 +62,18 @@ export function CustomerLogin({ authenticateCustomer }: Props) {
               onChange={(event) => setPhone(event.target.value)}
               placeholder="11999990000"
               autoComplete="tel"
+              required
+            />
+          </label>
+
+          <label>
+            <span>Senha (mínimo 8 caracteres)</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              minLength={8}
               required
             />
           </label>

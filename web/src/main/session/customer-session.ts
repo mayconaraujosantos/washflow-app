@@ -1,4 +1,4 @@
-import { UserModel } from '@/domain/models/user-model'
+import { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 
 // Plain localStorage wrapper, not a swappable data.protocols port - there's
 // no second implementation to abstract for yet, just the browser's own
@@ -6,16 +6,16 @@ import { UserModel } from '@/domain/models/user-model'
 // LocalStorageAdapter for when that changes).
 const STORAGE_KEY = 'washflow:customer-session'
 
-export function saveCustomerSession(user: UserModel): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+export function saveCustomerSession(session: AuthenticatedSessionModel): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
 }
 
-export function loadCustomerSession(): UserModel | null {
+export function loadCustomerSession(): AuthenticatedSessionModel | null {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) return null
 
   try {
-    return JSON.parse(raw) as UserModel
+    return JSON.parse(raw) as AuthenticatedSessionModel
   } catch {
     return null
   }

@@ -38,6 +38,11 @@ export class RemoteAuthenticateManager implements AuthenticateManager {
           (httpResponse.body as ErrorBody)?.error ??
             'Este telefone ainda não foi promovido a gerente',
         )
+      case HttpStatusCode.unauthorized:
+        throw new Error(
+          (httpResponse.body as ErrorBody)?.error ??
+            'Telefone ou senha inválidos',
+        )
       default:
         throw new Error('Erro inesperado ao entrar')
     }

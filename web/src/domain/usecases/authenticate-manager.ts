@@ -1,4 +1,4 @@
-import { UserModel } from '@/domain/models/user-model'
+import { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 
 export interface AuthenticateManager {
   auth: (
@@ -9,8 +9,8 @@ export interface AuthenticateManager {
 export namespace AuthenticateManager {
   export type Params = {
     phone: string
-    name: string
+    password: string
   }
 
-  export type Model = UserModel
+  export type Model = AuthenticatedSessionModel
 }

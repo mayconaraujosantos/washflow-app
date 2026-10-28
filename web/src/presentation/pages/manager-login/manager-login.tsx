@@ -8,15 +8,9 @@ type Props = Readonly<{
   authenticateManager: AuthenticateManager
 }>
 
-// There's no GERENTE dashboard yet (only /cliente exists so far), so a
-// successful login shows an inline confirmation instead of navigating
-// somewhere that doesn't exist. Swap this for a redirect once that panel
-// ships. A 403 here means the phone hasn't been promoted to manager yet
-// (see ManagerSelfRegistrationNotAllowedError on the backend) - that comes
-// back as a regular error message, same as any other failure.
 export function ManagerLogin({ authenticateManager }: Props) {
-  const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [manager, setManager] = useState<UserModel | null>(null)
@@ -27,9 +21,9 @@ export function ManagerLogin({ authenticateManager }: Props) {
     setLoading(true)
 
     try {
-      const user = await authenticateManager.auth({ name, phone })
-      saveManagerSession(user)
-      setManager(user)
+      const session = await authenticateManager.auth({ phone, password })
+      saveManagerSession(session)
+      setManager(session.user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar')
     } finally {
@@ -44,28 +38,17 @@ export function ManagerLogin({ authenticateManager }: Props) {
         <h1>Entrar</h1>
 
         {manager ? (
-          <p className="subtitle">
-            Bem-vindo, {manager.name}! Painel do gerente em breve.
-          </p>
+          <div className="subtitle">
+            <p>Bem-vindo, {manager.name}!</p>
+            <a href="/gerente">Abrir painel do gerente</a>
+          </div>
         ) : (
           <>
             <p className="subtitle">
-              Informe seu nome e telefone cadastrados como gerente.
+              Entre com o telefone e a senha cadastrados como gerente.
             </p>
 
             <form className="login-form" onSubmit={handleSubmit}>
-              <label>
-                <span>Nome</span>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="Seu nome"
-                  autoComplete="name"
-                  required
-                />
-              </label>
-
               <label>
                 <span>Telefone</span>
                 <input
@@ -74,6 +57,18 @@ export function ManagerLogin({ authenticateManager }: Props) {
                   onChange={(event) => setPhone(event.target.value)}
                   placeholder="11999990000"
                   autoComplete="tel"
+                  required
+                />
+              </label>
+
+              <label>
+                <span>Senha</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  minLength={8}
                   required
                 />
               </label>

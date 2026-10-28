@@ -31,6 +31,11 @@ export class RemoteAuthenticateCustomer implements AuthenticateCustomer {
           (httpResponse.body as ErrorBody)?.error ??
             'Este telefone já está cadastrado com outro perfil',
         )
+      case HttpStatusCode.unauthorized:
+        throw new Error(
+          (httpResponse.body as ErrorBody)?.error ??
+            'Telefone ou senha inválidos',
+        )
       default:
         throw new Error('Erro inesperado ao entrar')
     }

@@ -31,6 +31,16 @@ export class RemoteAuthenticateWasher implements AuthenticateWasher {
           (httpResponse.body as ErrorBody)?.error ??
             'Este telefone já está cadastrado com outro perfil',
         )
+      case HttpStatusCode.forbidden:
+        throw new Error(
+          (httpResponse.body as ErrorBody)?.error ??
+            'Peça ao gerente para liberar seu acesso',
+        )
+      case HttpStatusCode.unauthorized:
+        throw new Error(
+          (httpResponse.body as ErrorBody)?.error ??
+            'Telefone ou senha inválidos',
+        )
       default:
         throw new Error('Erro inesperado ao entrar')
     }

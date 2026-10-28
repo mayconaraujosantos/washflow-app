@@ -1,17 +1,17 @@
-import { UserModel } from '@/domain/models/user-model'
+import { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 
 const STORAGE_KEY = 'washflow:manager-session'
 
-export function saveManagerSession(user: UserModel): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+export function saveManagerSession(session: AuthenticatedSessionModel): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
 }
 
-export function loadManagerSession(): UserModel | null {
+export function loadManagerSession(): AuthenticatedSessionModel | null {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) return null
 
   try {
-    return JSON.parse(raw) as UserModel
+    return JSON.parse(raw) as AuthenticatedSessionModel
   } catch {
     return null
   }

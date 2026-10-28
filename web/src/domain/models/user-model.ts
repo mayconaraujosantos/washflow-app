@@ -6,4 +6,5 @@ export type UserModel = {
   phone: string
   profile: UserProfile
   createdAt: string
+  active: boolean
 }

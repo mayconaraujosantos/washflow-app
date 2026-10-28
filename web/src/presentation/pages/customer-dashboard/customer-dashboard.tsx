@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CreateVehicle } from '@/domain/usecases/create-vehicle'
 import { ListServiceOrdersByCustomer } from '@/domain/usecases/list-service-orders-by-customer'
@@ -15,6 +15,7 @@ import {
 import { VehicleSection } from './vehicle-section'
 import { ScheduleSection } from './schedule-section'
 import { TrackingSection } from './tracking-section'
+import { UiIcon } from '@/presentation/components/ui-icon'
 import './customer-dashboard.css'
 
 type Props = Readonly<{
@@ -33,13 +34,47 @@ export function CustomerDashboard({
   listServiceOrdersByCustomer,
 }: Props) {
   const navigate = useNavigate()
-  const [user] = useState(() => loadCustomerSession())
+  const [session] = useState(() => loadCustomerSession())
+  const user = session?.user ?? null
 
   const [vehicles, setVehicles] = useState<VehicleModel[]>([])
   const [servicePrices, setServicePrices] = useState<ServicePriceModel[]>([])
   const [serviceOrders, setServiceOrders] = useState<ServiceOrderModel[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
   const [refreshingOrders, setRefreshingOrders] = useState(false)
+  const [statusNotice, setStatusNotice] = useState<string | null>(null)
+  const previousStatuses = useRef<Map<
+    string,
+    ServiceOrderModel['status']
+  > | null>(null)
+
+  const updateOrders = (
+    orders: ServiceOrderModel[],
+    announceChanges: boolean,
+  ) => {
+    const previous = previousStatuses.current
+    if (announceChanges && previous) {
+      const changedOrder = orders.find(
+        (order) =>
+          previous.has(order.id) && previous.get(order.id) !== order.status,
+      )
+      if (changedOrder) {
+        const statusLabels: Record<ServiceOrderModel['status'], string> = {
+          SCHEDULED: 'Agendado',
+          WAITING_IN_YARD: 'Aguardando no pátio',
+          WASHING: 'Lavagem iniciada',
+          PAUSED: 'Lavagem pausada',
+          READY: 'Seu veículo está pronto para retirada',
+          DONE: 'Atendimento finalizado',
+        }
+        setStatusNotice(statusLabels[changedOrder.status])
+      }
+    }
+    previousStatuses.current = new Map(
+      orders.map((order) => [order.id, order.status]),
+    )
+    setServiceOrders(orders)
+  }
 
   useEffect(() => {
     if (!user) {
@@ -58,7 +93,7 @@ export function CustomerDashboard({
       .then(([vehiclesResult, servicePricesResult, serviceOrdersResult]) => {
         setVehicles(vehiclesResult)
         setServicePrices(servicePricesResult)
-        setServiceOrders(serviceOrdersResult)
+        updateOrders(serviceOrdersResult, false)
       })
       .catch(() => setLoadError('Erro ao carregar seus dados'))
   }, [
@@ -67,6 +102,33 @@ export function CustomerDashboard({
     listServicePrices,
     listServiceOrdersByCustomer,
   ])
+
+  useEffect(() => {
+    if (!user) return
+
+    let active = true
+    let refreshing = false
+    const timer = window.setInterval(() => {
+      if (refreshing) return
+      refreshing = true
+      listServiceOrdersByCustomer
+        .list({ customerId: user.id })
+        .then((orders) => {
+          if (active) updateOrders(orders, true)
+        })
+        .catch(() => {
+          if (active) setLoadError('Erro ao atualizar agendamentos')
+        })
+        .finally(() => {
+          refreshing = false
+        })
+    }, 3000)
+
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [user, listServiceOrdersByCustomer])
 
   if (!user) {
     return null
@@ -81,7 +143,7 @@ export function CustomerDashboard({
     setRefreshingOrders(true)
     listServiceOrdersByCustomer
       .list({ customerId: user.id })
-      .then(setServiceOrders)
+      .then((orders) => updateOrders(orders, true))
       .catch(() => setLoadError('Erro ao atualizar agendamentos'))
       .finally(() => setRefreshingOrders(false))
   }
@@ -91,13 +153,46 @@ export function CustomerDashboard({
       <div className="dashboard-container">
         <header className="dashboard-header">
           <div>
-            <span className="badge">Washflow · Cliente</span>
+            <span className="badge">
+              <UiIcon name="car" size={15} />
+              Washflow · Cliente
+            </span>
             <h1>Olá, {user.name.split(' ')[0]}</h1>
+            <p className="dashboard-subtitle">
+              Gerencie seus veículos e acompanhe suas lavagens.
+            </p>
           </div>
           <button className="secondary-btn" onClick={handleLogout}>
+            <UiIcon name="logout" size={16} />
             Sair
           </button>
         </header>
+
+        <div className="dashboard-metrics">
+          <article>
+            <span className="metric-icon metric-icon-blue">
+              <UiIcon name="car" />
+            </span>
+            <div>
+              <span>Meus veículos</span>
+              <strong>{vehicles.length}</strong>
+            </div>
+          </article>
+          <article>
+            <span className="metric-icon metric-icon-violet">
+              <UiIcon name="calendar" />
+            </span>
+            <div>
+              <span>Atendimentos ativos</span>
+              <strong>
+                {
+                  serviceOrders.filter((order) => order.status !== 'DONE')
+                    .length
+                }
+              </strong>
+            </div>
+          </article>
+        </div>
 
         {loadError && <p className="error-message">{loadError}</p>}
 
@@ -123,6 +218,7 @@ export function CustomerDashboard({
           serviceOrders={serviceOrders}
           vehicles={vehicles}
           refreshing={refreshingOrders}
+          statusNotice={statusNotice}
           onRefresh={handleRefreshOrders}
         />
       </div>

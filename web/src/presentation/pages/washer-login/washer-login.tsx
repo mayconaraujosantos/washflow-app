@@ -8,13 +8,9 @@ type Props = Readonly<{
   authenticateWasher: AuthenticateWasher
 }>
 
-// There's no LAVADOR dashboard yet (only /cliente exists so far), so a
-// successful login shows an inline confirmation instead of navigating
-// somewhere that doesn't exist. Swap this for a redirect once that panel
-// ships.
 export function WasherLogin({ authenticateWasher }: Props) {
-  const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [washer, setWasher] = useState<UserModel | null>(null)
@@ -25,9 +21,9 @@ export function WasherLogin({ authenticateWasher }: Props) {
     setLoading(true)
 
     try {
-      const user = await authenticateWasher.auth({ name, phone })
-      saveWasherSession(user)
-      setWasher(user)
+      const session = await authenticateWasher.auth({ phone, password })
+      saveWasherSession(session)
+      setWasher(session.user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar')
     } finally {
@@ -42,28 +38,17 @@ export function WasherLogin({ authenticateWasher }: Props) {
         <h1>Entrar</h1>
 
         {washer ? (
-          <p className="subtitle">
-            Bem-vindo, {washer.name}! Painel do lavador em breve.
-          </p>
+          <div className="subtitle">
+            <p>Bem-vindo, {washer.name}!</p>
+            <a href="/lavador">Abrir painel do lavador</a>
+          </div>
         ) : (
           <>
             <p className="subtitle">
-              Informe seu nome e telefone para começar seu turno.
+              Entre com o telefone e a senha fornecidos pelo gerente.
             </p>
 
             <form className="login-form" onSubmit={handleSubmit}>
-              <label>
-                <span>Nome</span>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="Seu nome"
-                  autoComplete="name"
-                  required
-                />
-              </label>
-
               <label>
                 <span>Telefone</span>
                 <input
@@ -72,6 +57,18 @@ export function WasherLogin({ authenticateWasher }: Props) {
                   onChange={(event) => setPhone(event.target.value)}
                   placeholder="11999990000"
                   autoComplete="tel"
+                  required
+                />
+              </label>
+
+              <label>
+                <span>Senha (mínimo 8 caracteres)</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  minLength={8}
                   required
                 />
               </label>

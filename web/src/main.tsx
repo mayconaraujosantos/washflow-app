@@ -10,6 +10,8 @@ import { makeWasherQrCodePage } from '@/main/factories/pages/make-washer-qr-code
 import { makeWasherLoginPage } from '@/main/factories/pages/make-washer-login-page'
 import { makeManagerQrCodePage } from '@/main/factories/pages/make-manager-qr-code-page'
 import { makeManagerLoginPage } from '@/main/factories/pages/make-manager-login-page'
+import { makeWasherDashboardPage } from '@/main/factories/pages/make-washer-dashboard-page'
+import { makeManagerDashboardPage } from '@/main/factories/pages/make-manager-dashboard-page'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -23,6 +25,8 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/login/lavador" element={makeWasherLoginPage()} />
         <Route path="/qrcodes/gerente" element={makeManagerQrCodePage()} />
         <Route path="/login/gerente" element={makeManagerLoginPage()} />
+        <Route path="/lavador" element={makeWasherDashboardPage()} />
+        <Route path="/gerente" element={makeManagerDashboardPage()} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
