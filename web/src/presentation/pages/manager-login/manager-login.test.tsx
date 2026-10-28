@@ -14,37 +14,39 @@ const user: UserModel = {
   phone: '11999993333',
   profile: 'MANAGER',
   createdAt: '2026-01-01T00:00:00Z',
+  active: true,
 }
+const session = { user, token: 'signed-token' }
 
 const fillAndSubmit = async () => {
-  await userEvent.type(screen.getByLabelText('Nome'), user.name)
   await userEvent.type(screen.getByLabelText('Telefone'), user.phone)
+  await userEvent.type(screen.getByLabelText('Senha'), 'senha-forte')
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 }
 
 describe('ManagerLogin', () => {
-  it('authenticates with the entered name and phone', async () => {
+  it('authenticates with the entered credentials', async () => {
     const authenticateManager: AuthenticateManager = { auth: vi.fn() }
-    vi.mocked(authenticateManager.auth).mockResolvedValueOnce(user)
+    vi.mocked(authenticateManager.auth).mockResolvedValueOnce(session)
     render(<ManagerLogin authenticateManager={authenticateManager} />)
 
     await fillAndSubmit()
 
     expect(authenticateManager.auth).toHaveBeenCalledWith({
-      name: user.name,
       phone: user.phone,
+      password: 'senha-forte',
     })
   })
 
   it('saves the session and greets the manager on success', async () => {
     const authenticateManager: AuthenticateManager = { auth: vi.fn() }
-    vi.mocked(authenticateManager.auth).mockResolvedValueOnce(user)
+    vi.mocked(authenticateManager.auth).mockResolvedValueOnce(session)
     render(<ManagerLogin authenticateManager={authenticateManager} />)
 
     await fillAndSubmit()
 
     await waitFor(() => {
-      expect(saveManagerSession).toHaveBeenCalledWith(user)
+      expect(saveManagerSession).toHaveBeenCalledWith(session)
     })
     expect(screen.getByText(/Bia/)).toBeInTheDocument()
     expect(

@@ -6,12 +6,16 @@ import {
   saveWasherSession,
 } from './washer-session'
 
-const user: UserModel = {
-  id: '1',
-  name: 'Ana',
-  phone: '11999990000',
-  profile: 'WASHER',
-  createdAt: '2026-01-01T00:00:00Z',
+const session = {
+  user: {
+    id: '1',
+    name: 'Ana',
+    phone: '11999990000',
+    profile: 'WASHER',
+    createdAt: '2026-01-01T00:00:00Z',
+    active: true,
+  } as UserModel,
+  token: 'signed-token',
 }
 
 describe('washer-session', () => {
@@ -24,9 +28,9 @@ describe('washer-session', () => {
   })
 
   it('round-trips a saved washer', () => {
-    saveWasherSession(user)
+    saveWasherSession(session)
 
-    expect(loadWasherSession()).toEqual(user)
+    expect(loadWasherSession()).toEqual(session)
   })
 
   it('returns null for corrupted storage instead of throwing', () => {
@@ -36,7 +40,7 @@ describe('washer-session', () => {
   })
 
   it('clears the saved washer', () => {
-    saveWasherSession(user)
+    saveWasherSession(session)
     clearWasherSession()
 
     expect(loadWasherSession()).toBeNull()

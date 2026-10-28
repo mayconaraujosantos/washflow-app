@@ -16,39 +16,45 @@ const makeSut = () => {
 }
 
 describe('RemoteAuthenticateWasher', () => {
-  it('posts phone and name to the given url', async () => {
-    const { sut, httpClient } = makeSut()
-    vi.mocked(httpClient.request).mockResolvedValueOnce({
-      statusCode: HttpStatusCode.ok,
-      body: { id: '1', name: 'Ana', phone: '11999990000' } as never,
-    })
-
-    await sut.auth({ phone: '11999990000', name: 'Ana' })
-
-    expect(httpClient.request).toHaveBeenCalledWith({
-      url: 'http://api.washflow.local/api/auth/washers',
-      method: 'post',
-      body: { phone: '11999990000', name: 'Ana' },
-    })
-  })
-
-  it('returns the authenticated washer on 200', async () => {
-    const { sut, httpClient } = makeSut()
-    const user = {
+  const params = { phone: '11999990000', name: 'Ana', password: 'senha-forte' }
+  const session = {
+    user: {
       id: '1',
       name: 'Ana',
       phone: '11999990000',
       profile: 'WASHER',
       createdAt: '2026-01-01T00:00:00Z',
-    }
+      active: true,
+    },
+    token: 'signed-token',
+  }
+
+  it('posts credentials to the given url', async () => {
+    const { sut, httpClient } = makeSut()
     vi.mocked(httpClient.request).mockResolvedValueOnce({
       statusCode: HttpStatusCode.ok,
-      body: user as never,
+      body: session as never,
     })
 
-    const result = await sut.auth({ phone: '11999990000', name: 'Ana' })
+    await sut.auth(params)
 
-    expect(result).toEqual(user)
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: 'http://api.washflow.local/api/auth/washers',
+      method: 'post',
+      body: params,
+    })
+  })
+
+  it('returns the authenticated washer on 200', async () => {
+    const { sut, httpClient } = makeSut()
+    vi.mocked(httpClient.request).mockResolvedValueOnce({
+      statusCode: HttpStatusCode.ok,
+      body: session as never,
+    })
+
+    const result = await sut.auth(params)
+
+    expect(result).toEqual(session)
   })
 
   it('throws the server message on 400', async () => {
@@ -58,7 +64,7 @@ describe('RemoteAuthenticateWasher', () => {
       body: { error: 'phone is required' } as never,
     })
 
-    await expect(sut.auth({ phone: '', name: 'Ana' })).rejects.toThrow(
+    await expect(sut.auth({ ...params, phone: '' })).rejects.toThrow(
       'phone is required',
     )
   })
@@ -70,9 +76,9 @@ describe('RemoteAuthenticateWasher', () => {
       body: {} as never,
     })
 
-    await expect(
-      sut.auth({ phone: '11999990000', name: 'Ana' }),
-    ).rejects.toThrow('Este telefone já está cadastrado com outro perfil')
+    await expect(sut.auth(params)).rejects.toThrow(
+      'Este telefone já está cadastrado com outro perfil',
+    )
   })
 
   it('throws a generic message on any other status', async () => {
@@ -82,8 +88,6 @@ describe('RemoteAuthenticateWasher', () => {
       body: {} as never,
     })
 
-    await expect(
-      sut.auth({ phone: '11999990000', name: 'Ana' }),
-    ).rejects.toThrow('Erro inesperado ao entrar')
+    await expect(sut.auth(params)).rejects.toThrow('Erro inesperado ao entrar')
   })
 })

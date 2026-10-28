@@ -14,37 +14,42 @@ const user: UserModel = {
   phone: '11999990000',
   profile: 'WASHER',
   createdAt: '2026-01-01T00:00:00Z',
+  active: true,
 }
+const session = { user, token: 'signed-token' }
 
 const fillAndSubmit = async () => {
-  await userEvent.type(screen.getByLabelText('Nome'), user.name)
   await userEvent.type(screen.getByLabelText('Telefone'), user.phone)
+  await userEvent.type(
+    screen.getByLabelText('Senha (mínimo 8 caracteres)'),
+    'senha-forte',
+  )
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 }
 
 describe('WasherLogin', () => {
-  it('authenticates with the entered name and phone', async () => {
+  it('authenticates with the entered credentials', async () => {
     const authenticateWasher: AuthenticateWasher = { auth: vi.fn() }
-    vi.mocked(authenticateWasher.auth).mockResolvedValueOnce(user)
+    vi.mocked(authenticateWasher.auth).mockResolvedValueOnce(session)
     render(<WasherLogin authenticateWasher={authenticateWasher} />)
 
     await fillAndSubmit()
 
     expect(authenticateWasher.auth).toHaveBeenCalledWith({
-      name: user.name,
       phone: user.phone,
+      password: 'senha-forte',
     })
   })
 
   it('saves the session and greets the washer on success', async () => {
     const authenticateWasher: AuthenticateWasher = { auth: vi.fn() }
-    vi.mocked(authenticateWasher.auth).mockResolvedValueOnce(user)
+    vi.mocked(authenticateWasher.auth).mockResolvedValueOnce(session)
     render(<WasherLogin authenticateWasher={authenticateWasher} />)
 
     await fillAndSubmit()
 
     await waitFor(() => {
-      expect(saveWasherSession).toHaveBeenCalledWith(user)
+      expect(saveWasherSession).toHaveBeenCalledWith(session)
     })
     expect(screen.getByText(/Ana/)).toBeInTheDocument()
     expect(

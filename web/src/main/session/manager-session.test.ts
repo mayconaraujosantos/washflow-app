@@ -6,12 +6,16 @@ import {
   saveManagerSession,
 } from './manager-session'
 
-const user: UserModel = {
-  id: '1',
-  name: 'Ana',
-  phone: '11999990000',
-  profile: 'MANAGER',
-  createdAt: '2026-01-01T00:00:00Z',
+const session = {
+  user: {
+    id: '1',
+    name: 'Ana',
+    phone: '11999990000',
+    profile: 'MANAGER',
+    createdAt: '2026-01-01T00:00:00Z',
+    active: true,
+  } as UserModel,
+  token: 'signed-token',
 }
 
 describe('manager-session', () => {
@@ -24,9 +28,9 @@ describe('manager-session', () => {
   })
 
   it('round-trips a saved manager', () => {
-    saveManagerSession(user)
+    saveManagerSession(session)
 
-    expect(loadManagerSession()).toEqual(user)
+    expect(loadManagerSession()).toEqual(session)
   })
 
   it('returns null for corrupted storage instead of throwing', () => {
@@ -36,7 +40,7 @@ describe('manager-session', () => {
   })
 
   it('clears the saved manager', () => {
-    saveManagerSession(user)
+    saveManagerSession(session)
     clearManagerSession()
 
     expect(loadManagerSession()).toBeNull()
