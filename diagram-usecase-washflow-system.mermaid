@@ -13,8 +13,9 @@ graph TD
         VALIDA -->|Não: Erro/Pátio Lotado| B
         VALIDA -->|Sim| C[Salva Agendamento]
         
-        C -->|Gera Notificação| NOT1[🔔 Recebe Confirmação de Agendamento]
+        C -->|Confirmação visual| NOT1[🔔 Agendamento confirmado no painel]
         C -->|Status: AGENDADO| D(Acompanha Painel de Status no Celular)
+        D -.->|Polling a cada 3 segundos| C
     end
 
     %% Canal do Gerente (Entrada)
@@ -26,19 +27,20 @@ graph TD
 
     %% Canal do Lavador
     subgraph L1 [2. VISÃO DO LAVADOR - PWA]
-        G --> H[Vê Carro Livre na Fila do PWA]
+        G --> H[Vê Carro na Fila do PWA<br/>AGUARDANDO_PATIO por atualizado_em ASC]
         H --> I[Clica em 'Iniciar Lavagem' - Puxa o Carro para Si]
         
-        I -->|Status: EM LAVAGEM| NOT2[🔔 Notifica Cliente: Lavagem Iniciada]
+        I -->|Status: EM LAVAGEM| NOT2[🔔 Painel do cliente atualiza em até 3s]
         I --> J[Realiza o Serviço no Veículo]
         J --> K[Clica em 'Concluir Lavagem']
     end
 
     %% Canal do Gerente / Cliente (Saída)
-    K -->|Status: PRONTO| NOT3[🔔 Notifica Cliente: Carro Pronto para Retirada]
+    K -->|Status: PRONTO| NOT3[🔔 Painel do cliente mostra carro pronto]
     K --> M[Gerente Valida a Qualidade da Lavagem]
     M --> N[Registra Cobrança / Recebe Pagamento]
-    N -->|Status: FINALIZADO| O[Libera o Carro para o Cliente]
+    N -->|Registra pagamento e comissão em transação| N1[Pagamento: dinheiro, Pix ou cartão]
+    N1 -->|Status: FINALIZADO| O[Libera o Carro para o Cliente]
     O --> P[Sistema calcula e credita Comissão do Lavador]
 
     %% Aplicando Classes

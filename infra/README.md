@@ -52,9 +52,28 @@ make db-down
 make db-logs
 ```
 
-`JdbiFactory` (`src/com/washflow/infra/db/jdbi/JdbiFactory.java`) builds the
-app's `Jdbi` + Hikari pool from the environment - the same role
-`application.properties` plays for `spring-boot-starter-jdbc`:
+`AppConfig` loads configuration once at startup. Operating-system environment
+variables take precedence over a local `.env` file; `.env` values are considered
+only outside production. Copy `.env.example` to `.env` for local development.
+Never put production secrets in `.env` or commit them.
+
+Generate a local signing secret with `make generate-auth-secret`. It writes a
+256-bit secret to `.env` without printing it or replacing an already configured
+`AUTH_TOKEN_SECRET`.
+
+To create fictitious local accounts for the customer, washer, and manager
+flows, start the development backend with `make dev` and run
+`make seed-test-users` in another terminal. The command uses only
+`127.0.0.1:7000`, requires the manager password, and refuses `APP_ENV=production`.
+It creates the customer and washer through the local API, then promotes the
+washer using the seeded manager account. Random test credentials are saved in
+the Git-ignored `.local-test-users` file (permissions `0600`) and printed once.
+The manager phone is `11999993333`; on a fresh development database, choose a
+password of at least eight characters when prompted. If that manager already
+has a password, enter its existing password.
+
+`JdbiFactory` (`src/main/java/com/washflow/infra/db/jdbi/JdbiFactory.java`)
+builds the app's `Jdbi` + Hikari pool from this configuration:
 
 - Discrete `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD`, all
   defaulting to `docker-compose.yml`'s `postgres` service - so `make dev` /
@@ -62,9 +81,32 @@ app's `Jdbi` + Hikari pool from the environment - the same role
 - Or a single `DATABASE_URL` (`postgres://user:pass@host:port/db`), the form
   Railway injects for its Postgres plugin - takes priority when set.
 
-Startup never blocks on Postgres being reachable (`initializationFailTimeout
-= -1`), so `make dev`/`gradle test` still work without `make db-up`. Live
-status shows up in `GET /api/health`'s `database` field (`"up"`/`"down"`).
+In development, an unreachable Postgres falls back to in-memory H2, so
+`make dev`/`gradle run` still start without `make db-up`. If a database is
+reachable but its migrations fail, startup stops with the migration error
+instead of serving requests against an incomplete schema. In production, the
+database configuration must be supplied through environment variables and the
+application fails to start if PostgreSQL or its migrations are unavailable.
+`GET /api/health` reports live database status (`"up"`/`"down"`).
+
+`APP_ENV` selects `development` (default) or `production`. Docker images default
+to production; Docker Compose and the local Kubernetes deployment explicitly
+select development. `PORT` and `MAX_VEHICLES_PER_HOUR` are also read through
+`AppConfig`.
+
+Authentication uses a BCrypt password hash and an HMAC-signed bearer token.
+Production must set `AUTH_TOKEN_SECRET` to a secret of at least 32 characters.
+Set `BOOTSTRAP_MANAGER_PASSWORD` (and, if needed, `BOOTSTRAP_MANAGER_PHONE`)
+for the initial manager account without a password hash; after its first
+successful login the hash is persisted and the bootstrap password can be
+removed. Existing production users without a password hash need a secure
+password reset before they can log in. Phone ownership is not verified by OTP.
+Only customer accounts can self-register; managers must create or promote washer
+and manager profiles before those users can sign in.
+
+The local development environment allows a legacy user without a password hash
+to choose one at first login. This compatibility behavior is disabled in
+production.
 
 ## Day to day (git flow)
 

@@ -10,9 +10,11 @@ Esta especificação descreve os requisitos funcionais, regras de negócio, cicl
 ### 2.1. Acesso & Onboarding
 * **RF-01 (Acesso Simplificado):** O cliente deve conseguir acessar o PWA por meio de URL direta ou leitura de QR Code.
 * **RF-02 (Instalação PWA):** A aplicação deve oferecer manifesto PWA para instalação na tela inicial (*Add to Home Screen*) sem necessidade de loja de aplicativos.
+* O acesso exige telefone, nome e senha (mínimo de 8 caracteres); a senha é armazenada com BCrypt e a API emite token assinado por perfil. O telefone ainda não é verificado por OTP.
 
 ### 2.2. Agendamento de Serviço
 * **RF-03 (Seleção de Serviços e Horários):** O cliente escolhe o tipo de lavagem/serviço, veículo (se já cadastrado), data e horário desejados.
+  * Os horários exibidos e informados pelo cliente são sempre do estabelecimento em Manaus (`America/Manaus`, UTC-4), independentemente do fuso configurado no dispositivo.
 * **RF-04 (Validação de Capacidade):** O sistema deve validar em tempo real:
   * Horário de funcionamento do estabelecimento.
   * Limite de capacidade (vagas simultâneas / pátio).
@@ -20,10 +22,12 @@ Esta especificação descreve os requisitos funcionais, regras de negócio, cicl
   * *Caso válido:* Persiste o agendamento no banco de dados com o status `AGENDADO`.
 
 ### 2.3. Notificações e Acompanhamento
-* **RF-05 (Notificações em Tempo Real):** O cliente deve receber notificações push ou alertas visuais nas transições de status do seu pedido:
+* **RF-05 (Atualizações visuais):** Com o painel do cliente aberto, o estado do atendimento é consultado automaticamente a cada 3 segundos e mudanças aparecem como aviso visual:
   1. **Confirmação:** Quando o agendamento é realizado (`AGENDADO`).
   2. **Início da Lavagem:** Quando o lavador assume a ordem de serviço (`EM_LAVAGEM`).
-  3. **Conclusão:** Quando a lavagem é finalizada (`PRONTO`).
+  3. **Conclusão:** Quando a lavagem é finalizada (`PRONTO`); a instrução para retirada permanece visível até o atendimento ser finalizado.
+  4. **Pausa:** O painel indica que a lavagem está temporariamente pausada.
+  * Push com o PWA fechado não está implementado.
 * **RF-06 (Painel de Status / Tracking):** O cliente acompanha na tela do celular a evolução do status do veículo até a liberação final (`FINALIZADO`).
 
 ---
@@ -44,12 +48,19 @@ Esta especificação descreve os requisitos funcionais, regras de negócio, cicl
    [Início pelo Lavador]
           │
           ▼
-    (EM_LAVAGEM) ──────►  🔔 Notificação 2: Lavagem Iniciada
+    (EM_LAVAGEM) ──────►  🔔 Aviso no painel: Lavagem Iniciada
+          │
+       [Pausa]
+          ▼
+       (PAUSADA) ──────►  Aviso de pausa temporária
+          │
+     [Retomada]
+          └────────────► (EM_LAVAGEM)
           │
   [Conclusão Lavagem]
           │
           ▼
-      (PRONTO)   ──────►  🔔 Notificação 3: Carro Pronto para Retirada
+      (PRONTO)   ──────►  Aviso persistente: Carro Pronto para Retirada
           │
  [Pagamento & Entrega]
           │
@@ -63,11 +74,12 @@ Esta especificação descreve os requisitos funcionais, regras de negócio, cicl
 
 | Método | Endpoint | Descrição |
 |---|---|---|
-| `GET` | `/api/v1/services` | Lista catálogo de lavagens e preços |
-| `GET` | `/api/v1/availability` | Consulta horários/vagas disponíveis |
-| `POST` | `/api/v1/service-orders` | Cria novo agendamento de lavagem |
-| `GET` | `/api/v1/service-orders/{id}` | Consulta status em tempo real da OS |
-| `GET` | `/api/v1/service-orders/{id}/events` | SSE (Server-Sent Events) ou polling para atualizações |
+| `GET` | `/api/services` | Lista catálogo de lavagens e preços |
+| `POST` | `/api/service-orders` | Cria novo agendamento de lavagem |
+| `GET` | `/api/customers/{id}/service-orders` | Lista os atendimentos do cliente autenticado |
+| `GET` | `/api/service-orders/{id}` | Consulta atendimento próprio |
+
+Não existe endpoint SSE/event stream; o painel usa polling autenticado em `/api/customers/{id}/service-orders`.
 
 ---
 
