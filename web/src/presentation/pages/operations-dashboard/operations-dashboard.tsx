@@ -5,6 +5,7 @@ import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServiceOrderModel } from '@/domain/models/service-order-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { UserModel, UserProfile } from '@/domain/models/user-model'
+import type { ChecklistType } from '@/domain/models/feature-models'
 import {
   Operations,
   PauseReason,
@@ -21,6 +22,8 @@ import {
 import { BUSINESS_TIME_ZONE } from '@/main/config/business-time'
 import { operationsReportCsv } from './operations-report-csv'
 import { UiIcon } from '@/presentation/components/ui-icon'
+import { ChecklistModal } from '@/presentation/components/checklist-modal'
+import { CashManager } from '@/presentation/components/cash-manager'
 import './operations-dashboard.css'
 
 type Props = Readonly<{
@@ -110,6 +113,10 @@ export function OperationsDashboard({ role, operations }: Props) {
   const [users, setUsers] = useState<UserModel[]>([])
   const [teamLoading, setTeamLoading] = useState(role === 'manager')
   const [teamError, setTeamError] = useState<string | null>(null)
+  const [checklistModal, setChecklistModal] = useState<{
+    serviceOrderId: string
+    type: ChecklistType
+  } | null>(null)
   const [selectedProfiles, setSelectedProfiles] = useState<
     Record<string, UserProfile>
   >({})
@@ -1049,7 +1056,19 @@ export function OperationsDashboard({ role, operations }: Props) {
             )}
           </section>
         )}
+        {role === 'manager' && (
+          <section className="dashboard-section">
+            <CashManager />
+          </section>
+        )}
       </div>
+      {checklistModal && (
+        <ChecklistModal
+          serviceOrderId={checklistModal.serviceOrderId}
+          type={checklistModal.type}
+          onClose={() => setChecklistModal(null)}
+        />
+      )}
     </main>
   )
 }
