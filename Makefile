@@ -12,6 +12,24 @@ else
   DETECTED_OS := $(shell uname -s)
 endif
 
+# Detect container runtime: Docker first, then Podman as default fallback
+ifeq ($(OS),Windows_NT)
+  HAS_DOCKER := $(shell where docker 2>$null)
+  HAS_PODMAN := $(shell where podman 2>$null)
+else
+  HAS_DOCKER := $(shell command -v docker 2>/dev/null)
+  HAS_PODMAN := $(shell command -v podman 2>/dev/null)
+endif
+
+ifeq ($(HAS_DOCKER),)
+  ifeq ($(HAS_PODMAN),)
+    $(error Nenhum container runtime encontrado. Instale Docker ou Podman.)
+  endif
+  DOCKER := podman
+else
+  DOCKER := docker
+endif
+
 ifeq ($(DETECTED_OS),Windows)
   # kind's podman provider (a Go binary) fails to find podman.exe when the
   # Windows PATH has a malformed entry, which os/exec aborts on outright.
@@ -22,10 +40,17 @@ else
   KIND := kind
 endif
 
+ifeq ($(DETECTED_OS),Windows)
+  GRADLE := .\gradlew.bat
+else
+  GRADLE := ./gradlew
+endif
+
 .DEFAULT_GOAL := help
 .PHONY: help install dev dev-backend dev-frontend build run start test lint format generate-auth-secret seed-test-users \
 	coverage sonar stop ip clean db-up db-down db-logs \
-	cluster-up cluster-down cluster-status image-local argocd-install argocd-password \
+	cluster-up cluster-down cluster-status image-local docker-build docker-info \
+	argocd-install argocd-password \
 	argocd-port-forward argo-install argo-port-forward ci deploy-prod
 
 help:
@@ -50,6 +75,10 @@ help:
 	@echo "                 :$(BACKEND_PORT) / :$(FRONTEND_PORT) (in case Ctrl+C didn't)."
 	@echo "  make ip        List LAN IPs to open on your phone (same Wi-Fi)."
 	@echo "  make clean     Remove build output (build/, web/dist)."
+	@echo ""
+	@echo "Docker/Podman (auto-detected, Docker preferred, Podman as fallback):"
+	@echo "  make docker-info     Show which container runtime is being used."
+	@echo "  make docker-build    Build the Docker image ($(IMAGE)) locally."
 	@echo ""
 	@echo "Database (Postgres via docker-compose - see infra/README.md):"
 	@echo "  make db-up     Start Postgres (:5432) in the background."
@@ -83,7 +112,7 @@ dev: install
 	@$(MAKE) -j2 dev-backend dev-frontend
 
 dev-backend:
-	gradle run --console=plain
+	$(GRADLE) run --console=plain
 
 dev-frontend:
 	cd web && bun run dev
@@ -100,27 +129,27 @@ run:
 	@echo "Plain http://<lan-ip> works fine in a phone's browser, but Chrome/Android"
 	@echo "will only offer 'Add to Home screen' over HTTPS or on the deployed Railway URL."
 	@echo ""
-	gradle run --console=plain
+	$(GRADLE) run --console=plain
 
 start: run
 
 test:
-	gradle test --console=plain
+	$(GRADLE) test --console=plain
 
 lint:
 	cd web && bun run lint && bun run format:check
-	gradle spotlessCheck --console=plain
+	$(GRADLE) spotlessCheck --console=plain
 
 format:
 	cd web && bun run format
-	gradle spotlessApply --console=plain
+	$(GRADLE) spotlessApply --console=plain
 
 coverage: test
 	@echo "HTML report: build/reports/jacoco/test/html/index.html"
 
 ## Needs a SonarCloud token: export SONAR_TOKEN=... first (see infra/README.md).
 sonar:
-	gradle sonar -Dsonar.token=$(SONAR_TOKEN) --console=plain
+	$(GRADLE) sonar -Dsonar.token=$(SONAR_TOKEN) --console=plain
 
 stop:
 ifeq ($(DETECTED_OS),Windows)
@@ -134,8 +163,20 @@ ip:
 	@echo "On your phone (same Wi-Fi as this PC): http://<one-of-the-ips-above>:$(BACKEND_PORT)"
 
 clean:
-	gradle clean --console=plain
+	$(GRADLE) clean --console=plain
 	rm -rf web/dist
+
+## Container runtime info: shows which tool (Docker/Podman) is detected.
+docker-info:
+	@echo "Container runtime: $(DOCKER)"
+	@$(DOCKER) --version
+
+## Build the Docker image locally using the auto-detected container runtime.
+docker-build:
+	@echo "Building image $(IMAGE) with $(DOCKER)..."
+	$(DOCKER) build -t $(IMAGE) .
+	@echo "Image built successfully: $(IMAGE)"
+	@$(DOCKER) images $(IMAGE)
 
 ## `docker-compose` here talks to Podman's Docker-API-compatible pipe
 ## (Podman Desktop's "Docker compatibility" mode) - no podman-compose needed.
@@ -190,10 +231,11 @@ cluster-status:
 
 ## Build the app image locally and load it straight into the kind node
 ## (no registry involved - Argo CD only tracks the Deployment/Service specs).
+## Uses the auto-detected container runtime (Docker or Podman).
 image-local:
-	podman build -t $(IMAGE) .
+	$(DOCKER) build -t $(IMAGE) .
 	@mkdir -p build
-	podman save $(IMAGE) -o build/washflow-api-local.tar
+	$(DOCKER) save $(IMAGE) -o build/washflow-api-local.tar
 	KIND_EXPERIMENTAL_PROVIDER=podman $(KIND) load image-archive build/washflow-api-local.tar --name $(KIND_CLUSTER)
 	@rm -f build/washflow-api-local.tar
 	@kubectl -n washflow-local rollout restart deployment/washflow-api 2>/dev/null || true
