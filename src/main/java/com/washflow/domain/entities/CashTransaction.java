@@ -20,4 +20,13 @@ public record CashTransaction(
     INCOME,
     EXPENSE
   }
+
+  /** Partial update record — only non-null fields are applied. */
+  public record PartialUpdate(
+      TransactionType type,
+      BigDecimal amount,
+      UUID categoryId,
+      String description,
+      LocalDate referenceDate,
+      UUID serviceOrderId) {}
 }
