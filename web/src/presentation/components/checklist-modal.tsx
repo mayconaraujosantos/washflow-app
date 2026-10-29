@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ChecklistItem, ChecklistType } from '@/domain/models/feature-models'
-import { saveChecklist } from '@/domain/usecases/features'
+import type { Features } from '@/domain/usecases/features'
 
 const DEFAULT_ENTRY_ITEMS: ChecklistItem[] = [
   { label: 'Quilometragem', checked: false, note: null },
@@ -27,12 +27,13 @@ const DEFAULT_EXIT_ITEMS: ChecklistItem[] = [
 ]
 
 type Props = Readonly<{
+  features: Features
   serviceOrderId: string
   type: ChecklistType
   onClose: () => void
 }>
 
-export function ChecklistModal({ serviceOrderId, type, onClose }: Props) {
+export function ChecklistModal({ features, serviceOrderId, type, onClose }: Props) {
   const isEntry = type === 'ENTRY'
   const [items, setItems] = useState<ChecklistItem[]>(
     isEntry ? DEFAULT_ENTRY_ITEMS : DEFAULT_EXIT_ITEMS,
@@ -114,7 +115,7 @@ export function ChecklistModal({ serviceOrderId, type, onClose }: Props) {
     const signatureImage = canvasRef.current?.toDataURL('image/png')
     setSaving(true)
     try {
-      await saveChecklist(serviceOrderId, type, items, signatureImage || null)
+      await features.saveChecklist(serviceOrderId, type, items, signatureImage || null)
       onClose()
     } catch (error) {
       console.error('Failed to save checklist:', error)

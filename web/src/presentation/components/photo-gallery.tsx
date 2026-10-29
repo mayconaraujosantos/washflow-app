@@ -1,13 +1,14 @@
 import { useCallback, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import type { ServiceOrderPhoto } from '@/domain/models/feature-models'
-import { savePhoto, getPhotos, deletePhoto } from '@/domain/usecases/features'
+import type { Features } from '@/domain/usecases/features'
 
 type Props = Readonly<{
+  features: Features
   serviceOrderId: string
 }>
 
-export function PhotoGallery({ serviceOrderId }: Props) {
+export function PhotoGallery({ features, serviceOrderId }: Props) {
   const [photos, setPhotos] = useState<ServiceOrderPhoto[]>([])
   const [loading, setLoading] = useState(false)
   const [imageData, setImageData] = useState('')
@@ -18,7 +19,7 @@ export function PhotoGallery({ serviceOrderId }: Props) {
   const loadPhotos = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await getPhotos(serviceOrderId)
+      const result = await features.getPhotos(serviceOrderId)
       setPhotos(result)
     } catch (error) {
       console.error('Failed to load photos:', error)
@@ -42,7 +43,7 @@ export function PhotoGallery({ serviceOrderId }: Props) {
     if (!imageData || uploading) return
     setUploading(true)
     try {
-      const photo = await savePhoto(serviceOrderId, photoType, imageData, description || null)
+      const photo = await features.savePhoto(serviceOrderId, photoType, imageData, description || null)
       setPhotos(prev => [...prev, photo])
       setImageData('')
       setDescription('')
@@ -55,7 +56,7 @@ export function PhotoGallery({ serviceOrderId }: Props) {
 
   const handleDelete = async (photoId: string) => {
     try {
-      await deletePhoto(photoId)
+      await features.deletePhoto(photoId)
       setPhotos(prev => prev.filter(p => p.id !== photoId))
     } catch (error) {
       console.error('Failed to delete photo:', error)

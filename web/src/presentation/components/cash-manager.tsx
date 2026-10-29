@@ -5,15 +5,13 @@ import type {
   CashTransactionReport,
   ExpenseCategory,
 } from '@/domain/models/feature-models'
-import {
-  createTransaction,
-  listTransactions,
-  deleteTransaction,
-  transactionReport,
-  listCategories,
-} from '@/domain/usecases/features'
+import type { Features } from '@/domain/usecases/features'
 
-export function CashManager() {
+type Props = Readonly<{
+  features: Features
+}>
+
+export function CashManager({ features }: Props) {
   const [transactions, setTransactions] = useState<CashTransaction[]>([])
   const [categories, setCategories] = useState<ExpenseCategory[]>([])
   const [report, setReport] = useState<CashTransactionReport | null>(null)
@@ -43,7 +41,7 @@ export function CashManager() {
   const loadTransactions = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await listTransactions(fromDate || null, toDate || null)
+      const result = await features.listTransactions(fromDate || null, toDate || null)
       setTransactions(result)
     } catch (error) {
       console.error('Failed to load transactions:', error)
@@ -54,7 +52,7 @@ export function CashManager() {
 
   const loadCategories = useCallback(async () => {
     try {
-      const result = await listCategories()
+      const result = await features.listCategories()
       setCategories(result)
     } catch (error) {
       console.error('Failed to load categories:', error)
@@ -64,7 +62,7 @@ export function CashManager() {
   const loadReport = useCallback(async () => {
     if (!fromDate || !toDate) return
     try {
-      const result = await transactionReport(fromDate, toDate)
+      const result = await features.transactionReport(fromDate, toDate)
       setReport(result)
     } catch (error) {
       console.error('Failed to load report:', error)
@@ -80,7 +78,7 @@ export function CashManager() {
     e.preventDefault()
     if (!amount) return
     try {
-      await createTransaction(
+      await features.createTransaction(
         type,
         amount,
         referenceDate,
@@ -99,7 +97,7 @@ export function CashManager() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteTransaction(id)
+      await features.deleteTransaction(id)
       setTransactions(prev => prev.filter(t => t.id !== id))
     } catch (error) {
       console.error('Failed to delete transaction:', error)

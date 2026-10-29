@@ -22,6 +22,7 @@ import {
 import { BUSINESS_TIME_ZONE } from '@/main/config/business-time'
 import { operationsReportCsv } from './operations-report-csv'
 import { UiIcon } from '@/presentation/components/ui-icon'
+import type { Features } from '@/domain/usecases/features'
 import { ChecklistModal } from '@/presentation/components/checklist-modal'
 import { CashManager } from '@/presentation/components/cash-manager'
 import './operations-dashboard.css'
@@ -29,6 +30,7 @@ import './operations-dashboard.css'
 type Props = Readonly<{
   role: 'washer' | 'manager'
   operations: Operations
+  features: Features
 }>
 
 const STATUS_LABELS: Record<ServiceOrderModel['status'], string> = {
@@ -100,7 +102,7 @@ function downloadReport(report: OperationsReportModel): void {
   URL.revokeObjectURL(url)
 }
 
-export function OperationsDashboard({ role, operations }: Props) {
+export function OperationsDashboard({ role, operations, features }: Props) {
   const navigate = useNavigate()
   const [session] = useState(() =>
     role === 'washer' ? loadWasherSession() : loadManagerSession(),
@@ -1058,12 +1060,13 @@ export function OperationsDashboard({ role, operations }: Props) {
         )}
         {role === 'manager' && (
           <section className="dashboard-section">
-            <CashManager />
+            <CashManager features={features} />
           </section>
         )}
       </div>
       {checklistModal && (
         <ChecklistModal
+          features={features}
           serviceOrderId={checklistModal.serviceOrderId}
           type={checklistModal.type}
           onClose={() => setChecklistModal(null)}
