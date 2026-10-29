@@ -43,8 +43,13 @@ export function PhotoGallery({ features, serviceOrderId }: Props) {
     if (!imageData || uploading) return
     setUploading(true)
     try {
-      const photo = await features.savePhoto(serviceOrderId, photoType, imageData, description || null)
-      setPhotos(prev => [...prev, photo])
+      const photo = await features.savePhoto(
+        serviceOrderId,
+        photoType,
+        imageData,
+        description || null,
+      )
+      setPhotos((prev) => [...prev, photo])
       setImageData('')
       setDescription('')
     } catch (error) {
@@ -57,7 +62,7 @@ export function PhotoGallery({ features, serviceOrderId }: Props) {
   const handleDelete = async (photoId: string) => {
     try {
       await features.deletePhoto(photoId)
-      setPhotos(prev => prev.filter(p => p.id !== photoId))
+      setPhotos((prev) => prev.filter((p) => p.id !== photoId))
     } catch (error) {
       console.error('Failed to delete photo:', error)
     }
@@ -66,7 +71,11 @@ export function PhotoGallery({ features, serviceOrderId }: Props) {
   return (
     <div className="photo-gallery">
       <h3>Fotos do veículo</h3>
-      <button className="btn-secondary btn-small" onClick={loadPhotos} disabled={loading}>
+      <button
+        className="btn-secondary btn-small"
+        onClick={loadPhotos}
+        disabled={loading}
+      >
         {loading ? 'Carregando...' : 'Carregar fotos'}
       </button>
 
@@ -74,7 +83,10 @@ export function PhotoGallery({ features, serviceOrderId }: Props) {
         <div className="photo-upload-fields">
           <label>
             Tipo:
-            <select value={photoType} onChange={e => setPhotoType(e.target.value as 'ENTRY' | 'EXIT')}>
+            <select
+              value={photoType}
+              onChange={(e) => setPhotoType(e.target.value as 'ENTRY' | 'EXIT')}
+            >
               <option value="ENTRY">Entrada</option>
               <option value="EXIT">Saída</option>
             </select>
@@ -84,12 +96,16 @@ export function PhotoGallery({ features, serviceOrderId }: Props) {
             type="text"
             placeholder="Descrição..."
             value={description}
-            onChange={e => setDescription(e.target.value)}
+            onChange={(e) => setDescription(e.target.value)}
           />
           {imageData && (
             <img src={imageData} alt="Preview" className="photo-preview" />
           )}
-          <button type="submit" className="btn-primary btn-small" disabled={!imageData || uploading}>
+          <button
+            type="submit"
+            className="btn-primary btn-small"
+            disabled={!imageData || uploading}
+          >
             {uploading ? 'Enviando...' : 'Enviar foto'}
           </button>
         </div>
@@ -97,14 +113,16 @@ export function PhotoGallery({ features, serviceOrderId }: Props) {
 
       {photos.length > 0 && (
         <div className="photo-grid">
-          {photos.map(photo => (
+          {photos.map((photo) => (
             <div key={photo.id} className="photo-card">
               <img src={photo.imageData} alt={photo.description || 'Foto'} />
               <div className="photo-info">
                 <span className="photo-type">
                   {photo.type === 'ENTRY' ? 'Entrada' : 'Saída'}
                 </span>
-                {photo.description && <span className="photo-desc">{photo.description}</span>}
+                {photo.description && (
+                  <span className="photo-desc">{photo.description}</span>
+                )}
                 <button
                   className="btn-delete btn-small"
                   onClick={() => handleDelete(photo.id)}

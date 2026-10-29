@@ -94,7 +94,9 @@ export class RemoteFeatures implements Features {
     if (from) params.set('from', from)
     if (to) params.set('to', to)
     const query = params.toString()
-    const url = query ? `/api/cash-transactions?${query}` : '/api/cash-transactions'
+    const url = query
+      ? `/api/cash-transactions?${query}`
+      : '/api/cash-transactions'
     return this.request(url, 'get') as Promise<CashTransaction[]>
   }
 
@@ -102,9 +104,11 @@ export class RemoteFeatures implements Features {
     id: string,
     updates: Partial<CashTransaction>,
   ): Promise<CashTransaction> {
-    return this.request(`/api/cash-transactions/${id}`, 'put', updates) as Promise<
-      CashTransaction
-    >
+    return this.request(
+      `/api/cash-transactions/${id}`,
+      'put',
+      updates,
+    ) as Promise<CashTransaction>
   }
 
   deleteTransaction(id: string): Promise<void> {
@@ -122,13 +126,16 @@ export class RemoteFeatures implements Features {
   // ==================== EXPENSE CATEGORIES ====================
 
   createCategory(name: string, color: string): Promise<ExpenseCategory> {
-    return this.request('/api/expense-categories', 'post', { name, color }) as Promise<
-      ExpenseCategory
-    >
+    return this.request('/api/expense-categories', 'post', {
+      name,
+      color,
+    }) as Promise<ExpenseCategory>
   }
 
   listCategories(): Promise<ExpenseCategory[]> {
-    return this.request('/api/expense-categories', 'get') as Promise<ExpenseCategory[]>
+    return this.request('/api/expense-categories', 'get') as Promise<
+      ExpenseCategory[]
+    >
   }
 
   // ==================== INTERNALS ====================

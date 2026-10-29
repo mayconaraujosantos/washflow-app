@@ -123,7 +123,9 @@ describe('PhotoGallery', () => {
     renderPhotoGallery(makeMockFeatures())
 
     expect(screen.getByText('Tipo:')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Enviar foto' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Enviar foto' }),
+    ).toBeInTheDocument()
   })
 
   it('renders the description input in the upload form', () => {

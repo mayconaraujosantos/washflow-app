@@ -18,7 +18,10 @@ const makeMockFeatures = (): Features => ({
   listCategories: vi.fn(),
 })
 
-const renderChecklistModal = (features: Features, type: 'ENTRY' | 'EXIT' = 'ENTRY') =>
+const renderChecklistModal = (
+  features: Features,
+  type: 'ENTRY' | 'EXIT' = 'ENTRY',
+) =>
   render(
     <ChecklistModal
       features={features}
@@ -65,14 +68,18 @@ describe('ChecklistModal', () => {
     renderChecklistModal(makeMockFeatures())
 
     expect(screen.getByText('Assinatura:')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Limpar assinatura' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Limpar assinatura' }),
+    ).toBeInTheDocument()
   })
 
   it('renders cancel and save buttons', () => {
     renderChecklistModal(makeMockFeatures())
 
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Salvar checklist' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Salvar checklist' }),
+    ).toBeInTheDocument()
   })
 
   it('calls onClose when cancel button is clicked', () => {

@@ -18,7 +18,8 @@ const makeMockFeatures = (): Features => ({
   listCategories: vi.fn(),
 })
 
-const renderCashManager = (features: Features) => render(<CashManager features={features} />)
+const renderCashManager = (features: Features) =>
+  render(<CashManager features={features} />)
 
 describe('CashManager', () => {
   it('renders the section heading', () => {
@@ -44,9 +45,16 @@ describe('CashManager', () => {
         createdBy: 'user-1',
       },
     ])
-    features.listCategories = vi.fn().mockResolvedValue([
-      { id: 'cat-1', name: 'Supplies', color: '#FF0000', createdAt: '2026-10-29T12:00:00Z' },
-    ])
+    features.listCategories = vi
+      .fn()
+      .mockResolvedValue([
+        {
+          id: 'cat-1',
+          name: 'Supplies',
+          color: '#FF0000',
+          createdAt: '2026-10-29T12:00:00Z',
+        },
+      ])
 
     renderCashManager(features)
 
@@ -66,7 +74,9 @@ describe('CashManager', () => {
     renderCashManager(features)
 
     await waitFor(() => {
-      expect(screen.getByText('Nenhuma transação encontrada')).toBeInTheDocument()
+      expect(
+        screen.getByText('Nenhuma transação encontrada'),
+      ).toBeInTheDocument()
     })
   })
 

@@ -1,6 +1,9 @@
 import { useCallback, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import type { ChecklistItem, ChecklistType } from '@/domain/models/feature-models'
+import type {
+  ChecklistItem,
+  ChecklistType,
+} from '@/domain/models/feature-models'
 import type { Features } from '@/domain/usecases/features'
 
 const DEFAULT_ENTRY_ITEMS: ChecklistItem[] = [
@@ -33,7 +36,12 @@ type Props = Readonly<{
   onClose: () => void
 }>
 
-export function ChecklistModal({ features, serviceOrderId, type, onClose }: Props) {
+export function ChecklistModal({
+  features,
+  serviceOrderId,
+  type,
+  onClose,
+}: Props) {
   const isEntry = type === 'ENTRY'
   const [items, setItems] = useState<ChecklistItem[]>(
     isEntry ? DEFAULT_ENTRY_ITEMS : DEFAULT_EXIT_ITEMS,
@@ -62,7 +70,10 @@ export function ChecklistModal({ features, serviceOrderId, type, onClose }: Prop
     if (!canvas) return { x: 0, y: 0 }
     const rect = canvas.getBoundingClientRect()
     if ('touches' in e) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top }
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top,
+      }
     }
     return { x: e.clientX - rect.left, y: e.clientY - rect.top }
   }
@@ -97,14 +108,18 @@ export function ChecklistModal({ features, serviceOrderId, type, onClose }: Prop
   }
 
   const toggleItem = (index: number) => {
-    setItems(prev =>
-      prev.map((item, i) => (i === index ? { ...item, checked: !item.checked } : item)),
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, checked: !item.checked } : item,
+      ),
     )
   }
 
   const updateNote = (index: number, note: string) => {
-    setItems(prev =>
-      prev.map((item, i) => (i === index ? { ...item, note: note || null } : item)),
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, note: note || null } : item,
+      ),
     )
   }
 
@@ -115,7 +130,12 @@ export function ChecklistModal({ features, serviceOrderId, type, onClose }: Prop
     const signatureImage = canvasRef.current?.toDataURL('image/png')
     setSaving(true)
     try {
-      await features.saveChecklist(serviceOrderId, type, items, signatureImage || null)
+      await features.saveChecklist(
+        serviceOrderId,
+        type,
+        items,
+        signatureImage || null,
+      )
       onClose()
     } catch (error) {
       console.error('Failed to save checklist:', error)
@@ -126,10 +146,8 @@ export function ChecklistModal({ features, serviceOrderId, type, onClose }: Prop
 
   return (
     <div className="checklist-modal-overlay" onClick={onClose}>
-      <div className="checklist-modal" onClick={e => e.stopPropagation()}>
-        <h2>
-          {isEntry ? 'Checklist de Entrada' : 'Checklist de Saída'}
-        </h2>
+      <div className="checklist-modal" onClick={(e) => e.stopPropagation()}>
+        <h2>{isEntry ? 'Checklist de Entrada' : 'Checklist de Saída'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="checklist-items">
             {items.map((item, index) => (
@@ -147,7 +165,7 @@ export function ChecklistModal({ features, serviceOrderId, type, onClose }: Prop
                     type="text"
                     placeholder="Observação..."
                     value={item.note || ''}
-                    onChange={e => updateNote(index, e.target.value)}
+                    onChange={(e) => updateNote(index, e.target.value)}
                     className="checklist-note"
                   />
                 )}

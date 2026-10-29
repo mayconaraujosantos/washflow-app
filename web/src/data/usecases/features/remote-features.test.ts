@@ -292,7 +292,10 @@ describe('RemoteFeatures', () => {
         body: report,
       })
 
-      const result = await features.transactionReport('2026-10-01', '2026-10-31')
+      const result = await features.transactionReport(
+        '2026-10-01',
+        '2026-10-31',
+      )
 
       expect(result).toEqual(report)
       expect(request).toHaveBeenCalledWith({
@@ -330,7 +333,12 @@ describe('RemoteFeatures', () => {
 
     it('lists expense categories', async () => {
       const categories = [
-        { id: 'cat-1', name: 'Supplies', color: '#FF0000', createdAt: '2026-10-29T12:00:00Z' },
+        {
+          id: 'cat-1',
+          name: 'Supplies',
+          color: '#FF0000',
+          createdAt: '2026-10-29T12:00:00Z',
+        },
       ]
       request.mockResolvedValueOnce({
         statusCode: HttpStatusCode.ok,
@@ -358,7 +366,14 @@ describe('RemoteFeatures', () => {
       })
 
       await expect(
-        features.createTransaction('INVALID' as any, '100', '2026-10-29', null, null, null),
+        features.createTransaction(
+          'INVALID' as any,
+          '100',
+          '2026-10-29',
+          null,
+          null,
+          null,
+        ),
       ).rejects.toThrow('Type must be INCOME or EXPENSE')
     })
 

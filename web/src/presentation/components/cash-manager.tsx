@@ -41,7 +41,10 @@ export function CashManager({ features }: Props) {
   const loadTransactions = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await features.listTransactions(fromDate || null, toDate || null)
+      const result = await features.listTransactions(
+        fromDate || null,
+        toDate || null,
+      )
       setTransactions(result)
     } catch (error) {
       console.error('Failed to load transactions:', error)
@@ -98,7 +101,7 @@ export function CashManager({ features }: Props) {
   const handleDelete = async (id: string) => {
     try {
       await features.deleteTransaction(id)
-      setTransactions(prev => prev.filter(t => t.id !== id))
+      setTransactions((prev) => prev.filter((t) => t.id !== id))
     } catch (error) {
       console.error('Failed to delete transaction:', error)
     }
@@ -106,9 +109,10 @@ export function CashManager({ features }: Props) {
 
   const formatCurrency = (value: string) => {
     try {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-        parseFloat(value),
-      )
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(parseFloat(value))
     } catch {
       return value
     }
@@ -122,11 +126,19 @@ export function CashManager({ features }: Props) {
       <div className="cash-report-filters">
         <label>
           De:
-          <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+          />
         </label>
         <label>
           Até:
-          <input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+          />
         </label>
         <button className="btn-secondary btn-small" onClick={loadReport}>
           Gerar relatório
@@ -158,7 +170,10 @@ export function CashManager({ features }: Props) {
         <div className="cash-form-fields">
           <label>
             Tipo:
-            <select value={type} onChange={e => setType(e.target.value as 'INCOME' | 'EXPENSE')}>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as 'INCOME' | 'EXPENSE')}
+            >
               <option value="EXPENSE">Despesa</option>
               <option value="INCOME">Entrada</option>
             </select>
@@ -171,19 +186,26 @@ export function CashManager({ features }: Props) {
               min="0"
               placeholder="0.00"
               value={amount}
-              onChange={e => setAmount(e.target.value)}
+              onChange={(e) => setAmount(e.target.value)}
               required
             />
           </label>
           <label>
             Data:
-            <input type="date" value={referenceDate} onChange={e => setReferenceDate(e.target.value)} />
+            <input
+              type="date"
+              value={referenceDate}
+              onChange={(e) => setReferenceDate(e.target.value)}
+            />
           </label>
           <label>
             Categoria:
-            <select value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
               <option value="">Sem categoria</option>
-              {categories.map(cat => (
+              {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>
@@ -194,7 +216,7 @@ export function CashManager({ features }: Props) {
             type="text"
             placeholder="Descrição..."
             value={description}
-            onChange={e => setDescription(e.target.value)}
+            onChange={(e) => setDescription(e.target.value)}
           />
           <button type="submit" className="btn-primary">
             Adicionar
@@ -221,24 +243,36 @@ export function CashManager({ features }: Props) {
               </tr>
             </thead>
             <tbody>
-              {transactions.map(t => (
-                <tr key={t.id} className={t.type === 'INCOME' ? 'income-row' : 'expense-row'}>
+              {transactions.map((t) => (
+                <tr
+                  key={t.id}
+                  className={t.type === 'INCOME' ? 'income-row' : 'expense-row'}
+                >
                   <td>{t.referenceDate}</td>
                   <td>
-                    <span className={`badge ${t.type === 'INCOME' ? 'badge-green' : 'badge-red'}`}>
+                    <span
+                      className={`badge ${t.type === 'INCOME' ? 'badge-green' : 'badge-red'}`}
+                    >
                       {t.type === 'INCOME' ? 'Entrada' : 'Despesa'}
                     </span>
                   </td>
-                  <td className={t.type === 'INCOME' ? 'text-green' : 'text-red'}>
+                  <td
+                    className={t.type === 'INCOME' ? 'text-green' : 'text-red'}
+                  >
                     {t.type === 'INCOME' ? '+' : '-'}
                     {formatCurrency(t.amount)}
                   </td>
                   <td>
-                    {t.categoryId && categories.find(c => c.id === t.categoryId)?.name || '—'}
+                    {(t.categoryId &&
+                      categories.find((c) => c.id === t.categoryId)?.name) ||
+                      '—'}
                   </td>
                   <td>{t.description || '—'}</td>
                   <td>
-                    <button className="btn-delete btn-small" onClick={() => handleDelete(t.id)}>
+                    <button
+                      className="btn-delete btn-small"
+                      onClick={() => handleDelete(t.id)}
+                    >
                       ✕
                     </button>
                   </td>
