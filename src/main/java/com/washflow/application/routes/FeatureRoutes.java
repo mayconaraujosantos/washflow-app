@@ -6,17 +6,16 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.washflow.application.adapters.JavalinRouteAdapter;
+import com.washflow.application.factories.controllers.GetChecklistsControllerFactory;
+import com.washflow.application.factories.controllers.SaveChecklistControllerFactory;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.CashTransaction.TransactionType;
 import com.washflow.domain.entities.ExpenseCategory;
-import com.washflow.domain.entities.ServiceOrderChecklist;
-import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistItem;
-import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistType;
 import com.washflow.domain.entities.ServiceOrderPhoto;
 import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
 import com.washflow.infra.db.jdbi.CashTransactionJdbiRepository;
-import com.washflow.infra.db.jdbi.ChecklistJdbiRepository;
 import com.washflow.infra.db.jdbi.PhotoJdbiRepository;
 import io.javalin.http.Context;
 import java.math.BigDecimal;
@@ -31,18 +30,15 @@ import org.jdbi.v3.core.Jdbi;
 
 public final class FeatureRoutes {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
   private FeatureRoutes() {}
 
   public static void register(Jdbi jdbi) {
-    ChecklistJdbiRepository checklistRepo = new ChecklistJdbiRepository(jdbi);
     PhotoJdbiRepository photoRepo = new PhotoJdbiRepository(jdbi);
     CashTransactionJdbiRepository cashRepo = new CashTransactionJdbiRepository(jdbi);
 
-    // --- Checklists ---
-    post("/api/service-orders/{id}/checklist", ctx -> saveChecklist(ctx, checklistRepo));
-    get("/api/service-orders/{id}/checklist", ctx -> getChecklists(ctx, checklistRepo));
+    // --- Checklists (Clean Architecture pattern) ---
+    post("/api/service-orders/{id}/checklist", JavalinRouteAdapter.adapt(SaveChecklistControllerFactory.make(jdbi)));
+    get("/api/service-orders/{id}/checklist", JavalinRouteAdapter.adapt(GetChecklistsControllerFactory.make(jdbi)));
 
     // --- Photos ---
     post("/api/service-orders/{id}/photos", ctx -> savePhoto(ctx, photoRepo));
@@ -59,70 +55,6 @@ public final class FeatureRoutes {
     // --- Expense Categories ---
     post("/api/expense-categories", ctx -> createCategory(ctx, cashRepo));
     get("/api/expense-categories", ctx -> listCategories(ctx, cashRepo));
-  }
-
-  // ==================== CHECKLISTS ====================
-
-  private static void saveChecklist(Context ctx, ChecklistJdbiRepository repo) {
-    UUID serviceOrderId;
-    try {
-      serviceOrderId = UUID.fromString(ctx.pathParam("id"));
-    } catch (IllegalArgumentException e) {
-      ctx.status(400).json(Map.of("error", "Invalid service order id"));
-      return;
-    }
-
-    AuthTokenService.Claims claims = ctx.attribute("washflow.auth.claims");
-    Map<String, Object> body = ctx.bodyAsClass(Map.class);
-
-    String typeStr = (String) body.get("type");
-    ChecklistType type;
-    try {
-      type = ChecklistType.valueOf(typeStr);
-    } catch (IllegalArgumentException e) {
-      ctx.status(400).json(Map.of("error", "Type must be ENTRY or EXIT"));
-      return;
-    }
-
-    @SuppressWarnings("unchecked")
-    List<Map<String, Object>> itemsMap = (List<Map<String, Object>>) body.get("items");
-    List<ChecklistItem> items =
-        itemsMap.stream()
-            .map(
-                m ->
-                    new ChecklistItem(
-                        (String) m.get("label"),
-                        Boolean.TRUE.equals(m.get("checked")),
-                        (String) m.get("note")))
-            .toList();
-
-    String signatureImage = (String) body.get("signatureImage");
-
-    ServiceOrderChecklist checklist =
-        new ServiceOrderChecklist(
-            UUID.randomUUID(),
-            serviceOrderId,
-            type,
-            items,
-            signatureImage,
-            Instant.now(),
-            claims.userId());
-
-    ServiceOrderChecklist saved = repo.save(checklist);
-    ctx.status(201).json(saved);
-  }
-
-  private static void getChecklists(Context ctx, ChecklistJdbiRepository repo) {
-    UUID serviceOrderId;
-    try {
-      serviceOrderId = UUID.fromString(ctx.pathParam("id"));
-    } catch (IllegalArgumentException e) {
-      ctx.status(400).json(Map.of("error", "Invalid service order id"));
-      return;
-    }
-
-    List<ServiceOrderChecklist> checklists = repo.loadByServiceOrderId(serviceOrderId);
-    ctx.json(checklists);
   }
 
   // ==================== PHOTOS ====================

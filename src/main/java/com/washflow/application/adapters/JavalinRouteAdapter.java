@@ -55,6 +55,15 @@ public final class JavalinRouteAdapter {
         body = Map.of();
       }
 
+      // Inject createdBy from authenticated user claims into the request body
+      // so controllers can access it without depending on Javalin Context.
+      AuthTokenService.Claims claims = ctx.attribute("washflow.auth.claims");
+      if (claims != null) {
+        // Use a mutable copy so we can add the createdBy field
+        body = new java.util.HashMap<>(body);
+        body.put("createdBy", claims.userId());
+      }
+
       HttpRequest request = new HttpRequest(body, ctx.pathParamMap());
       HttpResponse response = controller.handle(request);
 
