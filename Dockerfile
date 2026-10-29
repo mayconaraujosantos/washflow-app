@@ -1,23 +1,19 @@
-FROM gradle:9.7.1-jdk21 AS build
+FROM gradle:9.8-jdk21-alpine AS build
 
 USER root
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y curl unzip \
+RUN apk add --no-cache curl bash unzip \
     && curl -fsSL https://bun.sh/install | bash \
-    && ln -s /root/.bun/bin/bun /usr/local/bin/bun \
-    && rm -rf /var/lib/apt/lists/*
+    && ln -s /root/.bun/bin/bun /usr/local/bin/bun
 
 WORKDIR /workspace
 COPY . .
 RUN gradle installDist --no-daemon
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-alpine
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system --gid 10001 app \
-    && useradd --system --uid 10001 --gid app --home-dir /app --no-create-home app
+RUN apk add --no-cache curl tini \
+    && addgroup -S -g 10001 app \
+    && adduser -S -u 10001 -G app -h /app -s /bin/sh app
 
 WORKDIR /app
 COPY --from=build /workspace/build/install/washflow-api/ /app/
