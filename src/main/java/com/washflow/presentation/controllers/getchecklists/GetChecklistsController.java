@@ -26,8 +26,7 @@ public class GetChecklistsController implements Controller {
     try {
       UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
 
-      List<ServiceOrderChecklist> checklists =
-          listServiceOrderChecklists.list(serviceOrderId);
+      List<ServiceOrderChecklist> checklists = listServiceOrderChecklists.list(serviceOrderId);
 
       return HttpHelper.ok(checklists);
 

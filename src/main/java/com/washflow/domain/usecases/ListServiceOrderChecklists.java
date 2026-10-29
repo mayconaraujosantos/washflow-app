@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Lists all checklists for a given service order. Implemented by {@code DbListServiceOrderChecklists}
- * in the data layer.
+ * Lists all checklists for a given service order. Implemented by {@code
+ * DbListServiceOrderChecklists} in the data layer.
  */
 public interface ListServiceOrderChecklists {
 

@@ -21,40 +21,55 @@ import com.washflow.application.factories.controllers.UpdateCashTransactionContr
 import org.jdbi.v3.core.Jdbi;
 
 public final class FeatureRoutes {
+  private static final String SERVICE_ORDER_BY_ID = "/api/service-orders/{id}";
+  private static final String CASH_TRANSACTIONS = "/api/cash-transactions";
+  private static final String EXPENSE_CATEGORIES = "/api/expense-categories";
 
   private FeatureRoutes() {}
 
   public static void register(Jdbi jdbi) {
     // --- Checklists (Clean Architecture pattern) ---
-    post("/api/service-orders/{id}/checklist",
-         JavalinRouteAdapter.adapt(SaveChecklistControllerFactory.make(jdbi)));
-    get("/api/service-orders/{id}/checklist",
+    post(
+        "/api/service-orders/{id}/checklist",
+        JavalinRouteAdapter.adapt(SaveChecklistControllerFactory.make(jdbi)));
+    get(
+        "/api/service-orders/{id}/checklist",
         JavalinRouteAdapter.adapt(GetChecklistsControllerFactory.make(jdbi)));
 
     // --- Photos (Clean Architecture pattern) ---
-    post("/api/service-orders/{id}/photos",
-         JavalinRouteAdapter.adapt(SavePhotoControllerFactory.make(jdbi)));
-    get("/api/service-orders/{id}/photos",
+    post(
+        "/api/service-orders/{id}/photos",
+        JavalinRouteAdapter.adapt(SavePhotoControllerFactory.make(jdbi)));
+    get(
+        "/api/service-orders/{id}/photos",
         JavalinRouteAdapter.adapt(GetPhotosControllerFactory.make(jdbi)));
-    delete("/api/service-orders/{id}/photos/{photoId}",
-           JavalinRouteAdapter.adapt(DeletePhotoControllerFactory.make(jdbi)));
+    delete(
+        "/api/service-orders/{id}/photos/{photoId}",
+        JavalinRouteAdapter.adapt(DeletePhotoControllerFactory.make(jdbi)));
 
     // --- Cash Transactions (Clean Architecture pattern) ---
-    post("/api/cash-transactions",
-         JavalinRouteAdapter.adapt(CreateCashTransactionControllerFactory.make(jdbi)));
-    get("/api/cash-transactions",
+    post(
+        "/api/cash-transactions",
+        JavalinRouteAdapter.adapt(CreateCashTransactionControllerFactory.make(jdbi)));
+    get(
+        "/api/cash-transactions",
         JavalinRouteAdapter.adapt(ListCashTransactionsControllerFactory.make(jdbi)));
-    put("/api/cash-transactions/{id}",
+    put(
+        "/api/cash-transactions/{id}",
         JavalinRouteAdapter.adapt(UpdateCashTransactionControllerFactory.make(jdbi)));
-    delete("/api/cash-transactions/{id}",
-           JavalinRouteAdapter.adapt(DeleteCashTransactionControllerFactory.make(jdbi)));
-    get("/api/cash-transactions/report",
+    delete(
+        "/api/cash-transactions/{id}",
+        JavalinRouteAdapter.adapt(DeleteCashTransactionControllerFactory.make(jdbi)));
+    get(
+        "/api/cash-transactions/report",
         JavalinRouteAdapter.adapt(GetCashTransactionReportControllerFactory.make(jdbi)));
 
     // --- Expense Categories (Clean Architecture pattern) ---
-    post("/api/expense-categories",
-         JavalinRouteAdapter.adapt(CreateExpenseCategoryControllerFactory.make(jdbi)));
-    get("/api/expense-categories",
+    post(
+        "/api/expense-categories",
+        JavalinRouteAdapter.adapt(CreateExpenseCategoryControllerFactory.make(jdbi)));
+    get(
+        "/api/expense-categories",
         JavalinRouteAdapter.adapt(ListExpenseCategoriesControllerFactory.make(jdbi)));
   }
 }

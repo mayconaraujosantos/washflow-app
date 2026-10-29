@@ -43,8 +43,7 @@ public class SavePhotoController implements Controller {
       }
 
       SaveServiceOrderPhoto.Params params =
-          new SaveServiceOrderPhoto.Params(
-              serviceOrderId, type, imageData, description, createdBy);
+          new SaveServiceOrderPhoto.Params(serviceOrderId, type, imageData, description, createdBy);
 
       var saved = saveServiceOrderPhoto.save(params);
       return new HttpResponse(201, saved);

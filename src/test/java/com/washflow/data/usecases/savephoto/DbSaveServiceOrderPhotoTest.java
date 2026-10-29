@@ -62,8 +62,7 @@ class DbSaveServiceOrderPhotoTest {
   @Test
   void throwsInvalidPhotoTypeWhenTypeIsNull() {
     SaveServiceOrderPhoto.Params params =
-        new SaveServiceOrderPhoto.Params(
-            serviceOrderId, null, "base64data", null, createdBy);
+        new SaveServiceOrderPhoto.Params(serviceOrderId, null, "base64data", null, createdBy);
 
     assertThrows(InvalidPhotoTypeError.class, () -> sut.save(params));
     verifyNoInteractions(saveRepository);
@@ -72,8 +71,7 @@ class DbSaveServiceOrderPhotoTest {
   @Test
   void throwsInvalidPhotoTypeWhenImageDataIsBlank() {
     SaveServiceOrderPhoto.Params params =
-        new SaveServiceOrderPhoto.Params(
-            serviceOrderId, PhotoType.ENTRY, "", null, createdBy);
+        new SaveServiceOrderPhoto.Params(serviceOrderId, PhotoType.ENTRY, "", null, createdBy);
 
     assertThrows(InvalidPhotoTypeError.class, () -> sut.save(params));
     verifyNoInteractions(saveRepository);

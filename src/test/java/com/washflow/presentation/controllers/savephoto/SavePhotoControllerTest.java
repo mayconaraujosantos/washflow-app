@@ -48,7 +48,13 @@ class SavePhotoControllerTest {
 
     ServiceOrderPhoto saved =
         new ServiceOrderPhoto(
-            UUID.randomUUID(), serviceOrderId, PhotoType.ENTRY, "base64data", "Raspado", Instant.now(), createdBy);
+            UUID.randomUUID(),
+            serviceOrderId,
+            PhotoType.ENTRY,
+            "base64data",
+            "Raspado",
+            Instant.now(),
+            createdBy);
     when(saveServiceOrderPhoto.save(any(SaveServiceOrderPhoto.Params.class))).thenReturn(saved);
 
     HttpResponse response = sut.handle(request);

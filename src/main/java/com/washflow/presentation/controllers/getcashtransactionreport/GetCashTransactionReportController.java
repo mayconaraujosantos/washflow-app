@@ -25,14 +25,17 @@ public class GetCashTransactionReportController implements Controller {
       String toStr = (String) body.get("to");
 
       if (fromStr == null || toStr == null) {
-        return HttpHelper.badRequest(new IllegalArgumentException("Provide from and to as YYYY-MM-DD dates"));
+        return HttpHelper.badRequest(
+            new IllegalArgumentException("Provide from and to as YYYY-MM-DD dates"));
       }
 
       LocalDate from = LocalDate.parse(fromStr);
       LocalDate to = LocalDate.parse(toStr);
 
       if (to.isBefore(from) || ChronoUnit.DAYS.between(from, to) > 365) {
-        return HttpHelper.badRequest(new IllegalArgumentException("Report range must be ordered and no longer than 366 days"));
+        return HttpHelper.badRequest(
+            new IllegalArgumentException(
+                "Report range must be ordered and no longer than 366 days"));
       }
 
       Map<String, Object> report = getCashTransactionReport.report(from, to);

@@ -15,5 +15,10 @@ public interface SaveServiceOrderChecklist {
 
   ServiceOrderChecklist save(Params params) throws InvalidChecklistTypeError;
 
-  record Params(UUID serviceOrderId, ChecklistType type, List<ChecklistItem> items, String signatureImage, UUID createdBy) {}
+  record Params(
+      UUID serviceOrderId,
+      ChecklistType type,
+      List<ChecklistItem> items,
+      String signatureImage,
+      UUID createdBy) {}
 }

@@ -72,8 +72,7 @@ class DbSaveServiceOrderChecklistTest {
   @Test
   void throwsInvalidChecklistTypeWhenTypeIsNull() {
     SaveServiceOrderChecklist.Params params =
-        new SaveServiceOrderChecklist.Params(
-            serviceOrderId, null, items, "base64image", createdBy);
+        new SaveServiceOrderChecklist.Params(serviceOrderId, null, items, "base64image", createdBy);
 
     assertThrows(InvalidChecklistTypeError.class, () -> sut.save(params));
     verifyNoInteractions(saveRepository);
