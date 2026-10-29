@@ -7,16 +7,16 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.washflow.application.adapters.JavalinRouteAdapter;
+import com.washflow.application.factories.controllers.DeletePhotoControllerFactory;
 import com.washflow.application.factories.controllers.GetChecklistsControllerFactory;
+import com.washflow.application.factories.controllers.GetPhotosControllerFactory;
 import com.washflow.application.factories.controllers.SaveChecklistControllerFactory;
+import com.washflow.application.factories.controllers.SavePhotoControllerFactory;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.CashTransaction.TransactionType;
 import com.washflow.domain.entities.ExpenseCategory;
-import com.washflow.domain.entities.ServiceOrderPhoto;
-import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
 import com.washflow.infra.db.jdbi.CashTransactionJdbiRepository;
-import com.washflow.infra.db.jdbi.PhotoJdbiRepository;
 import io.javalin.http.Context;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -33,17 +33,16 @@ public final class FeatureRoutes {
   private FeatureRoutes() {}
 
   public static void register(Jdbi jdbi) {
-    PhotoJdbiRepository photoRepo = new PhotoJdbiRepository(jdbi);
     CashTransactionJdbiRepository cashRepo = new CashTransactionJdbiRepository(jdbi);
 
     // --- Checklists (Clean Architecture pattern) ---
     post("/api/service-orders/{id}/checklist", JavalinRouteAdapter.adapt(SaveChecklistControllerFactory.make(jdbi)));
     get("/api/service-orders/{id}/checklist", JavalinRouteAdapter.adapt(GetChecklistsControllerFactory.make(jdbi)));
 
-    // --- Photos ---
-    post("/api/service-orders/{id}/photos", ctx -> savePhoto(ctx, photoRepo));
-    get("/api/service-orders/{id}/photos", ctx -> getPhotos(ctx, photoRepo));
-    delete("/api/service-orders/{id}/photos/{photoId}", ctx -> deletePhoto(ctx, photoRepo));
+    // --- Photos (Clean Architecture pattern) ---
+    post("/api/service-orders/{id}/photos", JavalinRouteAdapter.adapt(SavePhotoControllerFactory.make(jdbi)));
+    get("/api/service-orders/{id}/photos", JavalinRouteAdapter.adapt(GetPhotosControllerFactory.make(jdbi)));
+    delete("/api/service-orders/{id}/photos/{photoId}", JavalinRouteAdapter.adapt(DeletePhotoControllerFactory.make(jdbi)));
 
     // --- Cash Transactions ---
     post("/api/cash-transactions", ctx -> createTransaction(ctx, cashRepo));
@@ -55,77 +54,6 @@ public final class FeatureRoutes {
     // --- Expense Categories ---
     post("/api/expense-categories", ctx -> createCategory(ctx, cashRepo));
     get("/api/expense-categories", ctx -> listCategories(ctx, cashRepo));
-  }
-
-  // ==================== PHOTOS ====================
-
-  private static void savePhoto(Context ctx, PhotoJdbiRepository repo) {
-    UUID serviceOrderId;
-    try {
-      serviceOrderId = UUID.fromString(ctx.pathParam("id"));
-    } catch (IllegalArgumentException e) {
-      ctx.status(400).json(Map.of("error", "Invalid service order id"));
-      return;
-    }
-
-    AuthTokenService.Claims claims = ctx.attribute("washflow.auth.claims");
-    Map<String, Object> body = ctx.bodyAsClass(Map.class);
-
-    String typeStr = (String) body.get("type");
-    PhotoType type;
-    try {
-      type = PhotoType.valueOf(typeStr);
-    } catch (IllegalArgumentException e) {
-      ctx.status(400).json(Map.of("error", "Type must be ENTRY or EXIT"));
-      return;
-    }
-
-    String imageData = (String) body.get("imageData");
-    if (imageData == null || imageData.isBlank()) {
-      ctx.status(400).json(Map.of("error", "imageData is required"));
-      return;
-    }
-
-    String description = (String) body.get("description");
-
-    ServiceOrderPhoto photo =
-        new ServiceOrderPhoto(
-            UUID.randomUUID(),
-            serviceOrderId,
-            type,
-            imageData,
-            description,
-            Instant.now(),
-            claims.userId());
-
-    ServiceOrderPhoto saved = repo.save(photo);
-    ctx.status(201).json(saved);
-  }
-
-  private static void getPhotos(Context ctx, PhotoJdbiRepository repo) {
-    UUID serviceOrderId;
-    try {
-      serviceOrderId = UUID.fromString(ctx.pathParam("id"));
-    } catch (IllegalArgumentException e) {
-      ctx.status(400).json(Map.of("error", "Invalid service order id"));
-      return;
-    }
-
-    List<ServiceOrderPhoto> photos = repo.loadByServiceOrderId(serviceOrderId);
-    ctx.json(photos);
-  }
-
-  private static void deletePhoto(Context ctx, PhotoJdbiRepository repo) {
-    UUID photoId;
-    try {
-      photoId = UUID.fromString(ctx.pathParam("photoId"));
-    } catch (IllegalArgumentException e) {
-      ctx.status(400).json(Map.of("error", "Invalid photo id"));
-      return;
-    }
-
-    repo.deleteById(photoId);
-    ctx.status(204).result("");
   }
 
   // ==================== CASH TRANSACTIONS ====================
