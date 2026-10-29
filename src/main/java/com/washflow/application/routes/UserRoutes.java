@@ -9,30 +9,23 @@ import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.factories.controllers.AuthenticateCustomerControllerFactory;
 import com.washflow.application.factories.controllers.AuthenticateManagerControllerFactory;
 import com.washflow.application.factories.controllers.AuthenticateWasherControllerFactory;
+import com.washflow.application.factories.controllers.CreateWasherControllerFactory;
+import com.washflow.application.factories.controllers.ListUsersControllerFactory;
+import com.washflow.application.factories.controllers.UpdateUserActiveControllerFactory;
 import com.washflow.application.factories.controllers.UpdateUserProfileControllerFactory;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthenticatedSession;
-import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.UserHasActiveWashesError;
-import com.washflow.infra.db.jdbi.UserJdbiRepository;
-import com.washflow.infra.security.BCryptPasswordHasher;
 import com.washflow.presentation.controllers.authenticateuser.AuthenticateCredentialsRequest;
 import com.washflow.presentation.controllers.authenticateuser.AuthenticateUserRequest;
 import com.washflow.presentation.controllers.updateuserprofile.UpdateUserProfileRequest;
-import io.javalin.http.Context;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 
 public final class UserRoutes {
 
@@ -155,11 +148,9 @@ public final class UserRoutes {
   }
 
   private static void registerManagerUserAdministration(Jdbi jdbi) {
-    UserJdbiRepository repository = new UserJdbiRepository(jdbi);
-    PasswordHasher passwordHasher = new BCryptPasswordHasher();
-    registerListUsers(repository);
-    registerCreateWasher(repository, passwordHasher);
-    registerUpdateActive(repository);
+    registerListUsers(jdbi);
+    registerCreateWasher(jdbi);
+    registerUpdateUserActive(jdbi);
   }
 
   @OpenApi(
@@ -172,8 +163,8 @@ public final class UserRoutes {
         @OpenApiResponse(status = "401", description = "Authentication required"),
         @OpenApiResponse(status = "403", description = "Requester is not a manager")
       })
-  private static void registerListUsers(UserJdbiRepository repository) {
-    get(USERS_BASE_PATH, ctx -> ctx.json(repository.loadAll()));
+  private static void registerListUsers(Jdbi jdbi) {
+    get(USERS_BASE_PATH, JavalinRouteAdapter.adapt(ListUsersControllerFactory.make(jdbi)));
   }
 
   @OpenApi(
@@ -190,9 +181,8 @@ public final class UserRoutes {
         @OpenApiResponse(status = "403", description = "Requester is not a manager"),
         @OpenApiResponse(status = "409", description = "Phone is already registered")
       })
-  private static void registerCreateWasher(
-      UserJdbiRepository repository, PasswordHasher passwordHasher) {
-    post(USERS_BASE_PATH, ctx -> createWasher(ctx, repository, passwordHasher));
+  private static void registerCreateWasher(Jdbi jdbi) {
+    post(USERS_BASE_PATH, JavalinRouteAdapter.adapt(CreateWasherControllerFactory.make(jdbi)));
   }
 
   @OpenApi(
@@ -211,99 +201,10 @@ public final class UserRoutes {
         @OpenApiResponse(status = "404", description = "User not found"),
         @OpenApiResponse(status = "409", description = "Washer has active orders")
       })
-  private static void registerUpdateActive(UserJdbiRepository repository) {
-    patch(USERS_BASE_PATH + "/{id}/active", ctx -> updateActive(ctx, repository));
-  }
-
-  private static void createWasher(
-      Context ctx, UserJdbiRepository repository, PasswordHasher passwordHasher) {
-    CreateWasherRequest request;
-    try {
-      request = ctx.bodyAsClass(CreateWasherRequest.class);
-    } catch (RuntimeException e) {
-      ctx.status(400).json(Map.of("error", "Provide name, phone, and an initial password"));
-      return;
-    }
-    if (request == null) {
-      ctx.status(400).json(Map.of("error", "Provide name, phone, and an initial password"));
-      return;
-    }
-
-    String name = request.name() == null ? "" : request.name().trim();
-    String phone = request.phone() == null ? "" : request.phone().trim();
-    String password = request.password() == null ? "" : request.password();
-    if (name.isBlank() || name.length() > 100 || phone.isBlank() || phone.length() > 20) {
-      ctx.status(400).json(Map.of("error", "Name and phone are required and must be valid"));
-      return;
-    }
-    if (password.length() < 8) {
-      ctx.status(400).json(Map.of("error", "Password must contain at least eight characters"));
-      return;
-    }
-    if (repository.loadByPhone(phone).isPresent()) {
-      ctx.status(409).json(Map.of("error", "Phone is already registered"));
-      return;
-    }
-
-    User washer = new User(UUID.randomUUID(), name, phone, UserProfile.WASHER, Instant.now(), true);
-    try {
-      ctx.status(201).json(repository.create(washer, passwordHasher.hash(password)));
-    } catch (UnableToExecuteStatementException e) {
-      if (hasUniqueConstraintViolation(e)) {
-        ctx.status(409).json(Map.of("error", "Phone is already registered"));
-        return;
-      }
-      throw e;
-    }
-  }
-
-  private static void updateActive(Context ctx, UserJdbiRepository repository) {
-    UUID userId;
-    try {
-      userId = UUID.fromString(ctx.pathParam("id"));
-    } catch (IllegalArgumentException e) {
-      ctx.status(400).json(Map.of("error", "Invalid user id"));
-      return;
-    }
-
-    UpdateUserActiveRequest request;
-    try {
-      request = ctx.bodyAsClass(UpdateUserActiveRequest.class);
-    } catch (RuntimeException e) {
-      ctx.status(400).json(Map.of("error", "Provide the active field"));
-      return;
-    }
-    if (request == null || request.active() == null) {
-      ctx.status(400).json(Map.of("error", "Provide the active field"));
-      return;
-    }
-
-    User user = repository.loadById(userId).orElse(null);
-    if (user == null) {
-      ctx.status(404).json(Map.of("error", "User not found"));
-      return;
-    }
-    try {
-      if (!repository.updateActive(userId, request.active())) {
-        ctx.status(404).json(Map.of("error", "User not found"));
-        return;
-      }
-    } catch (UserHasActiveWashesError e) {
-      ctx.status(409)
-          .json(Map.of("error", "Complete or reassign this washer's active orders first"));
-      return;
-    }
-    ctx.json(repository.loadById(userId).orElseThrow());
-  }
-
-  private static boolean hasUniqueConstraintViolation(Throwable error) {
-    for (Throwable cause = error; cause != null; cause = cause.getCause()) {
-      if (cause instanceof java.sql.SQLException sqlException
-          && "23505".equals(sqlException.getSQLState())) {
-        return true;
-      }
-    }
-    return false;
+  private static void registerUpdateUserActive(Jdbi jdbi) {
+    patch(
+        USERS_BASE_PATH + "/{id}/active",
+        JavalinRouteAdapter.adapt(UpdateUserActiveControllerFactory.make(jdbi)));
   }
 
   public record CreateWasherRequest(String name, String phone, String password) {}

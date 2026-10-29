@@ -1,10 +1,13 @@
 package com.washflow.infra.db.jdbi;
 
 import com.washflow.data.protocols.db.CreateUserRepository;
+import com.washflow.data.protocols.db.CreateWasherRepository;
+import com.washflow.data.protocols.db.LoadAllUsersRepository;
 import com.washflow.data.protocols.db.LoadUserByIdRepository;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.LoadUserPasswordHashRepository;
 import com.washflow.data.protocols.db.SaveUserPasswordHashRepository;
+import com.washflow.data.protocols.db.UpdateUserActiveRepository;
 import com.washflow.data.protocols.db.UpdateUserProfileRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
@@ -18,10 +21,13 @@ import org.jdbi.v3.core.statement.StatementContext;
 
 public class UserJdbiRepository
     implements CreateUserRepository,
+        CreateWasherRepository,
+        LoadAllUsersRepository,
         LoadUserByIdRepository,
         LoadUserByPhoneRepository,
         LoadUserPasswordHashRepository,
         SaveUserPasswordHashRepository,
+        UpdateUserActiveRepository,
         UpdateUserProfileRepository {
 
   // Column name (Portuguese, matches usuarios.perfil) vs. bind parameter name (English, matches
@@ -90,13 +96,20 @@ public class UserJdbiRepository
                 .findOne());
   }
 
+  @Override
   public java.util.List<User> loadAll() {
     return jdbi.withHandle(
         handle ->
             handle.createQuery(SELECT_SQL + " ORDER BY nome, telefone").map(this::mapRow).list());
   }
 
-  public boolean updateActive(UUID id, boolean active) {
+  @Override
+  public User createWasher(User user, String passwordHash) {
+    return create(user, passwordHash);
+  }
+
+  @Override
+  public User updateActive(UUID id, boolean active) {
     return jdbi.inTransaction(
         handle -> {
           if (!active) {
@@ -124,12 +137,12 @@ public class UserJdbiRepository
               }
             }
           }
+          handle.createUpdate(UPDATE_ACTIVE_SQL).bind("id", id).bind("active", active).execute();
           return handle
-                  .createUpdate(UPDATE_ACTIVE_SQL)
-                  .bind("id", id)
-                  .bind("active", active)
-                  .execute()
-              == 1;
+              .createQuery(SELECT_SQL + " WHERE id = :id")
+              .bind("id", id)
+              .map(this::mapRow)
+              .one();
         });
   }
 
