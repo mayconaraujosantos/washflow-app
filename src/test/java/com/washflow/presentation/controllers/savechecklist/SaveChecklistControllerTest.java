@@ -64,7 +64,7 @@ class SaveChecklistControllerTest {
     body.put("items", itemsMap);
     body.put("signatureImage", "base64image");
     body.put("createdBy", createdBy);
-    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()));
+    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
     ServiceOrderChecklist saved =
         new ServiceOrderChecklist(
@@ -95,7 +95,7 @@ class SaveChecklistControllerTest {
 
     Map<String, Object> body = new HashMap<>();
     body.put("items", List.of(item));
-    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()));
+    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
     HttpResponse response = sut.handle(request);
 
@@ -106,7 +106,7 @@ class SaveChecklistControllerTest {
   void returnsBadRequestWhenItemsAreMissing() {
     Map<String, Object> body = new HashMap<>();
     body.put("type", "ENTRY");
-    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()));
+    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
     HttpResponse response = sut.handle(request);
 
@@ -122,7 +122,7 @@ class SaveChecklistControllerTest {
     Map<String, Object> body = new HashMap<>();
     body.put("type", "ENTRY");
     body.put("items", List.of(item));
-    HttpRequest request = new HttpRequest(body, Map.of("id", "not-a-uuid"));
+    HttpRequest request = new HttpRequest(body, Map.of("id", "not-a-uuid"), Map.of());
 
     HttpResponse response = sut.handle(request);
 
@@ -140,7 +140,7 @@ class SaveChecklistControllerTest {
     body.put("items", List.of(item));
     body.put("signatureImage", null);
     body.put("createdBy", createdBy);
-    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()));
+    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
     when(saveServiceOrderChecklist.save(any(SaveServiceOrderChecklist.Params.class)))
         .thenThrow(new InvalidChecklistTypeError("empty items"));

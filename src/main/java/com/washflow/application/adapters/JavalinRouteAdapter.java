@@ -64,7 +64,12 @@ public final class JavalinRouteAdapter {
         body.put("createdBy", claims.userId());
       }
 
-      HttpRequest request = new HttpRequest(body, ctx.pathParamMap());
+      // Flatten queryParamMap (Map<String,List<String>>) to Map<String,String> using first value
+      Map<String, String> queryParams =
+          ctx.queryParamMap().entrySet().stream()
+              .collect(
+                  java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));
+      HttpRequest request = new HttpRequest(body, ctx.pathParamMap(), queryParams);
       HttpResponse response = controller.handle(request);
 
       ctx.attribute(CONTROLLER_HANDLED_ATTRIBUTE, Boolean.TRUE);

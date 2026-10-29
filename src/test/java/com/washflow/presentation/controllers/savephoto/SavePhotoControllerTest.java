@@ -44,7 +44,7 @@ class SavePhotoControllerTest {
     body.put("imageData", "base64data");
     body.put("description", "Raspado");
     body.put("createdBy", createdBy);
-    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()));
+    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
     ServiceOrderPhoto saved =
         new ServiceOrderPhoto(
@@ -67,7 +67,7 @@ class SavePhotoControllerTest {
   void returnsBadRequestWhenTypeIsMissing() {
     Map<String, Object> body = new HashMap<>();
     body.put("imageData", "base64data");
-    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()));
+    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
     HttpResponse response = sut.handle(request);
 
@@ -78,7 +78,7 @@ class SavePhotoControllerTest {
   void returnsBadRequestWhenImageDataIsMissing() {
     Map<String, Object> body = new HashMap<>();
     body.put("type", "ENTRY");
-    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()));
+    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
     HttpResponse response = sut.handle(request);
 
@@ -91,7 +91,7 @@ class SavePhotoControllerTest {
     body.put("type", "ENTRY");
     body.put("imageData", "base64data");
     body.put("createdBy", createdBy);
-    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()));
+    HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
     when(saveServiceOrderPhoto.save(any(SaveServiceOrderPhoto.Params.class)))
         .thenThrow(new InvalidPhotoTypeError("test"));

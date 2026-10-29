@@ -48,7 +48,8 @@ class GetChecklistsControllerTest {
             UUID.randomUUID());
     when(listServiceOrderChecklists.list(serviceOrderId)).thenReturn(List.of(checklist));
 
-    HttpRequest request = new HttpRequest(Map.of(), Map.of("id", serviceOrderId.toString()));
+    HttpRequest request =
+        new HttpRequest(Map.of(), Map.of("id", serviceOrderId.toString()), Map.of());
     HttpResponse response = sut.handle(request);
 
     assertEquals(200, response.statusCode());
@@ -60,7 +61,8 @@ class GetChecklistsControllerTest {
   void returnsEmptyListWhenNoChecklists() {
     when(listServiceOrderChecklists.list(serviceOrderId)).thenReturn(List.of());
 
-    HttpRequest request = new HttpRequest(Map.of(), Map.of("id", serviceOrderId.toString()));
+    HttpRequest request =
+        new HttpRequest(Map.of(), Map.of("id", serviceOrderId.toString()), Map.of());
     HttpResponse response = sut.handle(request);
 
     assertEquals(200, response.statusCode());
@@ -69,7 +71,7 @@ class GetChecklistsControllerTest {
 
   @Test
   void returnsBadRequestWhenServiceOrderIdIsInvalid() {
-    HttpRequest request = new HttpRequest(Map.of(), Map.of("id", "not-a-uuid"));
+    HttpRequest request = new HttpRequest(Map.of(), Map.of("id", "not-a-uuid"), Map.of());
     HttpResponse response = sut.handle(request);
 
     assertEquals(400, response.statusCode());

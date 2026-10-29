@@ -3,8 +3,14 @@ package com.washflow.infra.db.jdbi;
 import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.protocols.db.CreateServiceOrderRepository;
 import com.washflow.data.protocols.db.FinalizeServiceOrderRepository;
+import com.washflow.data.protocols.db.LoadOperationsReportRepository;
 import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
 import com.washflow.data.protocols.db.LoadServiceOrdersByCustomerIdRepository;
+import com.washflow.data.protocols.db.LoadWaitingQueueRepository;
+import com.washflow.data.protocols.db.LoadWashingByWasherRepository;
+import com.washflow.data.protocols.db.LoadYardOverviewRepository;
+import com.washflow.data.protocols.db.PauseServiceOrderRepository;
+import com.washflow.data.protocols.db.ResumeServiceOrderRepository;
 import com.washflow.data.protocols.db.UpdateServiceOrderStatusRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
@@ -35,7 +41,13 @@ public class ServiceOrderJdbiRepository
         LoadServiceOrdersByCustomerIdRepository,
         UpdateServiceOrderStatusRepository,
         CountServiceOrdersScheduledInRangeRepository,
-        FinalizeServiceOrderRepository {
+        FinalizeServiceOrderRepository,
+        PauseServiceOrderRepository,
+        ResumeServiceOrderRepository,
+        LoadWaitingQueueRepository,
+        LoadYardOverviewRepository,
+        LoadWashingByWasherRepository,
+        LoadOperationsReportRepository {
 
   private static final String STATUS = "status";
 
@@ -177,14 +189,21 @@ public class ServiceOrderJdbiRepository
                 .list());
   }
 
+  @Override
   public List<ServiceOrder> loadWaitingQueue() {
     return jdbi.withHandle(
         handle -> handle.createQuery(WAITING_QUEUE_SQL).map(this::mapRow).list());
   }
 
+  @Override
   public List<ServiceOrder> loadYardOverview() {
     return jdbi.withHandle(
         handle -> handle.createQuery(YARD_OVERVIEW_SQL).map(this::mapRow).list());
+  }
+
+  @Override
+  public List<ServiceOrder> loadByWasherId(UUID washerId) {
+    return loadWashingByWasher(washerId);
   }
 
   public List<ServiceOrder> loadWashingByWasher(UUID washerId) {
@@ -211,6 +230,11 @@ public class ServiceOrderJdbiRepository
 
           return handle.createQuery(SELECT_SQL).bind("id", id).map(this::mapRow).one();
         });
+  }
+
+  @Override
+  public boolean pause(UUID orderId, UUID washerId, String reason, String description) {
+    return pauseWashing(orderId, washerId, reason, description);
   }
 
   public boolean pauseWashing(UUID orderId, UUID washerId, String reason, String description) {
@@ -250,6 +274,11 @@ public class ServiceOrderJdbiRepository
         });
   }
 
+  @Override
+  public boolean resume(UUID orderId, UUID washerId) {
+    return resumeWashing(orderId, washerId);
+  }
+
   public boolean resumeWashing(UUID orderId, UUID washerId) {
     return jdbi.inTransaction(
         handle -> {
@@ -287,6 +316,11 @@ public class ServiceOrderJdbiRepository
           }
           return true;
         });
+  }
+
+  @Override
+  public OperationsReport load(LocalDate from, LocalDate to) {
+    return loadOperationsReport(from, to);
   }
 
   public OperationsReport loadOperationsReport(LocalDate from, LocalDate to) {
