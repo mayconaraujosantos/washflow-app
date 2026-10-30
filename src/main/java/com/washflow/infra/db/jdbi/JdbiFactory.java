@@ -4,12 +4,15 @@ import com.washflow.application.AppConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +71,7 @@ public final class JdbiFactory {
 
   public static DataSource createDataSource(AppConfig appConfig) {
     HikariDataSource postgres = createPostgresDataSource(appConfig);
-    if (isReachable(postgres)) {
+    if (isReachableWithRetry(postgres)) {
       return postgres;
     }
     if (appConfig.isProduction()) {
@@ -81,12 +84,29 @@ public final class JdbiFactory {
     return createH2DataSource();
   }
 
-  private static boolean isReachable(HikariDataSource dataSource) {
-    try (Connection ignored = dataSource.getConnection()) {
-      return true;
-    } catch (SQLException e) {
-      return false;
+  private static boolean isReachableWithRetry(HikariDataSource dataSource) {
+    int maxAttempts = 5;
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try (Connection ignored = dataSource.getConnection()) {
+        return true;
+      } catch (SQLException e) {
+        LOGGER.warn(
+            "Database connection attempt {}/{} failed: {} (jdbcUrl: {})",
+            attempt,
+            maxAttempts,
+            e.getMessage(),
+            dataSource.getJdbcUrl());
+        if (attempt < maxAttempts) {
+          try {
+            Thread.sleep(2000);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return false;
+          }
+        }
+      }
     }
+    return false;
   }
 
   private static HikariDataSource createPostgresDataSource(AppConfig appConfig) {
@@ -97,12 +117,28 @@ public final class JdbiFactory {
     String password = appConfig.databasePassword();
     if (databaseUrl != null && !databaseUrl.isBlank()) {
       URI uri = URI.create(databaseUrl);
-      String[] credentials =
-          uri.getUserInfo() != null ? uri.getUserInfo().split(":", 2) : new String[0];
-      user = credentials.length > 0 ? credentials[0] : LOCAL_DEFAULT;
-      password = credentials.length > 1 ? credentials[1] : "";
+      String userInfo = uri.getUserInfo();
+      if (userInfo != null) {
+        int firstColon = userInfo.indexOf(':');
+        if (firstColon > 0) {
+          user = URLDecoder.decode(userInfo.substring(0, firstColon), StandardCharsets.UTF_8);
+          password = URLDecoder.decode(userInfo.substring(firstColon + 1), StandardCharsets.UTF_8);
+        } else {
+          user = URLDecoder.decode(userInfo, StandardCharsets.UTF_8);
+        }
+      }
+      if (user == null || user.isEmpty()) {
+        user = LOCAL_DEFAULT;
+      }
       int port = uri.getPort() > 0 ? uri.getPort() : 5432;
-      jdbcUrl = "jdbc:postgresql://" + uri.getHost() + ":" + port + uri.getPath();
+      String host = uri.getHost();
+      // Handle IPv6 hosts that URI returns without brackets
+      if (host != null && host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      jdbcUrl = "jdbc:postgresql://" + host + ":" + port + uri.getPath();
+      LOGGER.info(
+          "Parsed DATABASE_URL: host={}, port={}, user={}, db={}", host, port, user, uri.getPath());
     } else {
       jdbcUrl =
           "jdbc:postgresql://"
@@ -113,22 +149,28 @@ public final class JdbiFactory {
               + appConfig.databaseName();
     }
 
+    HikariConfig config = createHikariConfig(jdbcUrl, user, password);
+
+    return new HikariDataSource(config);
+  }
+
+  @NotNull
+  private static HikariConfig createHikariConfig(String jdbcUrl, String user, String password) {
     HikariConfig config = new HikariConfig();
     config.setJdbcUrl(jdbcUrl);
     config.setUsername(user);
     config.setPassword(password);
     config.setPoolName("washflow-pool");
     config.setMaximumPoolSize(10);
-    // Keep it short: the reachability probe below (and a down-Postgres
-    // health check) should fail fast, not hang for Hikari's 30s default.
-    config.setConnectionTimeout(3000);
+    // Increase timeout for cloud platforms (Render, Railway) where first
+    // connection may take longer due to cold starts or network latency.
+    config.setConnectionTimeout(10000);
     // Don't block on pool construction itself - createDataSource() decides
     // reachability with an explicit getConnection() probe right after this
     // returns, so a slow/absent Postgres surfaces as a quick H2 fallback
     // instead of a hung startup.
     config.setInitializationFailTimeout(-1);
-
-    return new HikariDataSource(config);
+    return config;
   }
 
   private static HikariDataSource createH2DataSource() {
