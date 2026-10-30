@@ -1,25 +1,8 @@
-import {
-  ServiceOrderModel,
-  ServiceOrderStatus,
-} from '@/domain/models/service-order-model'
+import { ServiceOrderModel } from '@/domain/models/service-order-model'
 import { VehicleModel } from '@/domain/models/vehicle-model'
 import { BUSINESS_TIME_ZONE } from '@/main/config/business-time'
+import { PAUSE_LABELS_LOWER, STATUS_LABELS_DETAILED } from '@/main/config/labels'
 import { UiIcon } from '@/presentation/components/ui-icon'
-
-const STATUS_LABELS: Record<ServiceOrderStatus, string> = {
-  SCHEDULED: 'Agendado',
-  WAITING_IN_YARD: 'Aguardando no pátio',
-  WASHING: 'Em lavagem',
-  PAUSED: 'Lavagem pausada',
-  READY: 'Pronto para retirada',
-  DONE: 'Finalizado',
-}
-
-const PAUSE_LABELS = {
-  LUNCH: 'almoço',
-  RESTROOM: 'banheiro',
-  OTHER: 'outro motivo',
-}
 
 type Props = Readonly<{
   serviceOrders: ServiceOrderModel[]
@@ -74,7 +57,7 @@ export function TrackingSection({
               <span
                 className={`status-badge status-${serviceOrder.status.toLowerCase()}`}
               >
-                {STATUS_LABELS[serviceOrder.status]}
+                {STATUS_LABELS_DETAILED[serviceOrder.status]}
               </span>
               <span className="order-plate">
                 {plateByVehicleId.get(serviceOrder.vehicleId) ?? 'Veículo'}
@@ -89,7 +72,7 @@ export function TrackingSection({
                   <UiIcon name="clock" size={17} />
                   Lavagem pausada
                   {serviceOrder.pauseReason
-                    ? `: ${PAUSE_LABELS[serviceOrder.pauseReason]}.`
+                    ? `: ${PAUSE_LABELS_LOWER[serviceOrder.pauseReason]}.`
                     : '.'}{' '}
                   Será retomada em breve.
                 </p>

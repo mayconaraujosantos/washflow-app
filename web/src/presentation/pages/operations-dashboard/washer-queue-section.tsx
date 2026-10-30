@@ -3,15 +3,7 @@ import { UiIcon } from '@/presentation/components/ui-icon'
 import type { ServiceOrderModel } from '@/domain/models/service-order-model'
 import type { Operations } from '@/domain/usecases/operations'
 import { BUSINESS_TIME_ZONE } from '@/main/config/business-time'
-
-const STATUS_LABELS: Record<ServiceOrderModel['status'], string> = {
-  SCHEDULED: 'Agendado',
-  WAITING_IN_YARD: 'Aguardando no pátio',
-  WASHING: 'Em lavagem',
-  PAUSED: 'Pausada',
-  READY: 'Pronto',
-  DONE: 'Finalizado',
-}
+import { STATUS_LABELS } from '@/main/config/labels'
 
 type Props = Readonly<{
   waiting: ServiceOrderModel[]

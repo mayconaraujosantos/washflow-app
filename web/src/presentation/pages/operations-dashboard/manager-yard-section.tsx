@@ -4,21 +4,7 @@ import type { ServiceOrderModel } from '@/domain/models/service-order-model'
 import type { ServicePriceModel } from '@/domain/models/service-price-model'
 import type { Operations, PaymentMethod } from '@/domain/usecases/operations'
 import { BUSINESS_TIME_ZONE } from '@/main/config/business-time'
-
-const STATUS_LABELS: Record<ServiceOrderModel['status'], string> = {
-  SCHEDULED: 'Agendado',
-  WAITING_IN_YARD: 'Aguardando no pátio',
-  WASHING: 'Em lavagem',
-  PAUSED: 'Pausada',
-  READY: 'Pronto',
-  DONE: 'Finalizado',
-}
-
-const PAUSE_LABELS: Record<string, string> = {
-  LUNCH: 'Almoço',
-  RESTROOM: 'Banheiro',
-  OTHER: 'Outro',
-}
+import { PAUSE_LABELS, STATUS_LABELS } from '@/main/config/labels'
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'CASH', label: 'Dinheiro' },

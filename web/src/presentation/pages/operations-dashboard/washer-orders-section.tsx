@@ -3,21 +3,7 @@ import { UiIcon } from '@/presentation/components/ui-icon'
 import type { ServiceOrderModel } from '@/domain/models/service-order-model'
 import type { Operations, PauseReason } from '@/domain/usecases/operations'
 import { BUSINESS_TIME_ZONE } from '@/main/config/business-time'
-
-const STATUS_LABELS: Record<ServiceOrderModel['status'], string> = {
-  SCHEDULED: 'Agendado',
-  WAITING_IN_YARD: 'Aguardando no pátio',
-  WASHING: 'Em lavagem',
-  PAUSED: 'Pausada',
-  READY: 'Pronto',
-  DONE: 'Finalizado',
-}
-
-const PAUSE_LABELS: Record<PauseReason, string> = {
-  LUNCH: 'Almoço',
-  RESTROOM: 'Banheiro',
-  OTHER: 'Outro',
-}
+import { PAUSE_LABELS, STATUS_LABELS } from '@/main/config/labels'
 
 const PAUSE_REASONS: { value: PauseReason; label: string }[] = [
   { value: 'LUNCH', label: 'Almoço' },

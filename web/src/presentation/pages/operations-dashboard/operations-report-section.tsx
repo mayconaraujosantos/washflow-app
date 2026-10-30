@@ -2,20 +2,8 @@ import { useState } from 'react'
 import { UiIcon } from '@/presentation/components/ui-icon'
 import type { OperationsReportModel } from '@/domain/models/operations-report-model'
 import type { Operations } from '@/domain/usecases/operations'
+import { PAUSE_LABELS, PAYMENT_LABELS } from '@/main/config/labels'
 import { operationsReportCsv } from './operations-report-csv'
-
-const PAYMENT_LABELS: Record<string, string> = {
-  CASH: 'Dinheiro',
-  PIX: 'Pix',
-  DEBIT_CARD: 'Cartão de débito',
-  CREDIT_CARD: 'Cartão de crédito',
-}
-
-const PAUSE_LABELS: Record<string, string> = {
-  LUNCH: 'Almoço',
-  RESTROOM: 'Banheiro',
-  OTHER: 'Outro',
-}
 
 function currentManausDate(): string {
   const parts = Object.fromEntries(

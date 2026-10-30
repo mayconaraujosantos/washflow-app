@@ -1,20 +1,5 @@
 import { OperationsReportModel } from '@/domain/models/operations-report-model'
-
-const PAUSE_LABELS: Record<
-  OperationsReportModel['pauses'][number]['reason'],
-  string
-> = {
-  LUNCH: 'Almoço',
-  RESTROOM: 'Banheiro',
-  OTHER: 'Outro',
-}
-
-const PAYMENT_LABELS: Record<string, string> = {
-  CASH: 'Dinheiro',
-  PIX: 'Pix',
-  DEBIT_CARD: 'Cartão de débito',
-  CREDIT_CARD: 'Cartão de crédito',
-}
+import { PAUSE_LABELS, PAYMENT_LABELS } from '@/main/config/labels'
 
 function cell(value: string | number): string {
   const text = String(value)
