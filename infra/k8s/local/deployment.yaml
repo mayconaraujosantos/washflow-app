@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: washflow-api
+  labels:
+    app: washflow-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: washflow-api
+  template:
+    metadata:
+      labels:
+        app: washflow-api
+    spec:
+      containers:
+        - name: washflow-api
+          # podman tags locally-built images under "localhost/" when no
+          # registry is given - kind loads that image as-is, so the
+          # Deployment has to reference it under that same name.
+          image: localhost/washflow-api:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7000
+          env:
+            - name: PORT
+              value: "7000"
+            - name: APP_ENV
+              value: development
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 7000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 7000
+            initialDelaySeconds: 15
+            periodSeconds: 20

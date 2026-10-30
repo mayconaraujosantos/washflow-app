@@ -1,6 +1,9 @@
 plugins {
     java
     application
+    jacoco
+    id("com.diffplug.spotless") version "8.10.2"
+    id("org.sonarqube") version "7.4.0.8496"
 }
 
 group = "com.washflow"
@@ -20,21 +23,49 @@ dependencies {
 
     // Driver do Banco de Dados (CORRIGIDO: Parênteses e aspas duplas)
     implementation("com.h2database:h2:2.2.224")
+    implementation("org.postgresql:postgresql:42.7.13")
+
+    // Pool de conexões (o mesmo papel que o Spring Boot cobre "de graça" via
+    // spring-boot-starter-jdbc) usado pelo JdbiFactory.
+    implementation("com.zaxxer:HikariCP:7.1.0")
+
+    // Migrações de schema (o mesmo papel do Flyway/Liquibase auto-configurados
+    // pelo Spring Boot) - roda contra o mesmo DataSource do JdbiFactory.
+    implementation("org.flywaydb:flyway-core:11.8.2")
+    implementation("org.flywaydb:flyway-database-postgresql:11.8.2")
 
     // Suporte a JSON usando Jackson
     implementation("io.javalin:javalin-rendering:7.0.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.0")
-    
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.0")
+
+    // OpenAPI/Swagger: @OpenApi-annotated routes get compiled (no reflection)
+    // into a spec served at /openapi, with Swagger UI at /swagger. Pinned to
+    // the same version as io.javalin:javalin above - the plugins call
+    // Javalin's internal router API directly, so a newer plugin version than
+    // the Javalin version in use fails at startup with a NoSuchMethodError.
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:7.0.0")
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:7.0.0")
+    annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:7.0.0")
+
     // Logs
     implementation("org.slf4j:slf4j-simple:2.0.13")
-    
+
+    // Optional local environment file; production configuration still comes from environment vars.
+    implementation("io.github.cdimascio:dotenv-java:3.2.0")
+    implementation("com.auth0:java-jwt:4.5.0")
+    implementation("at.favre.lib:bcrypt:0.10.2")
+
     // Testes
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.mockito:mockito-core:5.18.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
 }
 
 application {
-    mainClass.set("com.washflow.main.Main")
+    mainClass.set("com.washflow.application.Application")
 }
 
 java {
@@ -43,18 +74,42 @@ java {
     }
 }
 
-sourceSets {
-    main {
-        java.srcDirs("src")
-        java.exclude("test/**")
-    }
-    test {
-        java.srcDirs("src/test")
+tasks.test {
+    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
+spotless {
+    java {
+        target("src/main/java/**/*.java", "src/test/java/**/*.java")
+        googleJavaFormat("1.19.2")
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "mayconaraujosantos_washflow-app")
+        property("sonar.organization", "mayconaraujosantos")
+        property("sonar.host.url", "https://sonarcloud.io")
+        // Both the backend ("src/main/java") and the frontend ("web/src") are analyzed
+        // as one SonarCloud project - it's a single deployable app, and
+        // SonarCloud's JS/TS analyzer picks up .ts/.tsx files automatically.
+        property("sonar.sources", "src/main/java,web/src")
+        property("sonar.tests", "src/test/java")
+        property("sonar.exclusions", "web/dist/**,web/node_modules/**,web/coverage/**")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+    }
 }
 
 val frontendDir = file("web")

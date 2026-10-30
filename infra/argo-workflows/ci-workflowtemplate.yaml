@@ -1,0 +1,117 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: washflow-ci
+  namespace: argo
+spec:
+  entrypoint: ci
+  arguments:
+    parameters:
+      - name: repo
+        value: https://github.com/mayconaraujosantos/washflow-app.git
+      - name: revision
+        value: develop
+      # SonarCloud needs the sonar-credentials Secret (SONAR_TOKEN) - see
+      # infra/README.md. Off by default so `make ci` keeps working for
+      # everyday feature work before that's set up.
+      - name: runSonar
+        value: "false"
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+  templates:
+    - name: ci
+      steps:
+        - - name: checkout
+            template: checkout
+        - - name: quality-backend
+            template: quality-backend
+          - name: quality-frontend
+            template: quality-frontend
+        - - name: sonar
+            template: sonar
+            when: "{{workflow.parameters.runSonar}} == true"
+          - name: build-check
+            template: build-check
+
+    - name: checkout
+      container:
+        image: alpine/git:2.47.1
+        command: [sh, -c]
+        args:
+          - git clone --depth 1 --branch "{{workflow.parameters.revision}}" "{{workflow.parameters.repo}}" /workspace/src
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # Mirrors the "quality" job's backend step from the old GitHub Actions
+    # workflow. `gradle test` depends on the bunInstall/bunBuild tasks (the
+    # frontend gets bundled into the backend's resources), so Bun has to be
+    # on PATH here too - same as the old workflow's separate setup-bun step.
+    - name: quality-backend
+      container:
+        image: gradle:9.7.1-jdk21
+        workingDir: /workspace/src
+        command: [sh, -c]
+        args:
+          - |
+            set -eu
+            apt-get update -qq && apt-get install --no-install-recommends -y -qq curl unzip >/dev/null
+            curl -fsSL https://bun.sh/install | bash >/dev/null
+            ln -s /root/.bun/bin/bun /usr/local/bin/bun
+            gradle test spotlessCheck --no-daemon --console=plain
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # SonarCloud analysis. Reads the classes/coverage report quality-backend
+    # already produced on the shared workspace - doesn't need Bun, and
+    # doesn't force a recompile. Skipped unless runSonar=true (see above).
+    - name: sonar
+      container:
+        image: gradle:9.7.1-jdk21
+        workingDir: /workspace/src
+        command: [sh, -c]
+        args:
+          - gradle sonar --no-daemon --console=plain -Dsonar.token=$SONAR_TOKEN
+        envFrom:
+          - secretRef:
+              name: sonar-credentials
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # Mirrors the "quality" job's frontend step: lint + formatting check.
+    - name: quality-frontend
+      container:
+        image: oven/bun:1.3.14
+        workingDir: /workspace/src/web
+        command: [sh, -c]
+        args:
+          - bun install --frozen-lockfile && bun run lint && bun run format:check
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # Mirrors the "container" job's intent (validate the app packages
+    # cleanly) without an in-cluster image build: kaniko v1.23.2 hits a
+    # reproducible "duplicate class" javac error on this Dockerfile's
+    # multi-stage COPY that plain `podman build`/`docker build` does not
+    # (confirmed against an isolated fresh clone) - a kaniko snapshotting
+    # quirk, not a project bug. `make image-local` (plain podman, on your
+    # machine) is what actually builds and loads the deployable image.
+    - name: build-check
+      container:
+        image: gradle:9.7.1-jdk21
+        workingDir: /workspace/src
+        command: [sh, -c]
+        args:
+          - |
+            set -eu
+            apt-get update -qq && apt-get install --no-install-recommends -y -qq curl unzip >/dev/null
+            curl -fsSL https://bun.sh/install | bash >/dev/null
+            ln -s /root/.bun/bin/bun /usr/local/bin/bun
+            gradle installDist --no-daemon --console=plain
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}

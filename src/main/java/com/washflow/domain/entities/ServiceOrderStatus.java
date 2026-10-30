@@ -1,0 +1,37 @@
+package com.washflow.domain.entities;
+
+/**
+ * The vehicle status flow from CLAUDE.md, including the reversible washing pause. {@link
+ * #dbValue()} is the exact Portuguese literal CLAUDE.md's schema/queries use ({@code AGENDADO},
+ * {@code AGUARDANDO_PATIO}...) - that's the business's domain language and the actual
+ * stored/queried value, kept as-is even though the Java-side constant names follow the English code
+ * convention.
+ */
+public enum ServiceOrderStatus {
+  SCHEDULED("AGENDADO"),
+  WAITING_IN_YARD("AGUARDANDO_PATIO"),
+  WASHING("EM_LAVAGEM"),
+  PAUSED("PAUSADA"),
+  READY("PRONTO"),
+  DONE("FINALIZADO");
+
+  private final String dbValue;
+
+  ServiceOrderStatus(String dbValue) {
+    this.dbValue = dbValue;
+  }
+
+  public String dbValue() {
+    return dbValue;
+  }
+
+  /** Reverses {@link #dbValue()} - used by repositories mapping a stored {@code status} column. */
+  public static ServiceOrderStatus fromDbValue(String dbValue) {
+    for (ServiceOrderStatus status : values()) {
+      if (status.dbValue.equals(dbValue)) {
+        return status;
+      }
+    }
+    throw new IllegalArgumentException("Unknown service order status: " + dbValue);
+  }
+}

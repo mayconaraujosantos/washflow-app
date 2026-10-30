@@ -4,11 +4,14 @@ import { LoadHealthStatus } from '@/domain/usecases/load-health-status'
 export class RemoteLoadHealthStatus implements LoadHealthStatus {
   constructor(
     private readonly url: string,
-    private readonly httpClient: HttpClient<LoadHealthStatus.Model>
+    private readonly httpClient: HttpClient<LoadHealthStatus.Model>,
   ) {}
 
   async load(): Promise<LoadHealthStatus.Model> {
-    const httpResponse = await this.httpClient.request({ url: this.url, method: 'get' })
+    const httpResponse = await this.httpClient.request({
+      url: this.url,
+      method: 'get',
+    })
 
     switch (httpResponse.statusCode) {
       case HttpStatusCode.ok:
