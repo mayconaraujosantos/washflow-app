@@ -31,29 +31,30 @@ public final class RoutePermissionMatcher {
   }
 
   private static boolean isCustomerResource(String method, String path) {
-    return (method.equals("POST") && path.equals("/api/vehicles"))
-        || (method.equals("POST") && path.equals("/api/service-orders"))
-        || (method.equals("GET") && path.matches("/api/customers/[^/]+/(vehicles|service-orders)"))
-        || (method.equals("GET") && path.matches("/api/service-orders/[^/]+"));
+    return (HTTP_POST.equals(method) && path.equals("/api/vehicles"))
+        || (HTTP_POST.equals(method) && path.equals("/api/service-orders"))
+        || (HTTP_GET.equals(method)
+            && path.matches("/api/customers/[^/]+/(vehicles|service-orders)"))
+        || (HTTP_GET.equals(method) && path.matches("/api/service-orders/[^/]+"));
   }
 
   private static boolean isWasherResource(String method, String path) {
-    return (method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/(start|complete)"))
-        || (method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/(pause|resume)"))
-        || (method.equals("GET") && path.equals("/api/operations/queue"))
-        || (method.equals("GET") && path.equals("/api/operations/my-orders"));
+    return (HTTP_PATCH.equals(method) && path.matches("/api/service-orders/[^/]+/(start|complete)"))
+        || (HTTP_PATCH.equals(method) && path.matches("/api/service-orders/[^/]+/(pause|resume)"))
+        || (HTTP_GET.equals(method) && path.equals("/api/operations/queue"))
+        || (HTTP_GET.equals(method) && path.equals("/api/operations/my-orders"));
   }
 
   private static boolean isManagerResource(String method, String path) {
     return switch (method) {
-      case "GET" ->
+      case HTTP_GET ->
           path.equals("/api/operations/report")
               || path.equals("/api/operations/yard")
               || path.equals("/api/users");
 
-      case "POST" -> path.equals("/api/users");
+      case HTTP_POST -> path.equals("/api/users");
 
-      case "PATCH" ->
+      case HTTP_PATCH ->
           path.matches("/api/users/[^/]+/(profile|active)")
               || path.matches("/api/service-orders/[^/]+/(check-in|finalize)");
 

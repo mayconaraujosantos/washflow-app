@@ -12,6 +12,7 @@ public final class AuthorizationMiddleware {
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
   private static final Set<String> PUBLIC_API_PATHS =
       Set.of("/api/health", "/api/hello", "/api/services");
+  public static final String ERROR = "error";
 
   private final AuthTokenService tokenService;
   private final AccountSecurityGateway securityGateway;
@@ -38,7 +39,7 @@ public final class AuthorizationMiddleware {
     try {
       claims = tokenService.verify(token);
     } catch (AuthTokenService.InvalidTokenException e) {
-      ctx.status(401).json(Map.of("error", "Invalid or expired access token"));
+      ctx.status(401).json(Map.of(ERROR, "Invalid or expired access token"));
       return false;
     }
 
@@ -69,7 +70,7 @@ public final class AuthorizationMiddleware {
   private String extractToken(Context ctx) {
     String authorization = ctx.header("Authorization");
     if (authorization == null || !authorization.startsWith("Bearer ")) {
-      ctx.status(401).json(Map.of("error", "Authentication required"));
+      ctx.status(401).json(Map.of(ERROR, "Authentication required"));
       return null;
     }
     return authorization.substring("Bearer ".length());
@@ -80,12 +81,12 @@ public final class AuthorizationMiddleware {
         securityGateway.findAccessById(claims.userId());
 
     if (account.isEmpty() || !account.get().active()) {
-      ctx.status(401).json(Map.of("error", "Account is inactive"));
+      ctx.status(401).json(Map.of(ERROR, "Account is inactive"));
       return false;
     }
 
     if (!account.get().profile().equals(claims.profile())) {
-      ctx.status(401).json(Map.of("error", "Access token is no longer valid"));
+      ctx.status(401).json(Map.of(ERROR, "Access token is no longer valid"));
       return false;
     }
     return true;
@@ -95,14 +96,14 @@ public final class AuthorizationMiddleware {
     UserProfile requiredProfile =
         RoutePermissionMatcher.requiredProfile(ctx.method().name(), ctx.path());
     if (requiredProfile == null || claims.profile() != requiredProfile) {
-      ctx.status(403).json(Map.of("error", "Insufficient permissions"));
+      ctx.status(403).json(Map.of(ERROR, "Insufficient permissions"));
       return false;
     }
 
     Map<String, Object> body = parseBody(ctx);
     if (!ResourceAccessEvaluator.isAuthorized(
         ctx.method().name(), ctx.path(), body, claims.userId(), claims.profile(), jdbi)) {
-      ctx.status(403).json(Map.of("error", "Resource is outside your account"));
+      ctx.status(403).json(Map.of(ERROR, "Resource is outside your account"));
       return false;
     }
     return true;
