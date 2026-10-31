@@ -3,8 +3,8 @@ package com.washflow.application.security;
 import com.washflow.domain.entities.UserProfile;
 import io.javalin.http.Context;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import org.jdbi.v3.core.Jdbi;
 
 public final class AuthorizationMiddleware {
@@ -14,64 +14,51 @@ public final class AuthorizationMiddleware {
       Set.of("/api/health", "/api/hello", "/api/services");
 
   private final AuthTokenService tokenService;
+  private final AccountSecurityGateway securityGateway;
   private final Jdbi jdbi;
 
-  public AuthorizationMiddleware(AuthTokenService tokenService, Jdbi jdbi) {
+  public AuthorizationMiddleware(
+      AuthTokenService tokenService, AccountSecurityGateway securityGateway, Jdbi jdbi) {
     this.tokenService = tokenService;
+    this.securityGateway = securityGateway;
     this.jdbi = jdbi;
   }
 
   public boolean authorize(Context ctx) {
-    if (!ctx.path().startsWith("/api/")
-        || PUBLIC_API_PATHS.contains(ctx.path())
-        || isAuthenticationPath(ctx.path(), ctx.method().name())) {
+    if (isPublicRoute(ctx)) {
       return true;
     }
 
-    String authorization = ctx.header("Authorization");
-    if (authorization == null || !authorization.startsWith("Bearer ")) {
-      ctx.status(401).json(Map.of("error", "Authentication required"));
+    String token = extractToken(ctx);
+    if (token == null) {
       return false;
     }
 
     AuthTokenService.Claims claims;
     try {
-      claims = tokenService.verify(authorization.substring("Bearer ".length()));
+      claims = tokenService.verify(token);
     } catch (AuthTokenService.InvalidTokenException e) {
       ctx.status(401).json(Map.of("error", "Invalid or expired access token"));
       return false;
     }
-    AccountAccess account =
-        jdbi.withHandle(
-            handle ->
-                handle
-                    .createQuery("SELECT perfil, ativo FROM usuarios WHERE id = :id")
-                    .bind("id", claims.userId())
-                    .map(
-                        (rs, statementContext) ->
-                            new AccountAccess(rs.getString("perfil"), rs.getBoolean("ativo")))
-                    .findOne()
-                    .orElse(null));
-    if (account == null || !account.active()) {
-      ctx.status(401).json(Map.of("error", "Account is inactive"));
-      return false;
-    }
-    if (!UserProfile.fromDbValue(account.profile()).equals(claims.profile())) {
-      ctx.status(401).json(Map.of("error", "Access token is no longer valid"));
+
+    if (!validateAccountStatus(ctx, claims)) {
       return false;
     }
 
-    UserProfile requiredProfile = requiredProfile(ctx);
-    if (requiredProfile == null || claims.profile() != requiredProfile) {
-      ctx.status(403).json(Map.of("error", "Insufficient permissions"));
+    if (!validateRoleAndResourcePermissions(ctx, claims)) {
       return false;
     }
-    if (!authorizedResource(ctx, claims.userId())) {
-      ctx.status(403).json(Map.of("error", "Resource is outside your account"));
-      return false;
-    }
+
     ctx.attribute(CLAIMS_ATTRIBUTE, claims);
     return true;
+  }
+
+  private boolean isPublicRoute(Context ctx) {
+    String path = ctx.path();
+    return !path.startsWith("/api/")
+        || PUBLIC_API_PATHS.contains(path)
+        || isAuthenticationPath(path, ctx.method().name());
   }
 
   private boolean isAuthenticationPath(String path, String method) {
@@ -79,171 +66,54 @@ public final class AuthorizationMiddleware {
         && Set.of("/api/auth/customers", "/api/auth/washers", "/api/auth/managers").contains(path);
   }
 
-  private UserProfile requiredProfile(Context ctx) {
-    String path = ctx.path();
-    String method = ctx.method().name();
-
-    if (method.equals("POST") && path.equals("/api/vehicles")
-        || method.equals("POST") && path.equals("/api/service-orders")
-        || method.equals("GET") && path.matches("/api/customers/[^/]+/(vehicles|service-orders)")
-        || method.equals("GET") && path.matches("/api/service-orders/[^/]+")) {
-      return UserProfile.CUSTOMER;
+  private String extractToken(Context ctx) {
+    String authorization = ctx.header("Authorization");
+    if (authorization == null || !authorization.startsWith("Bearer ")) {
+      ctx.status(401).json(Map.of("error", "Authentication required"));
+      return null;
     }
-    if (method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/(start|complete)")) {
-      return UserProfile.WASHER;
-    }
-    if (method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/(pause|resume)")) {
-      return UserProfile.WASHER;
-    }
-    if (method.equals("GET") && path.equals("/api/operations/queue")) {
-      return UserProfile.WASHER;
-    }
-    if (method.equals("GET") && path.equals("/api/operations/my-orders")) {
-      return UserProfile.WASHER;
-    }
-    if (method.equals("GET") && path.equals("/api/operations/report")) {
-      return UserProfile.MANAGER;
-    }
-    if (path.equals("/api/users") && Set.of("GET", "POST").contains(method)
-        || method.equals("PATCH") && path.matches("/api/users/[^/]+/(profile|active)")) {
-      return UserProfile.MANAGER;
-    }
-    if (method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/(check-in|finalize)")
-        || method.equals("GET") && path.equals("/api/operations/yard")) {
-      return UserProfile.MANAGER;
-    }
-    return null;
+    return authorization.substring("Bearer ".length());
   }
 
-  private boolean authorizedResource(Context ctx, UUID userId) {
-    String path = ctx.path();
-    String method = ctx.method().name();
+  private boolean validateAccountStatus(Context ctx, AuthTokenService.Claims claims) {
+    Optional<AccountSecurityGateway.AccountAccess> account =
+        securityGateway.findAccessById(claims.userId());
 
-    if (isCustomerResourcePath(path)) {
-      return pathCustomerId(path).equals(userId.toString());
+    if (account.isEmpty() || !account.get().active()) {
+      ctx.status(401).json(Map.of("error", "Account is inactive"));
+      return false;
     }
-    if (isCreateVehicle(method, path)) {
-      return bodyValue(ctx, "customerId").equals(userId.toString());
-    }
-    if (isCreateServiceOrder(method, path)) {
-      return vehicleBelongsToCustomer(ctx, userId);
-    }
-    if (isStartWash(method, path)) {
-      return bodyValue(ctx, "washerId").equals(userId.toString());
-    }
-    if (isWasherAction(method, path)) {
-      return hasAssignedServiceOrder(path, userId);
-    }
-    if (isUpdateUserProfile(method, path)) {
-      return bodyValue(ctx, "managerId").equals(userId.toString());
-    }
-    if (isGetServiceOrder(method, path)) {
-      return serviceOrderBelongsToCustomer(path, userId);
+
+    if (!account.get().profile().equals(claims.profile())) {
+      ctx.status(401).json(Map.of("error", "Access token is no longer valid"));
+      return false;
     }
     return true;
   }
 
-  private boolean isCustomerResourcePath(String path) {
-    return path.matches("/api/customers/[^/]+/(vehicles|service-orders)");
-  }
-
-  private String pathCustomerId(String path) {
-    return path.split("/")[3];
-  }
-
-  private boolean isCreateVehicle(String method, String path) {
-    return method.equals("POST") && path.equals("/api/vehicles");
-  }
-
-  private boolean isCreateServiceOrder(String method, String path) {
-    return method.equals("POST") && path.equals("/api/service-orders");
-  }
-
-  private boolean vehicleBelongsToCustomer(Context ctx, UUID userId) {
-    String vehicleId = bodyValue(ctx, "vehicleId");
-    try {
-      return jdbi.withHandle(
-          handle ->
-              handle
-                      .createQuery(
-                          "SELECT COUNT(*) FROM veiculos WHERE id = :vehicleId AND cliente_id = :customerId")
-                      .bind("vehicleId", UUID.fromString(vehicleId))
-                      .bind("customerId", userId)
-                      .mapTo(Integer.class)
-                      .one()
-                  == 1);
-    } catch (IllegalArgumentException e) {
+  private boolean validateRoleAndResourcePermissions(Context ctx, AuthTokenService.Claims claims) {
+    UserProfile requiredProfile =
+        RoutePermissionMatcher.requiredProfile(ctx.method().name(), ctx.path());
+    if (requiredProfile == null || claims.profile() != requiredProfile) {
+      ctx.status(403).json(Map.of("error", "Insufficient permissions"));
       return false;
     }
-  }
 
-  private boolean isStartWash(String method, String path) {
-    return method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/start");
-  }
-
-  private boolean isWasherAction(String method, String path) {
-    return method.equals("PATCH")
-        && (path.matches("/api/service-orders/[^/]+/complete")
-            || path.matches("/api/service-orders/[^/]+/(pause|resume)"));
-  }
-
-  private boolean isUpdateUserProfile(String method, String path) {
-    return method.equals("PATCH") && path.matches("/api/users/[^/]+/profile");
-  }
-
-  private boolean isGetServiceOrder(String method, String path) {
-    return method.equals("GET") && path.matches("/api/service-orders/[^/]+");
-  }
-
-  private boolean serviceOrderBelongsToCustomer(String path, UUID userId) {
-    try {
-      UUID orderId = UUID.fromString(path.substring(path.lastIndexOf('/') + 1));
-      return jdbi.withHandle(
-          handle ->
-              handle
-                      .createQuery(
-                          """
-                      SELECT COUNT(*) FROM atendimentos a
-                      JOIN veiculos v ON v.id = a.veiculo_id
-                      WHERE a.id = :orderId AND v.cliente_id = :customerId
-                      """)
-                      .bind("orderId", orderId)
-                      .bind("customerId", userId)
-                      .mapTo(Integer.class)
-                      .one()
-                  == 1);
-    } catch (IllegalArgumentException e) {
+    Map<String, Object> body = parseBody(ctx);
+    if (!ResourceAccessEvaluator.isAuthorized(
+        ctx.method().name(), ctx.path(), body, claims.userId(), claims.profile(), jdbi)) {
+      ctx.status(403).json(Map.of("error", "Resource is outside your account"));
       return false;
     }
-  }
-
-  private boolean hasAssignedServiceOrder(String path, UUID userId) {
-    try {
-      UUID orderId = UUID.fromString(path.split("/")[3]);
-      return jdbi.withHandle(
-          handle ->
-              handle
-                      .createQuery(
-                          "SELECT COUNT(*) FROM atendimentos WHERE id = :orderId AND lavador_id = :washerId")
-                      .bind("orderId", orderId)
-                      .bind("washerId", userId)
-                      .mapTo(Integer.class)
-                      .one()
-                  == 1);
-    } catch (IllegalArgumentException e) {
-      return false;
-    }
+    return true;
   }
 
   @SuppressWarnings("unchecked")
-  private String bodyValue(Context ctx, String key) {
+  private Map<String, Object> parseBody(Context ctx) {
     try {
-      Object value = ctx.bodyAsClass(Map.class).get(key);
-      return value == null ? "" : value.toString();
+      return ctx.bodyAsClass(Map.class);
     } catch (Exception e) {
-      return "";
+      return Map.of();
     }
   }
-
-  private record AccountAccess(String profile, boolean active) {}
 }
