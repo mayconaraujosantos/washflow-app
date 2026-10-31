@@ -119,63 +119,102 @@ public final class AuthorizationMiddleware {
     String path = ctx.path();
     String method = ctx.method().name();
 
-    if (path.matches("/api/customers/[^/]+/(vehicles|service-orders)")) {
-      return path.split("/")[3].equals(userId.toString());
+    if (isCustomerResourcePath(path)) {
+      return pathCustomerId(path).equals(userId.toString());
     }
-    if (method.equals("POST") && path.equals("/api/vehicles")) {
+    if (isCreateVehicle(method, path)) {
       return bodyValue(ctx, "customerId").equals(userId.toString());
     }
-    if (method.equals("POST") && path.equals("/api/service-orders")) {
-      String vehicleId = bodyValue(ctx, "vehicleId");
-      try {
-        return jdbi.withHandle(
-            handle ->
-                handle
-                        .createQuery(
-                            "SELECT COUNT(*) FROM veiculos WHERE id = :vehicleId AND cliente_id = :customerId")
-                        .bind("vehicleId", UUID.fromString(vehicleId))
-                        .bind("customerId", userId)
-                        .mapTo(Integer.class)
-                        .one()
-                    == 1);
-      } catch (IllegalArgumentException e) {
-        return false;
-      }
+    if (isCreateServiceOrder(method, path)) {
+      return vehicleBelongsToCustomer(ctx, userId);
     }
-    if (method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/start")) {
+    if (isStartWash(method, path)) {
       return bodyValue(ctx, "washerId").equals(userId.toString());
     }
-    if (method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/complete")) {
+    if (isWasherAction(method, path)) {
       return hasAssignedServiceOrder(path, userId);
     }
-    if (method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/(pause|resume)")) {
-      return hasAssignedServiceOrder(path, userId);
-    }
-    if (method.equals("PATCH") && path.matches("/api/users/[^/]+/profile")) {
+    if (isUpdateUserProfile(method, path)) {
       return bodyValue(ctx, "managerId").equals(userId.toString());
     }
-    if (method.equals("GET") && path.matches("/api/service-orders/[^/]+")) {
-      try {
-        UUID orderId = UUID.fromString(path.substring(path.lastIndexOf('/') + 1));
-        return jdbi.withHandle(
-            handle ->
-                handle
-                        .createQuery(
-                            """
-                        SELECT COUNT(*) FROM atendimentos a
-                        JOIN veiculos v ON v.id = a.veiculo_id
-                        WHERE a.id = :orderId AND v.cliente_id = :customerId
-                        """)
-                        .bind("orderId", orderId)
-                        .bind("customerId", userId)
-                        .mapTo(Integer.class)
-                        .one()
-                    == 1);
-      } catch (IllegalArgumentException e) {
-        return false;
-      }
+    if (isGetServiceOrder(method, path)) {
+      return serviceOrderBelongsToCustomer(path, userId);
     }
     return true;
+  }
+
+  private boolean isCustomerResourcePath(String path) {
+    return path.matches("/api/customers/[^/]+/(vehicles|service-orders)");
+  }
+
+  private String pathCustomerId(String path) {
+    return path.split("/")[3];
+  }
+
+  private boolean isCreateVehicle(String method, String path) {
+    return method.equals("POST") && path.equals("/api/vehicles");
+  }
+
+  private boolean isCreateServiceOrder(String method, String path) {
+    return method.equals("POST") && path.equals("/api/service-orders");
+  }
+
+  private boolean vehicleBelongsToCustomer(Context ctx, UUID userId) {
+    String vehicleId = bodyValue(ctx, "vehicleId");
+    try {
+      return jdbi.withHandle(
+          handle ->
+              handle
+                      .createQuery(
+                          "SELECT COUNT(*) FROM veiculos WHERE id = :vehicleId AND cliente_id = :customerId")
+                      .bind("vehicleId", UUID.fromString(vehicleId))
+                      .bind("customerId", userId)
+                      .mapTo(Integer.class)
+                      .one()
+                  == 1);
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+  }
+
+  private boolean isStartWash(String method, String path) {
+    return method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/start");
+  }
+
+  private boolean isWasherAction(String method, String path) {
+    return method.equals("PATCH")
+        && (path.matches("/api/service-orders/[^/]+/complete")
+            || path.matches("/api/service-orders/[^/]+/(pause|resume)"));
+  }
+
+  private boolean isUpdateUserProfile(String method, String path) {
+    return method.equals("PATCH") && path.matches("/api/users/[^/]+/profile");
+  }
+
+  private boolean isGetServiceOrder(String method, String path) {
+    return method.equals("GET") && path.matches("/api/service-orders/[^/]+");
+  }
+
+  private boolean serviceOrderBelongsToCustomer(String path, UUID userId) {
+    try {
+      UUID orderId = UUID.fromString(path.substring(path.lastIndexOf('/') + 1));
+      return jdbi.withHandle(
+          handle ->
+              handle
+                      .createQuery(
+                          """
+                      SELECT COUNT(*) FROM atendimentos a
+                      JOIN veiculos v ON v.id = a.veiculo_id
+                      WHERE a.id = :orderId AND v.cliente_id = :customerId
+                      """)
+                      .bind("orderId", orderId)
+                      .bind("customerId", userId)
+                      .mapTo(Integer.class)
+                      .one()
+                  == 1);
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
   }
 
   private boolean hasAssignedServiceOrder(String path, UUID userId) {
