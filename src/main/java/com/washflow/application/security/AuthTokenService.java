@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public final class AuthTokenService {
 
-  private static final long TOKEN_LIFETIME_SECONDS = 8 * 60 * 60;
+  private static final long TOKEN_LIFETIME_SECONDS = 8L * 60 * 60;
   private final Algorithm algorithm;
 
   public AuthTokenService(String secret) {
