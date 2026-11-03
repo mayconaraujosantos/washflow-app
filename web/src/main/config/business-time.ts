@@ -73,3 +73,44 @@ export function toManausInstant(localDateTime: string): string {
   }
   return result.toISOString()
 }
+
+const manausDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: BUSINESS_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+const manausHourFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: BUSINESS_TIME_ZONE,
+  hour: 'numeric',
+  hourCycle: 'h23',
+})
+
+/** 'YYYY-MM-DD' of the given instant in Manaus (the shop's civil date). */
+export function manausDate(instant: Date | string = new Date()): string {
+  return manausDateFormatter.format(new Date(instant))
+}
+
+/** Hour 0-23 of the given instant in Manaus. */
+export function manausHour(instant: Date | string = new Date()): number {
+  return Number(manausHourFormatter.format(new Date(instant)))
+}
+
+/** 'YYYY-MM-DDTHH:mm' in Manaus, the value format of <input type="datetime-local">. */
+export function toManausLocalInput(instant: Date | string): string {
+  const parts = Object.fromEntries(
+    manausDateTimeFormatter
+      .formatToParts(new Date(instant))
+      .map(({ type, value }) => [type, value]),
+  )
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`
+}
+
+/** Adds whole days to a 'YYYY-MM-DD' civil date. */
+export function addDays(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1, day + days))
+    .toISOString()
+    .slice(0, 10)
+}

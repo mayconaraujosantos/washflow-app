@@ -53,7 +53,9 @@ export function OperationsReportSection({ operations }: Props) {
       setReport(await operations.loadReport(reportFrom, reportTo))
     } catch (cause) {
       setReportError(
-        cause instanceof Error ? cause.message : 'Falha ao carregar o relatório',
+        cause instanceof Error
+          ? cause.message
+          : 'Falha ao carregar o relatório',
       )
     } finally {
       setReportLoading(false)
@@ -212,7 +214,9 @@ export function OperationsReportSection({ operations }: Props) {
                   <tbody>
                     {report.paymentMethods.map((payment) => (
                       <tr key={payment.method}>
-                        <td>{PAYMENT_LABELS[payment.method] ?? payment.method}</td>
+                        <td>
+                          {PAYMENT_LABELS[payment.method] ?? payment.method}
+                        </td>
                         <td>{payment.orders}</td>
                         <td>
                           {payment.amount.toLocaleString('pt-BR', {

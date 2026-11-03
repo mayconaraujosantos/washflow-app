@@ -20,13 +20,13 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/" element={makeHomePage()} />
         <Route path="/qrcodes/cliente" element={makeCustomerQrCodePage()} />
         <Route path="/login/cliente" element={makeCustomerLoginPage()} />
-        <Route path="/cliente" element={makeCustomerDashboardPage()} />
+        <Route path="/cliente/*" element={makeCustomerDashboardPage()} />
         <Route path="/qrcodes/lavador" element={makeWasherQrCodePage()} />
         <Route path="/login/lavador" element={makeWasherLoginPage()} />
         <Route path="/qrcodes/gerente" element={makeManagerQrCodePage()} />
         <Route path="/login/gerente" element={makeManagerLoginPage()} />
-        <Route path="/lavador" element={makeWasherDashboardPage()} />
-        <Route path="/gerente" element={makeManagerDashboardPage()} />
+        <Route path="/lavador/*" element={makeWasherDashboardPage()} />
+        <Route path="/gerente/*" element={makeManagerDashboardPage()} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

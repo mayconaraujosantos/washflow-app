@@ -16,6 +16,68 @@ describe('RemoteOperations', () => {
     operations = new RemoteOperations('https://washflow.test', httpClient)
   })
 
+  it('registers a vehicle entry by plate', async () => {
+    await operations.registerEntry({ plate: 'ABC1D23', servicePriceId: 2 })
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/operations/entries',
+      method: 'post',
+      body: { plate: 'ABC1D23', servicePriceId: 2 },
+    })
+  })
+
+  it('searches vehicles with an encoded query', async () => {
+    await operations.searchVehicles('abc 1')
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/operations/vehicles?query=abc+1',
+      method: 'get',
+      body: undefined,
+    })
+  })
+
+  it('loads the agenda for a date range', async () => {
+    await operations.loadAgenda('2026-11-01', '2026-11-30')
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/operations/agenda?from=2026-11-01&to=2026-11-30',
+      method: 'get',
+      body: undefined,
+    })
+  })
+
+  it('creates and lists sales', async () => {
+    const sale = {
+      type: 'QUICK_SALE' as const,
+      items: [{ servicePriceId: 1, quantity: 2 }],
+      payments: [{ method: 'PIX' as const, amount: 70 }],
+    }
+    await operations.createSale(sale)
+    await operations.listSales('2026-11-03', '2026-11-03', 'BUDGET')
+
+    expect(request).toHaveBeenNthCalledWith(1, {
+      url: 'https://washflow.test/api/sales',
+      method: 'post',
+      body: sale,
+    })
+    expect(request).toHaveBeenNthCalledWith(2, {
+      url: 'https://washflow.test/api/sales?from=2026-11-03&to=2026-11-03&type=BUDGET',
+      method: 'get',
+      body: undefined,
+    })
+  })
+
+  it('surfaces the API error message', async () => {
+    request.mockResolvedValueOnce({
+      statusCode: 400,
+      body: { error: 'Placa inválida: X' },
+    })
+
+    await expect(
+      operations.registerEntry({ plate: 'X', servicePriceId: 1 }),
+    ).rejects.toThrow('Placa inválida: X')
+  })
+
   it('requests the manager report for the selected dates', async () => {
     await operations.loadReport('2026-10-01', '2026-10-26')
 
