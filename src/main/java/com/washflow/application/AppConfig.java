@@ -1,6 +1,7 @@
 package com.washflow.application;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvEntry;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
@@ -27,9 +28,7 @@ public record AppConfig(
     Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
     Map<String, String> dotenvValues =
         dotenv.entries().stream()
-            .collect(
-                java.util.stream.Collectors.toMap(
-                    entry -> entry.getKey(), entry -> entry.getValue()));
+            .collect(java.util.stream.Collectors.toMap(DotenvEntry::getKey, DotenvEntry::getValue));
     return load(System.getenv(), dotenvValues);
   }
 
