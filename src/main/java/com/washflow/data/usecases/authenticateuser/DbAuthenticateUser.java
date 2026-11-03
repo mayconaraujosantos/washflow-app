@@ -83,10 +83,13 @@ public class DbAuthenticateUser implements AuthenticateUser {
       throw new WasherSelfRegistrationNotAllowedError(params.phone());
     }
 
+    if (params.name() == null || params.name().isBlank()) {
+      throw new IllegalArgumentException("Informe seu nome para criar a conta");
+    }
     return createUserRepository.create(
         new User(
             UUID.randomUUID(),
-            params.name(),
+            params.name().trim(),
             params.phone(),
             params.expectedProfile(),
             Instant.now()),

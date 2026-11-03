@@ -2,6 +2,10 @@ import { SubmitEvent, useState } from 'react'
 import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 import type { UserModel } from '@/domain/models/user-model'
 import { AuthLayout } from '@/presentation/components/ui/app-chrome'
+import {
+  PasswordField,
+  PhoneField,
+} from '@/presentation/components/ui/auth-fields'
 import { Notice } from '@/presentation/components/ui/blocks'
 import { errorMessage } from '@/presentation/helpers/format'
 
@@ -67,37 +71,20 @@ export function StaffLogin({
       title={title}
       subtitle={subtitle}
       footer={
-        <a href="/" className="faint">
+        <a href="/" className="auth-back">
           Voltar para o início
         </a>
       }
     >
       <form className="form" onSubmit={handleSubmit}>
-        <label className="field">
-          <span>Telefone</span>
-          <input
-            type="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
-            placeholder="(92) 99999-0000"
-            autoComplete="tel"
-            required
-          />
-        </label>
-        <label className="field">
-          <span>{passwordLabel}</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            minLength={8}
-            required
-          />
-        </label>
+        <PhoneField value={phone} onChange={setPhone} />
+        <PasswordField
+          label={passwordLabel}
+          value={password}
+          onChange={setPassword}
+        />
         <Notice tone="error">{error}</Notice>
-        <button type="submit" className="btn btn-accent" disabled={loading}>
+        <button type="submit" className="btn btn-dark" disabled={loading}>
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
       </form>

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { formatPhone, greeting, normalizePlate, parseMoney } from './format'
+import {
+  formatPhone,
+  greeting,
+  maskPhoneInput,
+  normalizePlate,
+  parseMoney,
+  phoneDigitsFromInput,
+} from './format'
 
 describe('format helpers', () => {
   it.each([
@@ -31,5 +38,22 @@ describe('format helpers', () => {
     // 15:00 UTC is 11:00 in Manaus.
     expect(greeting(new Date('2026-11-03T15:00:00Z'))).toBe('Bom dia')
     expect(greeting(new Date('2026-11-03T23:00:00Z'))).toBe('Boa noite')
+  })
+
+  it('masks the phone progressively while typing', () => {
+    expect(maskPhoneInput('9')).toBe('(9')
+    expect(maskPhoneInput('929912')).toBe('(92) 9912')
+    expect(maskPhoneInput('9233334444')).toBe('(92) 3333-4444')
+    expect(maskPhoneInput('92991234567')).toBe('(92) 99123-4567')
+  })
+
+  it('drops a digit when only a mask character was deleted', () => {
+    // "(92) 3333-4444" with the "-" removed by backspace.
+    expect(phoneDigitsFromInput('(92) 33334444', '9233334444')).toBe(
+      '923333444',
+    )
+    expect(phoneDigitsFromInput('(92) 3333-44445', '9233334444')).toBe(
+      '92333344445',
+    )
   })
 })

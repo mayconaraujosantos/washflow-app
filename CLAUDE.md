@@ -104,9 +104,9 @@ Para garantir que a lógica funcione igual no banco físico ou em listas Java/Ko
 
 ## 4. Atores, autorização e operações
 Somente clientes podem se cadastrar publicamente. O login de lavador e gerente exige telefone e senha de uma conta provisionada ou promovida por gerente; informar um telefone novo nesses endpoints não concede perfil operacional.
-O campo nome é exigido no cadastro de cliente; para entrar como lavador ou gerente, bastam telefone e senha.
+O campo nome é exigido no cadastro de cliente; para entrar (cliente, lavador ou gerente), bastam telefone e senha. A página inicial reúne "Criar uma conta" (somente cliente) e "Entrar" com escolha do perfil; o telefone é enviado só com dígitos.
 
-O login exige telefone, nome e senha (mínimo de 8 caracteres). A senha é armazenada com BCrypt. Após autenticar, a API emite um token HMAC assinado, com expiração de 8 horas e perfil fixado pelo endpoint de login. Rotas operacionais exigem `Authorization: Bearer <token>` e verificam o perfil atual do usuário.
+O login exige telefone e senha (mínimo de 8 caracteres); o nome só é exigido para criar a conta de cliente. A senha é armazenada com BCrypt. Após autenticar, a API emite um token HMAC assinado, com expiração de 8 horas e perfil fixado pelo endpoint de login. Rotas operacionais exigem `Authorization: Bearer <token>` e verificam o perfil atual do usuário.
 
 | Perfil | Operações autorizadas |
 |---|---|
