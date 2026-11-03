@@ -1514,6 +1514,134 @@ select option {
   color: var(--text);
 }
 
+.pin-input {
+  font-size: 1.4rem;
+  letter-spacing: 0.5em;
+  text-align: center;
+}
+
+.pin-input::placeholder {
+  font-size: 1rem;
+  letter-spacing: normal;
+}
+
+.scanner-video {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: #000;
+}
+
+.badge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  text-align: center;
+}
+
+.badge-pin {
+  font-family: 'Roboto Mono', ui-monospace, Consolas, monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+}
+
+.ticket-card {
+  width: min(460px, 100%);
+}
+
+.ticket-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.ticket-steps li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticket-step-dot {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-3);
+}
+
+.ticket-steps .is-done {
+  color: var(--success);
+}
+
+.ticket-steps .is-done .ticket-step-dot {
+  background: var(--success-bg);
+}
+
+.ticket-steps .is-current {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ticket-steps .is-current .ticket-step-dot {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(231, 246, 251, 0.75);
+  font-size: 0.82rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(231, 246, 251, 0.3);
+}
+
+.google-button {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+/* Printing a badge or ticket prints only that card. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .printable,
+  .printable * {
+    visibility: visible;
+  }
+
+  .printable {
+    position: fixed;
+    inset: 0 auto auto 0;
+    background: #fff;
+    color: #000;
+  }
+}
+
 /* --------------------------------------------------- role cards (home) */
 
 /*

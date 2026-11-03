@@ -11,7 +11,25 @@ public final class AuthorizationMiddleware {
 
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
   private static final Set<String> PUBLIC_API_PATHS =
-      Set.of("/api/health", "/api/hello", "/api/services", "/api/setup", "/api/establishment");
+      Set.of(
+          "/api/health",
+          "/api/hello",
+          "/api/services",
+          "/api/setup",
+          "/api/establishment",
+          "/api/auth/options");
+  // Login entry points (POST): each one fixes the profile it can sign into.
+  private static final Set<String> AUTHENTICATION_PATHS =
+      Set.of(
+          "/api/auth/customers",
+          "/api/auth/washers",
+          "/api/auth/managers",
+          "/api/setup",
+          "/api/auth/washers/pin",
+          "/api/auth/washers/badge",
+          "/api/auth/customers/otp",
+          "/api/auth/customers/otp/verify",
+          "/api/auth/customers/google");
   public static final String ERROR = "error";
 
   private final AuthTokenService tokenService;
@@ -60,6 +78,8 @@ public final class AuthorizationMiddleware {
     // Public API paths are read-only: POST /api/services (catalog) must still be authorized.
     return !path.startsWith("/api/")
         || (PUBLIC_API_PATHS.contains(path) && "GET".equals(ctx.method().name()))
+        // Ticket links are unguessable tokens meant to be opened without logging in.
+        || ("GET".equals(ctx.method().name()) && path.matches("/api/tickets/[^/]+"))
         || isAuthenticationPath(path, ctx.method().name());
   }
 
@@ -67,8 +87,7 @@ public final class AuthorizationMiddleware {
     return method.equals("POST")
         // POST /api/setup is open only while the establishment is unconfigured (and, in
         // production, with the server's SETUP_CODE) - DbSetupEstablishment enforces both.
-        && Set.of("/api/auth/customers", "/api/auth/washers", "/api/auth/managers", "/api/setup")
-            .contains(path);
+        && AUTHENTICATION_PATHS.contains(path);
   }
 
   private String extractToken(Context ctx) {

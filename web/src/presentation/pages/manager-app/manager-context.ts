@@ -3,6 +3,7 @@ import type { ServiceOrderModel } from '@/domain/models/service-order-model'
 import type { ServicePriceModel } from '@/domain/models/service-price-model'
 import type { UserModel } from '@/domain/models/user-model'
 import type { EstablishmentModel } from '@/domain/models/establishment-model'
+import type { Access } from '@/domain/usecases/access'
 import type { Establishment } from '@/domain/usecases/establishment'
 import type { Features } from '@/domain/usecases/features'
 import type { Operations, PaymentMethod } from '@/domain/usecases/operations'
@@ -23,6 +24,7 @@ export type ManagerData = {
   establishment: Establishment
   settings: EstablishmentModel | null
   reloadSettings: () => Promise<void>
+  access: Access
 }
 
 export const MANAGER_NAV: NavItem[] = [

@@ -33,7 +33,7 @@ Instalação de um único lava-jato (linha única, `id = 1`), criada pelo assist
 * `max_veiculos_hora`: INT (capacidade do pátio por hora)
 * `configurado_em`: TIMESTAMP (nulo até concluir o assistente ou salvar os parâmetros)
 
-`usuarios.email` (único, minúsculo) é o login da gestão.
+`usuarios.email` (único, minúsculo) é o login da gestão. `usuarios.pin_hash` (BCrypt), `cracha_hash` (HMAC do token do QR), `pin_tentativas` / `pin_bloqueado_ate` guardam o crachá do lavador; `google_sub` liga a conta Google do cliente. `atendimentos.ticket_token` é o link público do ticket e `codigos_acesso` guarda os códigos de WhatsApp (só o hash).
 
 ### 2.2 Tabela: `veiculos`
 Vincula os carros aos seus respectivos donos (clientes).
@@ -155,8 +155,14 @@ O cliente mantém o painel aberto com atualização automática a cada 3 segundo
 * `GET /api/establishment` (público) e `PUT /api/establishment` (gerente): nome, horário, domingos e capacidade do pátio. Salvar os parâmetros também encerra o assistente.
 * O gerente entra com e-mail e senha (`POST /api/auth/managers` com `email` ou, para contas antigas, `phone`). `PATCH /api/users/{id}/email` define o e-mail de acesso.
 
+### Acesso por perfil
+* **Gerente:** e-mail + senha (contas antigas ainda entram pelo telefone).
+* **Lavador:** crachá emitido pelo gerente (`POST /api/users/{id}/badge`, mostrado uma única vez): telefone + PIN de 6 dígitos (`POST /api/auth/washers/pin`; 5 erros bloqueiam por 15 minutos) ou leitura do QR do crachá (`POST /api/auth/washers/badge`; o QR abre `/login/lavador?cracha=...`). Gerar de novo invalida o crachá anterior. A senha do lavador passou a ser opcional.
+* **Cliente presencial:** o gerente gera o ticket do atendimento (`POST /api/service-orders/{id}/ticket`), entregue por QR, link ou WhatsApp; `GET /api/tickets/{token}` e a página `/ticket/:token` mostram veículo, serviço e andamento sem login e sem dados do cliente.
+* **Cliente com conta:** telefone + senha, código de 6 dígitos por WhatsApp (`POST /api/auth/customers/otp` e `/otp/verify`; vale 10 minutos, 5 tentativas, reenvio após 60 s; o link `/entrar/whatsapp?telefone=...&codigo=...` funciona como magic link) ou Google (`POST /api/auth/customers/google`). Telefone/conta Google novos viram conta de cliente; contas da equipe nunca entram por esses caminhos. `GET /api/auth/options` informa o que está habilitado (`OTP_CHANNEL`, `GOOGLE_CLIENT_ID`).
+
 ### Bootstrap e limites de autenticação
 * Em produção, configure `AUTH_TOKEN_SECRET` (mínimo 32 caracteres).
 * O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido. Em instalações novas, prefira o assistente `/configurar` (com `SETUP_CODE` em produção).
 * Contas preexistentes sem `senha_hash` não podem entrar em produção até que sua senha seja configurada por um processo administrativo seguro. Apenas ambiente de desenvolvimento permite reivindicar uma conta sem hash no primeiro login.
-* A senha comprova acesso à conta após o cadastro, mas o telefone não é verificado por SMS/WhatsApp (OTP). Para comprovar posse do número, é necessária integração com provedor de OTP.
+* A senha comprova acesso à conta após o cadastro, mas o telefone só é verificado no login por código de WhatsApp. O envio real exige integrar um provedor de WhatsApp em `AccessFactory.otpSender` (hoje só existe o canal `log`, de desenvolvimento).

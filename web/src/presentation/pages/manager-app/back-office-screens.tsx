@@ -7,6 +7,7 @@ import { Notice } from '@/presentation/components/ui/blocks'
 import { errorMessage, formatMoney } from '@/presentation/helpers/format'
 import { OperationsReportSection } from '@/presentation/pages/operations-dashboard/operations-report-section'
 import { TeamManagementSection } from '@/presentation/pages/operations-dashboard/team-management-section'
+import { BadgeSheet } from './access-sheets'
 import { useManager } from './manager-context'
 
 type DaySummary = {
@@ -104,6 +105,7 @@ export function TeamScreen() {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [busyUserId, setBusyUserId] = useState<string | null>(null)
+  const [badgeFor, setBadgeFor] = useState<UserModel | null>(null)
 
   const reload = useCallback(() => {
     operations
@@ -139,7 +141,9 @@ export function TeamScreen() {
         setNotice={setNotice}
         setError={setError}
         onChanged={reload}
+        onIssueBadge={setBadgeFor}
       />
+      <BadgeSheet washer={badgeFor} onClose={() => setBadgeFor(null)} />
     </ScreenLayout>
   )
 }

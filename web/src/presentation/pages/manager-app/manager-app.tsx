@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import type { ServiceOrderModel } from '@/domain/models/service-order-model'
 import type { ServicePriceModel } from '@/domain/models/service-price-model'
 import type { EstablishmentModel } from '@/domain/models/establishment-model'
+import type { Access } from '@/domain/usecases/access'
 import type { Establishment } from '@/domain/usecases/establishment'
 import type { Features } from '@/domain/usecases/features'
 import type { Operations } from '@/domain/usecases/operations'
@@ -29,12 +30,18 @@ type Props = Readonly<{
   operations: Operations
   features: Features
   establishment: Establishment
+  access: Access
 }>
 
 const REFRESH_MS = 3000
 const FLASH_MS = 4500
 
-export function ManagerApp({ operations, features, establishment }: Props) {
+export function ManagerApp({
+  operations,
+  features,
+  establishment,
+  access,
+}: Props) {
   const navigate = useNavigate()
   const [session] = useState(() => loadManagerSession())
   const user = session?.user ?? null
@@ -119,6 +126,7 @@ export function ManagerApp({ operations, features, establishment }: Props) {
         establishment,
         settings,
         reloadSettings,
+        access,
       },
     [
       user,
@@ -133,6 +141,7 @@ export function ManagerApp({ operations, features, establishment }: Props) {
       establishment,
       settings,
       reloadSettings,
+      access,
     ],
   )
 

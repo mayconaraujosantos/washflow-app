@@ -1,5 +1,8 @@
-import { SubmitEvent, useState } from 'react'
+import { SubmitEvent, useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import type { AuthOptionsModel } from '@/domain/models/access-model'
+import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
+import type { Access } from '@/domain/usecases/access'
 import type { AuthenticateCustomer } from '@/domain/usecases/authenticate-customer'
 import { saveCustomerSession } from '@/main/session/customer-session'
 import { UiIcon } from '@/presentation/components/ui-icon'
@@ -12,12 +15,15 @@ import {
 import { Notice } from '@/presentation/components/ui/blocks'
 import { usePwaInstall } from '@/presentation/components/ui/use-pwa-install'
 import { errorMessage } from '@/presentation/helpers/format'
+import { GoogleButton, WhatsAppLogin } from './passwordless'
 
-type Mode = 'signup' | 'signin' | 'forgot'
+type Mode = 'signup' | 'signin' | 'forgot' | 'whatsapp'
 
 type Props = Readonly<{
   authenticateCustomer: AuthenticateCustomer
-  initialMode?: Exclude<Mode, 'forgot'>
+  // WhatsApp code / Google sign-in, shown when the API enables them.
+  access?: Access
+  initialMode?: 'signup' | 'signin'
 }>
 
 /**
@@ -28,6 +34,7 @@ type Props = Readonly<{
  */
 export function AccessScreen({
   authenticateCustomer,
+  access,
   initialMode = 'signup',
 }: Props) {
   const navigate = useNavigate()
@@ -38,6 +45,31 @@ export function AccessScreen({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [welcome, setWelcome] = useState(false)
+  const [options, setOptions] = useState<AuthOptionsModel | null>(null)
+
+  useEffect(() => {
+    if (!access) return
+    let active = true
+    access
+      .options()
+      .then((loaded) => {
+        if (active) setOptions(loaded)
+      })
+      .catch(() => {
+        // Without options only phone + password is offered.
+      })
+    return () => {
+      active = false
+    }
+  }, [access])
+
+  const onPasswordless = useCallback(
+    (_session: AuthenticatedSessionModel, isNew: boolean) => {
+      if (isNew) setWelcome(true)
+      else navigate('/cliente')
+    },
+    [navigate],
+  )
 
   const switchMode = (next: Mode) => {
     setMode(next)
@@ -78,7 +110,10 @@ export function AccessScreen({
     signup: 'Criar uma conta',
     signin: 'Entrar',
     forgot: 'Esqueci a senha',
+    whatsapp: 'Entrar com WhatsApp',
   }[mode]
+  const whatsappEnabled = Boolean(access && options?.whatsappCode)
+  const googleClientId = access ? options?.googleClientId : null
 
   return (
     <main className="auth-shell">
@@ -93,16 +128,31 @@ export function AccessScreen({
         {mode === 'forgot' ? (
           <>
             <p className="subtitle">
-              Ainda não há recuperação de senha pelo app, porque o telefone não
-              é verificado por SMS. Fale com o atendimento do lava-jato para
-              redefinir o seu acesso.
+              {whatsappEnabled
+                ? 'Entre com um código enviado ao seu WhatsApp, sem precisar da senha.'
+                : 'Ainda não há recuperação de senha pelo app. Fale com o atendimento do lava-jato para redefinir o seu acesso.'}
             </p>
+            {whatsappEnabled && (
+              <button
+                type="button"
+                className="btn btn-dark"
+                onClick={() => switchMode('whatsapp')}
+              >
+                Receber código no WhatsApp
+              </button>
+            )}
             <div className="auth-links">
               <button type="button" onClick={() => switchMode('signin')}>
                 Voltar para entrar
               </button>
             </div>
           </>
+        ) : mode === 'whatsapp' && access ? (
+          <WhatsAppLogin
+            access={access}
+            onSession={onPasswordless}
+            onCancel={() => switchMode('signin')}
+          />
         ) : (
           <form className="form" onSubmit={handleSubmit}>
             {mode === 'signup' && (
@@ -151,6 +201,29 @@ export function AccessScreen({
                 </button>
               )}
             </div>
+            {(whatsappEnabled || googleClientId) && access && (
+              <>
+                <p className="auth-divider">ou</p>
+                {whatsappEnabled && (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => switchMode('whatsapp')}
+                  >
+                    <UiIcon name="phone" size={18} />
+                    Entrar com WhatsApp (sem senha)
+                  </button>
+                )}
+                {googleClientId && (
+                  <GoogleButton
+                    access={access}
+                    clientId={googleClientId}
+                    onSession={onPasswordless}
+                    onError={setError}
+                  />
+                )}
+              </>
+            )}
           </form>
         )}
       </section>
