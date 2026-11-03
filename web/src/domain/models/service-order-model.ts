@@ -9,6 +9,7 @@ export type ServiceOrderDetails = {
   vehicleModel: string | null
   vehicleColor: string | null
   customerName: string | null
+  customerPhone: string | null
   serviceName: string | null
   washerName: string | null
 }
@@ -23,5 +24,7 @@ export type ServiceOrderModel = {
   createdAt: string
   updatedAt: string
   pauseReason?: 'LUNCH' | 'RESTROOM' | 'OTHER' | null
+  expectedDeliveryAt?: string | null
+  notes?: string | null
   details?: ServiceOrderDetails | null
 }

@@ -4,7 +4,9 @@ import com.washflow.data.protocols.db.CreateVehicleRepository;
 import com.washflow.data.protocols.db.LoadVehicleByIdRepository;
 import com.washflow.data.protocols.db.LoadVehicleByPlateRepository;
 import com.washflow.data.protocols.db.LoadVehiclesByCustomerIdRepository;
+import com.washflow.data.protocols.db.SearchVehiclesRepository;
 import com.washflow.domain.entities.Vehicle;
+import com.washflow.domain.entities.VehicleLookup;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -17,15 +19,35 @@ public class VehicleJdbiRepository
     implements LoadVehicleByIdRepository,
         LoadVehicleByPlateRepository,
         LoadVehiclesByCustomerIdRepository,
-        CreateVehicleRepository {
+        CreateVehicleRepository,
+        SearchVehiclesRepository {
 
   private static final String SELECT_SQL =
-      "SELECT id, cliente_id, placa, modelo, cor FROM veiculos";
+      "SELECT id, cliente_id, placa, modelo, cor, contato_nome, contato_telefone FROM veiculos";
 
   private static final String INSERT_SQL =
       """
-      INSERT INTO veiculos (id, cliente_id, placa, modelo, cor)
-      VALUES (:id, :customerId, :plate, :model, :color)
+      INSERT INTO veiculos (id, cliente_id, placa, modelo, cor, contato_nome, contato_telefone)
+      VALUES (:id, :customerId, :plate, :model, :color, :contactName, :contactPhone)
+      """;
+
+  // Registered owner first, walk-in contact as fallback - see Vehicle.contactName. Patterns are
+  // built from normalized input (DbSearchVehicles): plate is [A-Z0-9], digits are [0-9], and the
+  // free-text name has LIKE wildcards escaped below.
+  private static final String SEARCH_SQL =
+      """
+      SELECT v.id, v.placa, v.modelo, v.cor, v.cliente_id,
+             COALESCE(c.nome, v.contato_nome) AS owner_name,
+             COALESCE(c.telefone, v.contato_telefone) AS owner_phone
+      FROM veiculos v
+      LEFT JOIN usuarios c ON c.id = v.cliente_id
+      WHERE (:platePrefix <> '' AND v.placa LIKE :platePattern)
+         OR (:text <> ''
+             AND LOWER(COALESCE(c.nome, v.contato_nome, '')) LIKE :textPattern ESCAPE '!')
+         OR (:digits <> ''
+             AND COALESCE(c.telefone, v.contato_telefone, '') LIKE :digitsPattern)
+      ORDER BY v.placa
+      LIMIT :limit
       """;
 
   private final Jdbi jdbi;
@@ -78,6 +100,8 @@ public class VehicleJdbiRepository
                 .bind("plate", vehicle.plate())
                 .bind("model", vehicle.model())
                 .bind("color", vehicle.color())
+                .bind("contactName", vehicle.contactName())
+                .bind("contactPhone", vehicle.contactPhone())
                 .execute());
 
     return vehicle;
@@ -89,6 +113,39 @@ public class VehicleJdbiRepository
         (UUID) rs.getObject("cliente_id"),
         rs.getString("placa"),
         rs.getString("modelo"),
-        rs.getString("cor"));
+        rs.getString("cor"),
+        rs.getString("contato_nome"),
+        rs.getString("contato_telefone"));
+  }
+
+  @Override
+  public List<VehicleLookup> search(String platePrefix, String text, String digits, int limit) {
+    return jdbi.withHandle(
+        handle ->
+            handle
+                .createQuery(SEARCH_SQL)
+                .bind("platePrefix", platePrefix)
+                .bind("platePattern", platePrefix + "%")
+                .bind("text", text)
+                .bind("textPattern", "%" + escapeLike(text) + "%")
+                .bind("digits", digits)
+                .bind("digitsPattern", "%" + digits + "%")
+                .bind("limit", limit)
+                .map(
+                    (rs, ctx) ->
+                        new VehicleLookup(
+                            (UUID) rs.getObject("id"),
+                            rs.getString("placa"),
+                            rs.getString("modelo"),
+                            rs.getString("cor"),
+                            (UUID) rs.getObject("cliente_id"),
+                            rs.getString("owner_name"),
+                            rs.getString("owner_phone")))
+                .list());
+  }
+
+  // The name is free text, so % and _ must match literally ('!' is the ESCAPE char above).
+  private static String escapeLike(String value) {
+    return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
   }
 }
