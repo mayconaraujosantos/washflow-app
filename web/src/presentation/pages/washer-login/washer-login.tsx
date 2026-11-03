@@ -14,7 +14,12 @@ export function WasherLogin({ authenticateWasher }: Props) {
       passwordLabel="Senha (mínimo 8 caracteres)"
       panelPath="/lavador"
       panelLabel="Abrir painel do lavador"
-      authenticate={(params) => authenticateWasher.auth(params)}
+      authenticate={(credentials) =>
+        authenticateWasher.auth({
+          phone: 'phone' in credentials ? credentials.phone : '',
+          password: credentials.password,
+        })
+      }
       saveSession={saveWasherSession}
     />
   )

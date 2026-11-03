@@ -3,6 +3,7 @@ package com.washflow.data.usecases.authenticateuser;
 import com.washflow.application.AppConfig;
 import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.protocols.db.CreateUserRepository;
+import com.washflow.data.protocols.db.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.LoadUserPasswordHashRepository;
 import com.washflow.data.protocols.db.SaveUserPasswordHashRepository;
@@ -28,6 +29,7 @@ public class DbAuthenticateUser implements AuthenticateUser {
   private final SaveUserPasswordHashRepository saveUserPasswordHashRepository;
   private final PasswordHasher passwordHasher;
   private final AppConfig appConfig;
+  private final LoadUserByEmailRepository loadUserByEmailRepository;
 
   public DbAuthenticateUser(
       LoadUserByPhoneRepository loadUserByPhoneRepository,
@@ -36,6 +38,26 @@ public class DbAuthenticateUser implements AuthenticateUser {
       SaveUserPasswordHashRepository saveUserPasswordHashRepository,
       PasswordHasher passwordHasher,
       AppConfig appConfig) {
+    this(
+        loadUserByPhoneRepository,
+        createUserRepository,
+        loadUserPasswordHashRepository,
+        saveUserPasswordHashRepository,
+        passwordHasher,
+        appConfig,
+        email -> java.util.Optional.empty());
+  }
+
+  @SuppressWarnings("java:S107")
+  public DbAuthenticateUser(
+      LoadUserByPhoneRepository loadUserByPhoneRepository,
+      CreateUserRepository createUserRepository,
+      LoadUserPasswordHashRepository loadUserPasswordHashRepository,
+      SaveUserPasswordHashRepository saveUserPasswordHashRepository,
+      PasswordHasher passwordHasher,
+      AppConfig appConfig,
+      LoadUserByEmailRepository loadUserByEmailRepository) {
+    this.loadUserByEmailRepository = loadUserByEmailRepository;
     this.loadUserByPhoneRepository = loadUserByPhoneRepository;
     this.createUserRepository = createUserRepository;
     this.loadUserPasswordHashRepository = loadUserPasswordHashRepository;
@@ -50,30 +72,17 @@ public class DbAuthenticateUser implements AuthenticateUser {
           ManagerSelfRegistrationNotAllowedError,
           WasherSelfRegistrationNotAllowedError,
           InvalidCredentialsError {
+    if (params.email() != null && !params.email().isBlank()) {
+      // E-mail login never self-registers: unknown e-mails are just wrong credentials.
+      String email = params.email().trim().toLowerCase(java.util.Locale.ROOT);
+      User user =
+          loadUserByEmailRepository.loadByEmail(email).orElseThrow(InvalidCredentialsError::new);
+      return verifyExisting(user, params);
+    }
     var existingUser = loadUserByPhoneRepository.loadByPhone(params.phone());
 
     if (existingUser.isPresent()) {
-      User user = existingUser.get();
-      if (!user.active()) {
-        throw new InvalidCredentialsError();
-      }
-      if (user.profile() != params.expectedProfile()) {
-        throw new UserProfileMismatchError(
-            params.phone(), user.profile(), params.expectedProfile());
-      }
-      var passwordHash = loadUserPasswordHashRepository.loadPasswordHash(user.id());
-      if (passwordHash.isPresent()) {
-        if (!passwordHasher.matches(params.password(), passwordHash.get())) {
-          throw new InvalidCredentialsError();
-        }
-      } else if (appConfig.canClaimUnconfiguredUsers()
-          || isBootstrapManager(user, params.password())) {
-        saveUserPasswordHashRepository.savePasswordHash(
-            user.id(), passwordHasher.hash(params.password()));
-      } else {
-        throw new InvalidCredentialsError();
-      }
-      return user;
+      return verifyExisting(existingUser.get(), params);
     }
 
     if (params.expectedProfile() != UserProfile.CUSTOMER) {
@@ -96,9 +105,35 @@ public class DbAuthenticateUser implements AuthenticateUser {
         passwordHasher.hash(params.password()));
   }
 
+  private User verifyExisting(User user, Params params)
+      throws UserProfileMismatchError, InvalidCredentialsError {
+    if (!user.active()) {
+      throw new InvalidCredentialsError();
+    }
+    if (user.profile() != params.expectedProfile()) {
+      throw new UserProfileMismatchError(
+          params.phone() != null ? params.phone() : user.phone(),
+          user.profile(),
+          params.expectedProfile());
+    }
+    var passwordHash = loadUserPasswordHashRepository.loadPasswordHash(user.id());
+    if (passwordHash.isPresent()) {
+      if (!passwordHasher.matches(params.password(), passwordHash.get())) {
+        throw new InvalidCredentialsError();
+      }
+    } else if (appConfig.canClaimUnconfiguredUsers()
+        || isBootstrapManager(user, params.password())) {
+      saveUserPasswordHashRepository.savePasswordHash(
+          user.id(), passwordHasher.hash(params.password()));
+    } else {
+      throw new InvalidCredentialsError();
+    }
+    return user;
+  }
+
   private boolean isBootstrapManager(User user, String password) {
     return user.profile() == UserProfile.MANAGER
-        && user.phone().equals(appConfig.bootstrapManagerPhone())
+        && appConfig.bootstrapManagerPhone().equals(user.phone())
         && !appConfig.bootstrapManagerPassword().isBlank()
         && appConfig.bootstrapManagerPassword().equals(password);
   }

@@ -14,6 +14,7 @@ type Props = Readonly<{
   servicePrices: ServicePriceModel[]
   scheduleServiceOrder: ScheduleServiceOrder
   onScheduled: (serviceOrder: ServiceOrderModel) => void
+  businessHours?: string
 }>
 
 export function ScheduleSection({
@@ -21,6 +22,7 @@ export function ScheduleSection({
   servicePrices,
   scheduleServiceOrder,
   onScheduled,
+  businessHours = 'seg. a sáb., 08h às 18h',
 }: Props) {
   const [vehicleId, setVehicleId] = useState('')
   const [servicePriceId, setServicePriceId] = useState('')
@@ -104,7 +106,7 @@ export function ScheduleSection({
       </label>
 
       <label className="field">
-        <span>Data e horário (Manaus · seg. a sáb., 08h às 18h)</span>
+        <span>Data e horário (Manaus · {businessHours})</span>
         <input
           type="datetime-local"
           value={scheduledAt}

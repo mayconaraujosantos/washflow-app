@@ -52,6 +52,21 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
         new SchedulingRules(countServiceOrdersScheduledInRangeRepository, maxVehiclesPerHour);
   }
 
+  /** Hours and capacity from the establishment settings (see SchedulingRules.Hours). */
+  public DbScheduleServiceOrder(
+      LoadVehicleByIdRepository loadVehicleByIdRepository,
+      LoadServicePriceByIdRepository loadServicePriceByIdRepository,
+      CountServiceOrdersScheduledInRangeRepository countServiceOrdersScheduledInRangeRepository,
+      CreateServiceOrderRepository createServiceOrderRepository,
+      Clock clock,
+      java.util.function.Supplier<SchedulingRules.Hours> hours) {
+    this.loadVehicleByIdRepository = loadVehicleByIdRepository;
+    this.loadServicePriceByIdRepository = loadServicePriceByIdRepository;
+    this.createServiceOrderRepository = createServiceOrderRepository;
+    this.clock = clock;
+    this.rules = new SchedulingRules(countServiceOrdersScheduledInRangeRepository, hours);
+  }
+
   @Override
   public ServiceOrder schedule(Params params)
       throws VehicleNotFoundError,

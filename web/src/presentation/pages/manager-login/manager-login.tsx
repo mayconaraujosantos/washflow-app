@@ -10,11 +10,12 @@ export function ManagerLogin({ authenticateManager }: Props) {
   return (
     <StaffLogin
       title="Entrar como gerente"
-      subtitle="Entre com o telefone e a senha cadastrados como gerente."
+      subtitle="Use o e-mail (ou o telefone) e a senha da sua conta de gestão."
       passwordLabel="Senha"
       panelPath="/gerente"
       panelLabel="Abrir painel do gerente"
-      authenticate={(params) => authenticateManager.auth(params)}
+      identifier="emailOrPhone"
+      authenticate={(credentials) => authenticateManager.auth(credentials)}
       saveSession={saveManagerSession}
     />
   )

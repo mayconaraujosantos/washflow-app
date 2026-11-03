@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import type { Establishment } from '@/domain/usecases/establishment'
 import { LoadHealthStatus } from '@/domain/usecases/load-health-status'
 import { UiIcon, type UiIconName } from '@/presentation/components/ui-icon'
 import { BrandLogo } from '@/presentation/components/ui/app-chrome'
 
 type Props = Readonly<{
   loadHealthStatus: LoadHealthStatus
+  // Optional so the page still renders where setup status is not wired (tests).
+  establishment?: Establishment
 }>
 
 type Role = {
@@ -47,8 +50,29 @@ const HEALTH_LABELS: Record<Health, string> = {
 }
 
 /** Profile choice: each role card carries its own actions (single-step access). */
-export function Home({ loadHealthStatus }: Props) {
+export function Home({ loadHealthStatus, establishment }: Props) {
+  const navigate = useNavigate()
   const [health, setHealth] = useState<Health>('checking')
+  const [shopName, setShopName] = useState<string | null>(null)
+
+  // A fresh install has no establishment yet: send the owner to the setup wizard.
+  useEffect(() => {
+    if (!establishment) return
+    let active = true
+    establishment
+      .setupStatus()
+      .then((status) => {
+        if (!active) return
+        if (status.configured) setShopName(status.establishmentName)
+        else navigate('/configurar', { replace: true })
+      })
+      .catch(() => {
+        // Offline/health issues are already shown by the status chip.
+      })
+    return () => {
+      active = false
+    }
+  }, [establishment, navigate])
 
   useEffect(() => {
     let active = true
@@ -71,6 +95,7 @@ export function Home({ loadHealthStatus }: Props) {
         <h1 className="auth-brand">
           <BrandLogo size="lg" />
         </h1>
+        {shopName && <p className="role-shop">{shopName}</p>}
         <p className="role-slogan">Tudo em ordem. Seu veículo, também.</p>
         <span className={`status-chip is-${health}`} role="status">
           <span className="status-chip-dot" aria-hidden="true" />

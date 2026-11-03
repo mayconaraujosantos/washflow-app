@@ -51,6 +51,16 @@ class AuthorizationMiddlewareTest {
   }
 
   @Test
+  void leavesSetupAndEstablishmentReadsPublicButNotSettingsWrites() {
+    AuthorizationMiddleware middleware = createMiddleware();
+
+    assertTrue(middleware.authorize(mockContext("GET", "/api/setup", null, null)));
+    assertTrue(middleware.authorize(mockContext("POST", "/api/setup", null, null)));
+    assertTrue(middleware.authorize(mockContext("GET", "/api/establishment", null, null)));
+    assertFalse(middleware.authorize(mockContext("PUT", "/api/establishment", null, null)));
+  }
+
+  @Test
   void allowsStaticFiles() {
     Context ctx = mockContext("GET", "/index.html", null, null);
     AuthorizationMiddleware middleware = createMiddleware();

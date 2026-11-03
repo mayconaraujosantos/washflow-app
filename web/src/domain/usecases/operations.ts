@@ -50,6 +50,7 @@ export interface Operations {
     profile: UserProfile,
   ) => Promise<UserModel>
   setUserActive: (userId: string, active: boolean) => Promise<UserModel>
+  updateUserEmail: (userId: string, email: string | null) => Promise<UserModel>
   checkIn: (serviceOrderId: string) => Promise<void>
   start: (serviceOrderId: string, washerId: string) => Promise<void>
   pause: (

@@ -80,6 +80,12 @@ export class RemoteOperations implements Operations {
     }) as Promise<UserModel>
   }
 
+  updateUserEmail(userId: string, email: string | null): Promise<UserModel> {
+    return this.request(`/api/users/${userId}/email`, 'patch', {
+      email,
+    }) as Promise<UserModel>
+  }
+
   async checkIn(serviceOrderId: string): Promise<void> {
     await this.request(
       `/api/service-orders/${serviceOrderId}/check-in`,

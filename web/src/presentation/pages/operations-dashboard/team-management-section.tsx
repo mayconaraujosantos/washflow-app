@@ -231,6 +231,7 @@ export function TeamManagementSection({
                 <div>
                   <strong>{account.name}</strong>
                   <span>{account.phone}</span>
+                  {account.email && <span>{account.email}</span>}
                 </div>
               </div>
               <span
@@ -238,6 +239,21 @@ export function TeamManagementSection({
               >
                 {account.active ? 'Ativo' : 'Acesso desativado'}
               </span>
+              {account.profile === 'MANAGER' && (
+                <EmailEditor
+                  account={account}
+                  operations={operations}
+                  onSaved={(saved) => {
+                    setNotice(
+                      saved.email
+                        ? `${saved.name} agora entra com ${saved.email}.`
+                        : `E-mail de ${saved.name} removido.`,
+                    )
+                    onChanged?.()
+                  }}
+                  onError={setError}
+                />
+              )}
               <div className="team-controls">
                 <label>
                   Perfil
@@ -287,5 +303,59 @@ export function TeamManagementSection({
         </ul>
       )}
     </section>
+  )
+}
+
+function EmailEditor({
+  account,
+  operations,
+  onSaved,
+  onError,
+}: Readonly<{
+  account: UserModel
+  operations: Operations
+  onSaved: (account: UserModel) => void
+  onError: (message: string | null) => void
+}>) {
+  const [email, setEmail] = useState(account.email ?? '')
+  const [saving, setSaving] = useState(false)
+  const unchanged = email.trim().toLowerCase() === (account.email ?? '')
+
+  const save = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSaving(true)
+    onError(null)
+    try {
+      onSaved(
+        await operations.updateUserEmail(account.id, email.trim() || null),
+      )
+    } catch (cause) {
+      onError(
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível salvar o e-mail',
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="team-controls" onSubmit={(event) => void save(event)}>
+      <label>
+        E-mail de acesso
+        <input
+          className="input"
+          type="email"
+          aria-label={`E-mail de acesso de ${account.name}`}
+          value={email}
+          maxLength={254}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+      </label>
+      <button className="secondary-btn" disabled={saving || unchanged}>
+        {saving ? 'Salvando...' : 'Salvar e-mail'}
+      </button>
+    </form>
   )
 }

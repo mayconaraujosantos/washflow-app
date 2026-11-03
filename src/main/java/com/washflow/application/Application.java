@@ -3,6 +3,7 @@ package com.washflow.application;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.application.adapters.SpaFallbackHandler;
+import com.washflow.application.routes.EstablishmentRoutes;
 import com.washflow.application.routes.FeatureRoutes;
 import com.washflow.application.routes.OperationsRoutes;
 import com.washflow.application.routes.SaleRoutes;
@@ -92,6 +93,7 @@ public class Application {
                     VehicleRoutes.register(jdbi);
                     FeatureRoutes.register(jdbi);
                     SaleRoutes.register(jdbi);
+                    EstablishmentRoutes.register(jdbi, appConfig);
                   });
 
               config.routes.error(404, SpaFallbackHandler::handle);

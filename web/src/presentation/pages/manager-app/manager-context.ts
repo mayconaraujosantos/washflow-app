@@ -2,6 +2,8 @@ import { createContext, useContext } from 'react'
 import type { ServiceOrderModel } from '@/domain/models/service-order-model'
 import type { ServicePriceModel } from '@/domain/models/service-price-model'
 import type { UserModel } from '@/domain/models/user-model'
+import type { EstablishmentModel } from '@/domain/models/establishment-model'
+import type { Establishment } from '@/domain/usecases/establishment'
 import type { Features } from '@/domain/usecases/features'
 import type { Operations, PaymentMethod } from '@/domain/usecases/operations'
 import type { NavItem } from '@/presentation/components/ui/app-chrome'
@@ -18,6 +20,9 @@ export type ManagerData = {
   reloadPrices: () => Promise<void>
   notify: (tone: FlashTone, text: string) => void
   openMenu: () => void
+  establishment: Establishment
+  settings: EstablishmentModel | null
+  reloadSettings: () => Promise<void>
 }
 
 export const MANAGER_NAV: NavItem[] = [

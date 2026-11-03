@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  formatBusinessHours,
   formatPhone,
   greeting,
   maskPhoneInput,
@@ -55,5 +56,22 @@ describe('format helpers', () => {
     expect(phoneDigitsFromInput('(92) 3333-44445', '9233334444')).toBe(
       '92333344445',
     )
+  })
+
+  it('describes the business hours from the settings', () => {
+    expect(
+      formatBusinessHours({
+        openingHour: 8,
+        closingHour: 18,
+        openOnSunday: false,
+      }),
+    ).toBe('seg. a sáb., 08h às 18h')
+    expect(
+      formatBusinessHours({
+        openingHour: 6,
+        closingHour: 22,
+        openOnSunday: true,
+      }),
+    ).toBe('todos os dias, 06h às 22h')
   })
 })
