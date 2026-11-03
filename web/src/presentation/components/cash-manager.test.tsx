@@ -45,16 +45,14 @@ describe('CashManager', () => {
         createdBy: 'user-1',
       },
     ])
-    features.listCategories = vi
-      .fn()
-      .mockResolvedValue([
-        {
-          id: 'cat-1',
-          name: 'Supplies',
-          color: '#FF0000',
-          createdAt: '2026-10-29T12:00:00Z',
-        },
-      ])
+    features.listCategories = vi.fn().mockResolvedValue([
+      {
+        id: 'cat-1',
+        name: 'Supplies',
+        color: '#FF0000',
+        createdAt: '2026-10-29T12:00:00Z',
+      },
+    ])
 
     renderCashManager(features)
 

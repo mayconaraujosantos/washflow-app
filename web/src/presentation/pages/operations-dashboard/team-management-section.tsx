@@ -23,6 +23,7 @@ type Props = Readonly<{
   setBusyUserId: (id: string | null) => void
   setNotice: (msg: string | null) => void
   setError: (msg: string | null) => void
+  onChanged?: () => void
 }>
 
 export function TeamManagementSection({
@@ -35,9 +36,12 @@ export function TeamManagementSection({
   setBusyUserId,
   setNotice,
   setError,
+  onChanged,
 }: Props) {
   const navigate = useNavigate()
-  const [selectedProfiles, setSelectedProfiles] = useState<Record<string, UserProfile>>({})
+  const [selectedProfiles, setSelectedProfiles] = useState<
+    Record<string, UserProfile>
+  >({})
   const [washerName, setWasherName] = useState('')
   const [washerPhone, setWasherPhone] = useState('')
   const [washerPassword, setWasherPassword] = useState('')
@@ -54,7 +58,7 @@ export function TeamManagementSection({
         phone: washerPhone.trim(),
         password: washerPassword,
       })
-      // Users will be refreshed by the parent component
+      onChanged?.()
       setWasherName('')
       setWasherPhone('')
       setWasherPassword('')
@@ -63,7 +67,9 @@ export function TeamManagementSection({
       )
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Não foi possível cadastrar o lavador',
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível cadastrar o lavador',
       )
     } finally {
       setCreatingWasher(false)
@@ -78,7 +84,7 @@ export function TeamManagementSection({
     setNotice(null)
     try {
       await operations.updateUserProfile(target.id, currentUser.id, newProfile)
-      // Users will be refreshed by the parent component
+      onChanged?.()
       setSelectedProfiles((current) => {
         const next = { ...current }
         delete next[target.id]
@@ -92,10 +98,14 @@ export function TeamManagementSection({
         )
         return
       }
-      setNotice(`Perfil de ${target.name} alterado para ${USER_PROFILE_LABELS[newProfile]}.`)
+      setNotice(
+        `Perfil de ${target.name} alterado para ${USER_PROFILE_LABELS[newProfile]}.`,
+      )
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Não foi possível alterar o perfil',
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível alterar o perfil',
       )
     } finally {
       setBusyUserId(null)
@@ -113,13 +123,17 @@ export function TeamManagementSection({
         navigate('/', { replace: true })
         return
       }
-      // Users will be refreshed by the parent component
+      onChanged?.()
       setNotice(
-        target.active ? `Acesso de ${target.name} desativado.` : `Acesso de ${target.name} reativado.`,
+        target.active
+          ? `Acesso de ${target.name} desativado.`
+          : `Acesso de ${target.name} reativado.`,
       )
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Não foi possível atualizar o acesso',
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível atualizar o acesso',
       )
     } finally {
       setBusyUserId(null)
@@ -143,7 +157,10 @@ export function TeamManagementSection({
         <span className="team-count">{users.length} contas</span>
       </div>
 
-      <form className="washer-create-form" onSubmit={(event) => void createWasher(event)}>
+      <form
+        className="washer-create-form"
+        onSubmit={(event) => void createWasher(event)}
+      >
         <label>
           Nome
           <input
@@ -194,7 +211,10 @@ export function TeamManagementSection({
       ) : (
         <ul className="team-list">
           {users.map((account) => (
-            <li key={account.id} className={!account.active ? 'account-inactive' : ''}>
+            <li
+              key={account.id}
+              className={!account.active ? 'account-inactive' : ''}
+            >
               <div className="team-user">
                 <span className="team-avatar">
                   <UiIcon
@@ -213,7 +233,9 @@ export function TeamManagementSection({
                   <span>{account.phone}</span>
                 </div>
               </div>
-              <span className={`account-status ${account.active ? 'is-active' : 'is-inactive'}`}>
+              <span
+                className={`account-status ${account.active ? 'is-active' : 'is-inactive'}`}
+              >
                 {account.active ? 'Ativo' : 'Acesso desativado'}
               </span>
               <div className="team-controls">
@@ -241,7 +263,8 @@ export function TeamManagementSection({
                   disabled={
                     busyUserId === account.id ||
                     !account.active ||
-                    (selectedProfiles[account.id] ?? account.profile) === account.profile
+                    (selectedProfiles[account.id] ?? account.profile) ===
+                      account.profile
                   }
                   onClick={() => void changeUserProfile(account)}
                 >

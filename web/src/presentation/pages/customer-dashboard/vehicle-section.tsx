@@ -2,6 +2,8 @@ import { SubmitEvent, useState } from 'react'
 import { CreateVehicle } from '@/domain/usecases/create-vehicle'
 import { VehicleModel } from '@/domain/models/vehicle-model'
 import { UiIcon } from '@/presentation/components/ui-icon'
+import { EmptyState, Notice } from '@/presentation/components/ui/blocks'
+import { errorMessage, normalizePlate } from '@/presentation/helpers/format'
 
 type Props = Readonly<{
   vehicles: VehicleModel[]
@@ -26,7 +28,6 @@ export function VehicleSection({
     event.preventDefault()
     setError(null)
     setLoading(true)
-
     try {
       const vehicle = await createVehicle.create({
         customerId,
@@ -38,33 +39,24 @@ export function VehicleSection({
       setPlate('')
       setModel('')
       setColor('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao cadastrar veículo')
+    } catch (cause) {
+      setError(errorMessage(cause, 'Erro ao cadastrar veículo'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <section className="dashboard-section">
-      <h2 className="section-title">
-        <span className="section-icon">
-          <UiIcon name="car" />
-        </span>
-        Meus veículos
-      </h2>
-
+    <>
+      <h2>Meus veículos</h2>
       {vehicles.length === 0 ? (
-        <p className="empty-state">Nenhum veículo cadastrado ainda.</p>
+        <EmptyState icon="car" title="Nenhum veículo cadastrado ainda." />
       ) : (
-        <ul className="vehicle-list">
+        <ul className="list">
           {vehicles.map((vehicle) => (
-            <li key={vehicle.id}>
-              <span className="vehicle-icon" aria-hidden="true">
-                <UiIcon name="car" size={18} />
-              </span>
-              <span className="vehicle-plate">{vehicle.plate}</span>
-              <span className="vehicle-details">
+            <li key={vehicle.id} className="client-chip">
+              <span className="plate">{vehicle.plate}</span>
+              <span className="muted">
                 {[vehicle.model, vehicle.color].filter(Boolean).join(' · ') ||
                   '—'}
               </span>
@@ -73,33 +65,40 @@ export function VehicleSection({
         </ul>
       )}
 
-      <form className="inline-form" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={plate}
-          onChange={(event) => setPlate(event.target.value.toUpperCase())}
-          placeholder="Placa (ABC1D23)"
-          required
-        />
-        <input
-          type="text"
-          value={model}
-          onChange={(event) => setModel(event.target.value)}
-          placeholder="Modelo (opcional)"
-        />
-        <input
-          type="text"
-          value={color}
-          onChange={(event) => setColor(event.target.value)}
-          placeholder="Cor (opcional)"
-        />
-        <button type="submit" className="primary-btn" disabled={loading}>
-          <span aria-hidden="true">+</span>
+      <form className="card form" onSubmit={handleSubmit}>
+        <h3>Adicionar veículo</h3>
+        <label className="field">
+          <span>Placa</span>
+          <input
+            value={plate}
+            onChange={(event) => setPlate(normalizePlate(event.target.value))}
+            placeholder="ABC1D23"
+            autoCapitalize="characters"
+            required
+          />
+        </label>
+        <div className="field-row">
+          <label className="field">
+            <span>Modelo (opcional)</span>
+            <input
+              value={model}
+              onChange={(event) => setModel(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>Cor (opcional)</span>
+            <input
+              value={color}
+              onChange={(event) => setColor(event.target.value)}
+            />
+          </label>
+        </div>
+        <Notice tone="error">{error}</Notice>
+        <button type="submit" className="btn btn-accent" disabled={loading}>
+          <UiIcon name="plus" size={18} />
           {loading ? 'Salvando...' : 'Adicionar veículo'}
         </button>
       </form>
-
-      {error && <p className="error-message">{error}</p>}
-    </section>
+    </>
   )
 }

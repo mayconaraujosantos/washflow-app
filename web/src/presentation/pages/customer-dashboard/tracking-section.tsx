@@ -1,8 +1,12 @@
 import { ServiceOrderModel } from '@/domain/models/service-order-model'
 import { VehicleModel } from '@/domain/models/vehicle-model'
-import { BUSINESS_TIME_ZONE } from '@/main/config/business-time'
-import { PAUSE_LABELS_LOWER, STATUS_LABELS_DETAILED } from '@/main/config/labels'
+import {
+  PAUSE_LABELS_LOWER,
+  STATUS_LABELS_DETAILED,
+} from '@/main/config/labels'
 import { UiIcon } from '@/presentation/components/ui-icon'
+import { EmptyState, Notice } from '@/presentation/components/ui/blocks'
+import { formatDateTime } from '@/presentation/helpers/format'
 
 type Props = Readonly<{
   serviceOrders: ServiceOrderModel[]
@@ -24,17 +28,12 @@ export function TrackingSection({
   )
 
   return (
-    <section className="dashboard-section">
+    <section className="form">
       <div className="section-header">
-        <h2 className="section-title">
-          <span className="section-icon">
-            <UiIcon name="clipboard" />
-          </span>
-          Meus agendamentos
-        </h2>
+        <h2>Meus agendamentos</h2>
         <button
           type="button"
-          className="secondary-btn"
+          className="btn btn-outline btn-small"
           onClick={onRefresh}
           disabled={refreshing}
         >
@@ -42,33 +41,44 @@ export function TrackingSection({
           {refreshing ? 'Atualizando...' : 'Atualizar'}
         </button>
       </div>
-      {statusNotice && (
-        <p className="success-message" role="status" aria-live="polite">
-          {statusNotice}
-        </p>
-      )}
+      <Notice tone="success">{statusNotice}</Notice>
 
       {serviceOrders.length === 0 ? (
-        <p className="empty-state">Nenhum agendamento ainda.</p>
+        <EmptyState icon="calendar" title="Nenhum agendamento ainda." />
       ) : (
-        <ul className="order-list">
+        <ul className="list">
           {serviceOrders.map((serviceOrder) => (
-            <li key={serviceOrder.id}>
-              <span
-                className={`status-badge status-${serviceOrder.status.toLowerCase()}`}
-              >
-                {STATUS_LABELS_DETAILED[serviceOrder.status]}
-              </span>
-              <span className="order-plate">
-                {plateByVehicleId.get(serviceOrder.vehicleId) ?? 'Veículo'}
-              </span>
-              <span className="order-date">
-                {new Date(serviceOrder.scheduledAt).toLocaleString('pt-BR', {
-                  timeZone: BUSINESS_TIME_ZONE,
-                })}
-              </span>
+            <li
+              key={serviceOrder.id}
+              className="order-card"
+              data-status={serviceOrder.status}
+            >
+              <div className="order-head">
+                <span className="plate">
+                  {serviceOrder.details?.vehiclePlate ??
+                    plateByVehicleId.get(serviceOrder.vehicleId) ??
+                    'Veículo'}
+                </span>
+                <span
+                  className={`status-badge status-${serviceOrder.status.toLowerCase()}`}
+                >
+                  {STATUS_LABELS_DETAILED[serviceOrder.status]}
+                </span>
+              </div>
+              <div className="order-meta">
+                {serviceOrder.details?.serviceName && (
+                  <span>
+                    <UiIcon name="tag" size={15} />
+                    {serviceOrder.details.serviceName}
+                  </span>
+                )}
+                <span>
+                  <UiIcon name="clock" size={15} />
+                  {formatDateTime(serviceOrder.scheduledAt)}
+                </span>
+              </div>
               {serviceOrder.status === 'PAUSED' && (
-                <p className="pause-notice">
+                <p className="notice notice-warning">
                   <UiIcon name="clock" size={17} />
                   Lavagem pausada
                   {serviceOrder.pauseReason
@@ -78,7 +88,11 @@ export function TrackingSection({
                 </p>
               )}
               {serviceOrder.status === 'READY' && (
-                <p className="pickup-notice" role="status" aria-live="polite">
+                <p
+                  className="notice notice-success"
+                  role="status"
+                  aria-live="polite"
+                >
                   <UiIcon name="check" size={18} />
                   Seu veículo está pronto para retirada. Dirija-se ao gerente
                   para concluir o atendimento.

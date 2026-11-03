@@ -37,8 +37,8 @@ public class SaleJdbiRepository implements SaveSaleRepository, LoadSalesReposito
                     (id, tipo, veiculo_id, cliente_nome, cliente_telefone, subtotal, desconto,
                      total, observacoes, criado_por, criado_em)
                   VALUES
-                    (:id, :type, :vehicleId, :customerName, :customerPhone, :subtotal, :discount,
-                     :total, :notes, :createdBy, :createdAt)
+                    (:id, :type, CAST(:vehicleId AS UUID), :customerName, :customerPhone, :subtotal, :discount,
+                     :total, :notes, CAST(:createdBy AS UUID), :createdAt)
                   """)
               .bind("id", sale.id())
               .bind("type", sale.type().dbValue())

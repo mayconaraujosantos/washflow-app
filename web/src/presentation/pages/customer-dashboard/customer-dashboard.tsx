@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { CreateVehicle } from '@/domain/usecases/create-vehicle'
 import { ListServiceOrdersByCustomer } from '@/domain/usecases/list-service-orders-by-customer'
 import { ListServicePrices } from '@/domain/usecases/list-service-prices'
@@ -12,11 +12,20 @@ import {
   clearCustomerSession,
   loadCustomerSession,
 } from '@/main/session/customer-session'
-import { VehicleSection } from './vehicle-section'
+import { UiIcon } from '@/presentation/components/ui-icon'
+import {
+  ScreenLayout,
+  type NavItem,
+} from '@/presentation/components/ui/app-chrome'
+import {
+  ActionTile,
+  KpiBand,
+  Notice,
+} from '@/presentation/components/ui/blocks'
+import { firstName, greeting } from '@/presentation/helpers/format'
 import { ScheduleSection } from './schedule-section'
 import { TrackingSection } from './tracking-section'
-import { UiIcon } from '@/presentation/components/ui-icon'
-import './customer-dashboard.css'
+import { VehicleSection } from './vehicle-section'
 
 type Props = Readonly<{
   createVehicle: CreateVehicle
@@ -26,6 +35,24 @@ type Props = Readonly<{
   listServiceOrdersByCustomer: ListServiceOrdersByCustomer
 }>
 
+const NAV: NavItem[] = [
+  { to: '/cliente', label: 'Início', icon: 'home', end: true },
+  { to: '/cliente/veiculos', label: 'Veículos', icon: 'car' },
+  { to: '/cliente/agendamentos', label: 'Agendamentos', icon: 'calendar' },
+]
+
+const STATUS_CHANGE_NOTICES: Record<ServiceOrderModel['status'], string> = {
+  SCHEDULED: 'Agendado',
+  WAITING_IN_YARD: 'Seu veículo chegou ao pátio',
+  WASHING: 'Lavagem iniciada',
+  PAUSED: 'Lavagem pausada',
+  READY: 'Seu veículo está pronto para retirada',
+  DONE: 'Atendimento finalizado',
+}
+
+const REFRESH_MS = 3000
+
+/** Customer app: home, vehicles, schedule and live tracking (polls every 3s). */
 export function CustomerDashboard({
   createVehicle,
   listVehiclesByCustomer,
@@ -48,52 +75,39 @@ export function CustomerDashboard({
     ServiceOrderModel['status']
   > | null>(null)
 
-  const updateOrders = (
-    orders: ServiceOrderModel[],
-    announceChanges: boolean,
-  ) => {
-    const previous = previousStatuses.current
-    if (announceChanges && previous) {
-      const changedOrder = orders.find(
-        (order) =>
-          previous.has(order.id) && previous.get(order.id) !== order.status,
-      )
-      if (changedOrder) {
-        const statusLabels: Record<ServiceOrderModel['status'], string> = {
-          SCHEDULED: 'Agendado',
-          WAITING_IN_YARD: 'Aguardando no pátio',
-          WASHING: 'Lavagem iniciada',
-          PAUSED: 'Lavagem pausada',
-          READY: 'Seu veículo está pronto para retirada',
-          DONE: 'Atendimento finalizado',
-        }
-        setStatusNotice(statusLabels[changedOrder.status])
+  const updateOrders = useCallback(
+    (orders: ServiceOrderModel[], announceChanges: boolean) => {
+      const previous = previousStatuses.current
+      if (announceChanges && previous) {
+        const changed = orders.find(
+          (order) =>
+            previous.has(order.id) && previous.get(order.id) !== order.status,
+        )
+        if (changed) setStatusNotice(STATUS_CHANGE_NOTICES[changed.status])
       }
-    }
-    previousStatuses.current = new Map(
-      orders.map((order) => [order.id, order.status]),
-    )
-    setServiceOrders(orders)
-  }
+      previousStatuses.current = new Map(
+        orders.map((order) => [order.id, order.status]),
+      )
+      setServiceOrders(orders)
+    },
+    [],
+  )
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login/cliente', { replace: true })
-    }
+    if (!user) navigate('/login/cliente', { replace: true })
   }, [user, navigate])
 
   useEffect(() => {
     if (!user) return
-
-    Promise.all([
+    void Promise.all([
       listVehiclesByCustomer.list({ customerId: user.id }),
       listServicePrices.list(),
       listServiceOrdersByCustomer.list({ customerId: user.id }),
     ])
-      .then(([vehiclesResult, servicePricesResult, serviceOrdersResult]) => {
+      .then(([vehiclesResult, pricesResult, ordersResult]) => {
         setVehicles(vehiclesResult)
-        setServicePrices(servicePricesResult)
-        updateOrders(serviceOrdersResult, false)
+        setServicePrices(pricesResult)
+        updateOrders(ordersResult, false)
       })
       .catch(() => setLoadError('Erro ao carregar seus dados'))
   }, [
@@ -101,11 +115,11 @@ export function CustomerDashboard({
     listVehiclesByCustomer,
     listServicePrices,
     listServiceOrdersByCustomer,
+    updateOrders,
   ])
 
   useEffect(() => {
     if (!user) return
-
     let active = true
     let refreshing = false
     const timer = window.setInterval(() => {
@@ -122,17 +136,14 @@ export function CustomerDashboard({
         .finally(() => {
           refreshing = false
         })
-    }, 3000)
-
+    }, REFRESH_MS)
     return () => {
       active = false
       window.clearInterval(timer)
     }
-  }, [user, listServiceOrdersByCustomer])
+  }, [user, listServiceOrdersByCustomer, updateOrders])
 
-  if (!user) {
-    return null
-  }
+  if (!user) return null
 
   const handleLogout = () => {
     clearCustomerSession()
@@ -141,87 +152,130 @@ export function CustomerDashboard({
 
   const handleRefreshOrders = () => {
     setRefreshingOrders(true)
-    listServiceOrdersByCustomer
+    void listServiceOrdersByCustomer
       .list({ customerId: user.id })
       .then((orders) => updateOrders(orders, true))
       .catch(() => setLoadError('Erro ao atualizar agendamentos'))
       .finally(() => setRefreshingOrders(false))
   }
 
-  return (
-    <main className="dashboard-shell">
-      <div className="dashboard-container">
-        <header className="dashboard-header">
-          <div>
-            <span className="badge">
-              <UiIcon name="car" size={15} />
-              Washflow · Cliente
-            </span>
-            <h1>Olá, {user.name.split(' ')[0]}</h1>
-            <p className="dashboard-subtitle">
-              Gerencie seus veículos e acompanhe suas lavagens.
-            </p>
-          </div>
-          <button className="secondary-btn" onClick={handleLogout}>
-            <UiIcon name="logout" size={16} />
-            Sair
-          </button>
-        </header>
+  const activeOrders = serviceOrders.filter((order) => order.status !== 'DONE')
+  const readyOrders = serviceOrders.filter((order) => order.status === 'READY')
 
-        <div className="dashboard-metrics">
-          <article>
-            <span className="metric-icon metric-icon-blue">
-              <UiIcon name="car" />
-            </span>
-            <div>
-              <span>Meus veículos</span>
-              <strong>{vehicles.length}</strong>
-            </div>
-          </article>
-          <article>
-            <span className="metric-icon metric-icon-violet">
-              <UiIcon name="calendar" />
-            </span>
-            <div>
-              <span>Atendimentos ativos</span>
-              <strong>
-                {
-                  serviceOrders.filter((order) => order.status !== 'DONE')
-                    .length
-                }
-              </strong>
-            </div>
-          </article>
+  const logoutAction = (
+    <button
+      type="button"
+      className="icon-btn"
+      aria-label="Sair"
+      onClick={handleLogout}
+    >
+      <UiIcon name="logout" size={22} />
+    </button>
+  )
+
+  const tracking = (
+    <TrackingSection
+      serviceOrders={serviceOrders}
+      vehicles={vehicles}
+      refreshing={refreshingOrders}
+      statusNotice={statusNotice}
+      onRefresh={handleRefreshOrders}
+    />
+  )
+
+  const home = (
+    <ScreenLayout nav={NAV} actions={logoutAction}>
+      <div className="greeting">
+        <div>
+          <small>{greeting()},</small>
+          <strong>{firstName(user.name)}</strong>
         </div>
-
-        {loadError && <p className="error-message">{loadError}</p>}
-
-        <VehicleSection
-          vehicles={vehicles}
-          customerId={user.id}
-          createVehicle={createVehicle}
-          onCreated={(vehicle) =>
-            setVehicles((current) => [...current, vehicle])
-          }
+      </div>
+      <KpiBand
+        items={[
+          { label: 'Meus veículos', value: vehicles.length },
+          { label: 'Atendimentos ativos', value: activeOrders.length },
+          { label: 'Prontos para retirada', value: readyOrders.length },
+        ]}
+      />
+      <Notice tone="error">{loadError}</Notice>
+      {readyOrders.length > 0 && (
+        <p className="notice notice-success" role="status" aria-live="polite">
+          <UiIcon name="check" size={18} />
+          Seu veículo está pronto para retirada. Dirija-se ao gerente para
+          concluir o atendimento.
+        </p>
+      )}
+      <div className="tile-grid">
+        <ActionTile
+          to="/cliente/agendar"
+          label="Agendar"
+          icon="calendar"
+          tone="schedule"
         />
-
-        <ScheduleSection
-          vehicles={vehicles}
-          servicePrices={servicePrices}
-          scheduleServiceOrder={scheduleServiceOrder}
-          onScheduled={(serviceOrder) =>
-            setServiceOrders((current) => [serviceOrder, ...current])
+        <ActionTile
+          to="/cliente/agendamentos"
+          label="Acompanhar"
+          icon="clock"
+          tone="entry"
+          hint={
+            activeOrders.length ? `${activeOrders.length} ativo(s)` : undefined
           }
-        />
-
-        <TrackingSection
-          serviceOrders={serviceOrders}
-          vehicles={vehicles}
-          refreshing={refreshingOrders}
-          statusNotice={statusNotice}
-          onRefresh={handleRefreshOrders}
         />
       </div>
-    </main>
+      {activeOrders.length > 0 && (
+        <Link to="/cliente/agendamentos" className="btn btn-outline">
+          Ver andamento das lavagens
+        </Link>
+      )}
+    </ScreenLayout>
+  )
+
+  return (
+    <div className="app">
+      <Routes>
+        <Route index element={home} />
+        <Route
+          path="veiculos"
+          element={
+            <ScreenLayout nav={NAV} actions={logoutAction}>
+              <VehicleSection
+                vehicles={vehicles}
+                customerId={user.id}
+                createVehicle={createVehicle}
+                onCreated={(vehicle) =>
+                  setVehicles((current) => [...current, vehicle])
+                }
+              />
+            </ScreenLayout>
+          }
+        />
+        <Route
+          path="agendamentos"
+          element={
+            <ScreenLayout nav={NAV} actions={logoutAction}>
+              <Notice tone="error">{loadError}</Notice>
+              {tracking}
+            </ScreenLayout>
+          }
+        />
+        <Route
+          path="agendar"
+          element={
+            <ScreenLayout title="Agendar lavagem" backTo="/cliente">
+              <ScheduleSection
+                vehicles={vehicles}
+                servicePrices={servicePrices}
+                scheduleServiceOrder={scheduleServiceOrder}
+                onScheduled={(serviceOrder) =>
+                  setServiceOrders((current) => [serviceOrder, ...current])
+                }
+              />
+            </ScreenLayout>
+          }
+        />
+        <Route path="*" element={<Navigate to="/cliente" replace />} />
+      </Routes>
+    </div>
   )
 }

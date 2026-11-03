@@ -367,7 +367,7 @@ describe('RemoteFeatures', () => {
 
       await expect(
         features.createTransaction(
-          'INVALID' as any,
+          'INVALID' as unknown as 'INCOME',
           '100',
           '2026-10-29',
           null,

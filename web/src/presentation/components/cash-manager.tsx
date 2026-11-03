@@ -51,7 +51,7 @@ export function CashManager({ features }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [fromDate, toDate])
+  }, [features, fromDate, toDate])
 
   const loadCategories = useCallback(async () => {
     try {
@@ -60,7 +60,7 @@ export function CashManager({ features }: Props) {
     } catch (error) {
       console.error('Failed to load categories:', error)
     }
-  }, [])
+  }, [features])
 
   const loadReport = useCallback(async () => {
     if (!fromDate || !toDate) return
@@ -70,11 +70,15 @@ export function CashManager({ features }: Props) {
     } catch (error) {
       console.error('Failed to load report:', error)
     }
-  }, [fromDate, toDate])
+  }, [features, fromDate, toDate])
 
   useEffect(() => {
-    loadTransactions()
-    loadCategories()
+    // Deferred so the loaders' setState calls run outside the effect body.
+    const timer = window.setTimeout(() => {
+      void loadTransactions()
+      void loadCategories()
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [loadTransactions, loadCategories])
 
   const handleSubmit = async (e: FormEvent) => {

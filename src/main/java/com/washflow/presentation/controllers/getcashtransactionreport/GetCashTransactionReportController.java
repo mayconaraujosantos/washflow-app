@@ -20,9 +20,9 @@ public class GetCashTransactionReportController implements Controller {
   @Override
   public HttpResponse handle(HttpRequest request) {
     try {
-      Map<String, Object> body = request.body();
-      String fromStr = (String) body.get("from");
-      String toStr = (String) body.get("to");
+      // GET requests carry the range in the query string; the body is kept as a fallback.
+      String fromStr = param(request, "from");
+      String toStr = param(request, "to");
 
       if (fromStr == null || toStr == null) {
         return HttpHelper.badRequest(
@@ -44,5 +44,15 @@ public class GetCashTransactionReportController implements Controller {
     } catch (Exception e) {
       return HttpHelper.badRequest(e);
     }
+  }
+
+  private static String param(HttpRequest request, String name) {
+    String value = request.queryParams() == null ? null : request.queryParams().get(name);
+    if (value != null && !value.isBlank()) {
+      return value;
+    }
+    Map<String, Object> body = request.body();
+    Object fromBody = body == null ? null : body.get(name);
+    return fromBody == null ? null : fromBody.toString();
   }
 }

@@ -25,10 +25,12 @@ public class VehicleJdbiRepository
   private static final String SELECT_SQL =
       "SELECT id, cliente_id, placa, modelo, cor, contato_nome, contato_telefone FROM veiculos";
 
+  // CAST: a null UUID (walk-in vehicle without account) is bound as varchar, which Postgres
+  // rejects for a uuid column.
   private static final String INSERT_SQL =
       """
       INSERT INTO veiculos (id, cliente_id, placa, modelo, cor, contato_nome, contato_telefone)
-      VALUES (:id, :customerId, :plate, :model, :color, :contactName, :contactPhone)
+      VALUES (:id, CAST(:customerId AS UUID), :plate, :model, :color, :contactName, :contactPhone)
       """;
 
   // Registered owner first, walk-in contact as fallback - see Vehicle.contactName. Patterns are

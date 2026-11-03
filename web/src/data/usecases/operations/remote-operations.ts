@@ -3,10 +3,14 @@ import { ServiceOrderModel } from '@/domain/models/service-order-model'
 import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { UserModel, UserProfile } from '@/domain/models/user-model'
+import { VehicleLookupModel } from '@/domain/models/vehicle-lookup-model'
+import { SaleModel, SaleType } from '@/domain/models/sale-model'
 import {
+  CreateSaleParams,
   Operations,
   PauseReason,
   PaymentMethod,
+  RegisterEntryParams,
 } from '@/domain/usecases/operations'
 
 type ErrorBody = { error?: string }
@@ -122,6 +126,54 @@ export class RemoteOperations implements Operations {
         paymentMethod,
       },
     )
+  }
+
+  registerEntry(params: RegisterEntryParams): Promise<ServiceOrderModel> {
+    return this.request(
+      '/api/operations/entries',
+      'post',
+      params,
+    ) as Promise<ServiceOrderModel>
+  }
+
+  searchVehicles(query: string): Promise<VehicleLookupModel[]> {
+    const search = new URLSearchParams({ query })
+    return this.request(
+      `/api/operations/vehicles?${search.toString()}`,
+      'get',
+    ) as Promise<VehicleLookupModel[]>
+  }
+
+  loadAgenda(from: string, to: string): Promise<ServiceOrderModel[]> {
+    const query = new URLSearchParams({ from, to })
+    return this.request(
+      `/api/operations/agenda?${query.toString()}`,
+      'get',
+    ) as Promise<ServiceOrderModel[]>
+  }
+
+  createSale(params: CreateSaleParams): Promise<SaleModel> {
+    return this.request('/api/sales', 'post', params) as Promise<SaleModel>
+  }
+
+  listSales(from: string, to: string, type?: SaleType): Promise<SaleModel[]> {
+    const query = new URLSearchParams({ from, to })
+    if (type) query.set('type', type)
+    return this.request(`/api/sales?${query.toString()}`, 'get') as Promise<
+      SaleModel[]
+    >
+  }
+
+  createServicePrice(params: {
+    name: string
+    price: number
+    washerCommission?: number
+  }): Promise<ServicePriceModel> {
+    return this.request(
+      '/api/services',
+      'post',
+      params,
+    ) as Promise<ServicePriceModel>
   }
 
   private async request<T>(
