@@ -10,6 +10,9 @@ import java.util.UUID;
  * just persists a value that already fully exists. {@code washerId} ({@code lavador_id}) is
  * nullable until a washer picks up the vehicle in {@code DbStartServiceOrder}.
  *
+ * <p>{@code expectedDeliveryAt} ({@code previsao_entrega}) and {@code notes} ({@code observacoes})
+ * are agreed with the customer when the manager registers the vehicle's entry; both are optional.
+ *
  * <p>{@code details} is read-only display data joined from {@code veiculos}, {@code usuarios} and
  * {@code servicos_preco} when the order is loaded, so the yard/queue screens can show the plate and
  * service without one extra request per card. It is {@code null} on orders that were just built in
@@ -25,6 +28,8 @@ public record ServiceOrder(
     Instant createdAt,
     Instant updatedAt,
     String pauseReason,
+    Instant expectedDeliveryAt,
+    String notes,
     Details details) {
 
   public ServiceOrder(
@@ -47,6 +52,8 @@ public record ServiceOrder(
         createdAt,
         updatedAt,
         pauseReason,
+        null,
+        null,
         null);
   }
 
@@ -68,6 +75,7 @@ public record ServiceOrder(
       String vehicleModel,
       String vehicleColor,
       String customerName,
+      String customerPhone,
       String serviceName,
       String washerName) {}
 }

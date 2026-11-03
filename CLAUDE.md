@@ -32,6 +32,7 @@ Vincula os carros aos seus respectivos donos (clientes).
 * `placa`: VARCHAR(10) (Único / Indexado)
 * `modelo`: VARCHAR(50) (Ex: Civic, Onix)
 * `cor`: VARCHAR(30)
+* `contato_nome` / `contato_telefone`: contato do dono quando o veículo não tem `cliente_id` (entrada registrada pelo gerente)
 
 ### 2.3 Tabela: `servicos_preco`
 Catálogo de tipos de lavagem oferecidos pelo estabelecimento.
@@ -52,6 +53,8 @@ A tabela central que dita o fluxo físico e financeiro do lava-jato.
 * `atualizado_em`: TIMESTAMP (Crucial para ordenação da fila em tempo real)
 * `lavagem_iniciada_em`: TIMESTAMP (Início real da lavagem, usado em relatórios)
 * `lavagem_concluida_em`: TIMESTAMP (Conclusão real da lavagem, usado em relatórios)
+* `previsao_entrega`: TIMESTAMP (opcional, combinada na entrada)
+* `observacoes`: VARCHAR(500) (opcional)
 
 ### 2.5 Tabela: `pagamentos`
 Registra o recebimento manual no balcão, no momento em que o gerente finaliza o atendimento.
@@ -103,7 +106,7 @@ O login exige telefone, nome e senha (mínimo de 8 caracteres). A senha é armaz
 |---|---|
 | `CLIENTE` | Cadastrar/listar seus veículos, agendar e consultar seus próprios atendimentos |
 | `LAVADOR` | Consultar fila, iniciar e concluir lavagens atribuídas a si |
-| `GERENTE` | Consultar o pátio, receber veículos, registrar pagamento e finalizar atendimentos, cadastrar lavadores, alterar perfis e ativar/desativar contas |
+| `GERENTE` | Consultar o pátio e a agenda, registrar entradas pela placa, receber veículos, registrar pagamento e finalizar atendimentos, cadastrar lavadores, alterar perfis e ativar/desativar contas |
 
 O painel do gerente lista contas e permite cadastrar lavadores com senha inicial (mínimo de 8 caracteres). A senha é persistida somente como hash BCrypt e deve ser entregue diretamente ao colaborador. Um gerente pode alterar contas entre `CLIENTE`, `LAVADOR` e `GERENTE`, inclusive o próprio perfil; ao alterar o próprio perfil, precisa autenticar novamente pela tela do novo perfil. Contas podem ser desativadas sem exclusão dos dados históricos. A desativação é aplicada no login e em cada request autenticada; lavadores com atendimentos `EM_LAVAGEM` ou `PAUSADA` não podem ser desativados nem mudar de perfil até que esses atendimentos sejam resolvidos.
 
@@ -111,6 +114,11 @@ Endpoints operacionais:
 * `GET /api/operations/queue`: atendimentos `AGUARDANDO_PATIO`, ordenados por `atualizado_em ASC`.
 * `GET /api/operations/my-orders`: lavagens `EM_LAVAGEM` ou `PAUSADA` atribuídas ao lavador autenticado.
 * `GET /api/operations/yard`: atendimentos não finalizados, priorizando `EM_LAVAGEM`, `AGUARDANDO_PATIO`, `PRONTO` e `AGENDADO`.
+* As listagens de atendimentos trazem `details` (placa, modelo, cor, cliente, telefone, serviço e lavador) para exibição.
+* `POST /api/operations/entries`: o gerente registra a entrada pela placa (`plate`, `servicePriceId`; opcionais `vehicleModel`, `vehicleColor`, `customerName`, `customerPhone`, `expectedDeliveryAt`, `notes`). Placa nova cria o veículo; telefone de cliente cadastrado vincula o veículo à conta, senão fica como contato. Sem `scheduledAt` o atendimento entra direto em `AGUARDANDO_PATIO`; com `scheduledAt` fica `AGENDADO`, respeitando horário de funcionamento e capacidade por hora.
+* `GET /api/operations/vehicles?query=`: busca veículos por início da placa, nome ou telefone do dono (mínimo 2 caracteres, até 10 resultados).
+* `GET /api/operations/agenda?from=YYYY-MM-DD&to=YYYY-MM-DD`: atendimentos por data de agendamento (data Manaus, qualquer status), intervalo máximo de 62 dias.
+* Caixa (`/api/cash-transactions`), categorias de despesa (`/api/expense-categories`) e checklist/fotos de atendimento são exclusivos do gerente.
 * `PATCH /api/service-orders/{id}/pause`: pausa uma lavagem atribuída ao lavador; exige motivo (`LUNCH`, `RESTROOM`, `OTHER`) e descrição para `OTHER`.
 * `PATCH /api/service-orders/{id}/resume`: retoma a lavagem pausada pelo próprio lavador.
 * `PATCH /api/service-orders/{id}/finalize`: recebe `paymentMethod`; em uma transação, muda o status para `FINALIZADO`, registra o pagamento pelo preço do catálogo e credita a comissão.

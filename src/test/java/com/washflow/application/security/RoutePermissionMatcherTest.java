@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.washflow.domain.entities.UserProfile;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class RoutePermissionMatcherTest {
 
@@ -132,6 +134,35 @@ class RoutePermissionMatcherTest {
   void returnsManagerForYardOverview() {
     assertEquals(
         UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile("GET", "/api/operations/yard"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "POST, /api/operations/entries",
+    "GET, /api/operations/vehicles",
+    "GET, /api/operations/agenda",
+    "GET, /api/cash-transactions",
+    "POST, /api/cash-transactions",
+    "GET, /api/cash-transactions/report",
+    "PUT, /api/cash-transactions/abc-123",
+    "DELETE, /api/cash-transactions/abc-123",
+    "GET, /api/expense-categories",
+    "POST, /api/expense-categories",
+    "GET, /api/service-orders/abc-123/checklist",
+    "POST, /api/service-orders/abc-123/checklist",
+    "GET, /api/service-orders/abc-123/photos",
+    "POST, /api/service-orders/abc-123/photos",
+    "DELETE, /api/service-orders/abc-123/photos/photo-1"
+  })
+  void returnsManagerForBackOfficeRoutes(String method, String path) {
+    assertEquals(UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile(method, path));
+  }
+
+  @Test
+  void keepsSingleServiceOrderLookupForCustomers() {
+    assertEquals(
+        UserProfile.CUSTOMER,
+        RoutePermissionMatcher.requiredProfile("GET", "/api/service-orders/abc-123"));
   }
 
   @Test

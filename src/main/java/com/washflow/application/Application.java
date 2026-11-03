@@ -84,7 +84,7 @@ public class Application {
               config.routes.apiBuilder(
                   () -> {
                     SystemRoutes.register(jdbi);
-                    OperationsRoutes.register(jdbi);
+                    OperationsRoutes.register(jdbi, appConfig);
                     ServiceOrderRoutes.register(jdbi, appConfig);
                     ServicePriceRoutes.register(jdbi);
                     UserRoutes.register(jdbi, appConfig);

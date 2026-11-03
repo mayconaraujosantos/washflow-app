@@ -6,6 +6,7 @@ import com.washflow.data.protocols.db.FinalizeServiceOrderRepository;
 import com.washflow.data.protocols.db.LoadOperationsReportRepository;
 import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
 import com.washflow.data.protocols.db.LoadServiceOrdersByCustomerIdRepository;
+import com.washflow.data.protocols.db.LoadServiceOrdersScheduledBetweenRepository;
 import com.washflow.data.protocols.db.LoadWaitingQueueRepository;
 import com.washflow.data.protocols.db.LoadWashingByWasherRepository;
 import com.washflow.data.protocols.db.LoadYardOverviewRepository;
@@ -47,16 +48,19 @@ public class ServiceOrderJdbiRepository
         LoadWaitingQueueRepository,
         LoadYardOverviewRepository,
         LoadWashingByWasherRepository,
-        LoadOperationsReportRepository {
+        LoadOperationsReportRepository,
+        LoadServiceOrdersScheduledBetweenRepository {
 
   private static final String STATUS = "status";
 
   private static final String INSERT_SQL =
       """
       INSERT INTO atendimentos
-        (id, veiculo_id, servico_preco_id, status, data_agendamento, criado_em, atualizado_em)
+        (id, veiculo_id, servico_preco_id, status, data_agendamento, criado_em, atualizado_em,
+         previsao_entrega, observacoes)
       VALUES
-        (:id, :vehicleId, :servicePriceId, :status, :scheduledAt, :createdAt, :updatedAt)
+        (:id, :vehicleId, :servicePriceId, :status, :scheduledAt, :createdAt, :updatedAt,
+         :expectedDeliveryAt, :notes)
       """;
 
   // Every read joins the display data (plate, customer, service, washer) the yard and queue
@@ -67,8 +71,11 @@ public class ServiceOrderJdbiRepository
              a.data_agendamento, a.criado_em, a.atualizado_em,
              (SELECT p.motivo FROM pausas_atendimento p
               WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason,
+             a.previsao_entrega, a.observacoes,
              v.placa AS vehicle_plate, v.modelo AS vehicle_model, v.cor AS vehicle_color,
-             c.nome AS customer_name, s.nome AS service_name, l.nome AS washer_name
+             COALESCE(c.nome, v.contato_nome) AS customer_name,
+             COALESCE(c.telefone, v.contato_telefone) AS customer_phone,
+             s.nome AS service_name, l.nome AS washer_name
       FROM atendimentos a
       LEFT JOIN veiculos v ON v.id = a.veiculo_id
       LEFT JOIN usuarios c ON c.id = v.cliente_id
@@ -134,6 +141,13 @@ public class ServiceOrderJdbiRepository
         a.atualizado_em ASC
       """;
 
+  private static final String SCHEDULED_BETWEEN_SQL =
+      SELECT_WITH_DETAILS
+          + """
+      WHERE a.data_agendamento >= :start AND a.data_agendamento < :end
+      ORDER BY a.data_agendamento ASC
+      """;
+
   private static final String WASHER_ACTIVE_SQL =
       SELECT_WITH_DETAILS
           + """
@@ -162,6 +176,8 @@ public class ServiceOrderJdbiRepository
                 .bind("scheduledAt", serviceOrder.scheduledAt())
                 .bind("createdAt", serviceOrder.createdAt())
                 .bind("updatedAt", serviceOrder.updatedAt())
+                .bind("expectedDeliveryAt", serviceOrder.expectedDeliveryAt())
+                .bind("notes", serviceOrder.notes())
                 .execute());
 
     return serviceOrder;
@@ -188,6 +204,18 @@ public class ServiceOrderJdbiRepository
   public List<ServiceOrder> loadWaitingQueue() {
     return jdbi.withHandle(
         handle -> handle.createQuery(WAITING_QUEUE_SQL).map(this::mapRow).list());
+  }
+
+  @Override
+  public List<ServiceOrder> loadScheduledBetween(Instant start, Instant end) {
+    return jdbi.withHandle(
+        handle ->
+            handle
+                .createQuery(SCHEDULED_BETWEEN_SQL)
+                .bind("start", start)
+                .bind("end", end)
+                .map(this::mapRow)
+                .list());
   }
 
   @Override
@@ -541,11 +569,14 @@ public class ServiceOrderJdbiRepository
         rs.getTimestamp("criado_em").toInstant(),
         rs.getTimestamp("atualizado_em").toInstant(),
         rs.getString("pause_reason"),
+        timestamp(rs, "previsao_entrega"),
+        rs.getString("observacoes"),
         new ServiceOrder.Details(
             rs.getString("vehicle_plate"),
             rs.getString("vehicle_model"),
             rs.getString("vehicle_color"),
             rs.getString("customer_name"),
+            rs.getString("customer_phone"),
             rs.getString("service_name"),
             rs.getString("washer_name")));
   }

@@ -2,15 +2,21 @@ package com.washflow.application.routes;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.patch;
+import static io.javalin.apibuilder.ApiBuilder.post;
 
+import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.factories.controllers.GetOperationsReportControllerFactory;
 import com.washflow.application.factories.controllers.GetWaitingQueueControllerFactory;
 import com.washflow.application.factories.controllers.GetWashingByWasherControllerFactory;
 import com.washflow.application.factories.controllers.GetYardOverviewControllerFactory;
+import com.washflow.application.factories.controllers.ListAgendaControllerFactory;
 import com.washflow.application.factories.controllers.PauseServiceOrderControllerFactory;
+import com.washflow.application.factories.controllers.RegisterVehicleEntryControllerFactory;
 import com.washflow.application.factories.controllers.ResumeServiceOrderControllerFactory;
+import com.washflow.application.factories.controllers.SearchVehiclesControllerFactory;
 import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.VehicleLookup;
 import com.washflow.infra.db.jdbi.OperationsReport;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
@@ -25,13 +31,69 @@ public final class OperationsRoutes {
 
   private OperationsRoutes() {}
 
-  public static void register(Jdbi jdbi) {
+  public static void register(Jdbi jdbi, AppConfig appConfig) {
+    registerEntry(jdbi, appConfig);
+    registerVehicleSearch(jdbi);
+    registerAgenda(jdbi);
     registerPause(jdbi);
     registerResume(jdbi);
     registerQueue(jdbi);
     registerYard(jdbi);
     registerReport(jdbi);
     registerMyOrders(jdbi);
+  }
+
+  @OpenApi(
+      path = "/api/operations/entries",
+      methods = HttpMethod.POST,
+      summary = "Manager registers a vehicle entry (walk-in) or schedules it, by plate",
+      tags = {"Operations"},
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = ServiceOrder.class)),
+        @OpenApiResponse(
+            status = "400",
+            description = "Invalid plate, phone, dates or outside business hours"),
+        @OpenApiResponse(status = "404", description = "Service not found"),
+        @OpenApiResponse(status = "409", description = "Time slot fully booked")
+      })
+  private static void registerEntry(Jdbi jdbi, AppConfig appConfig) {
+    post(
+        "/api/operations/entries",
+        JavalinRouteAdapter.adapt(RegisterVehicleEntryControllerFactory.make(jdbi, appConfig)));
+  }
+
+  @OpenApi(
+      path = "/api/operations/vehicles",
+      methods = HttpMethod.GET,
+      summary = "Search vehicles by plate prefix, owner name or phone",
+      tags = {"Operations"},
+      queryParams = @OpenApiParam(name = "query", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = VehicleLookup[].class))
+      })
+  private static void registerVehicleSearch(Jdbi jdbi) {
+    get(
+        "/api/operations/vehicles",
+        JavalinRouteAdapter.adapt(SearchVehiclesControllerFactory.make(jdbi)));
+  }
+
+  @OpenApi(
+      path = "/api/operations/agenda",
+      methods = HttpMethod.GET,
+      summary = "Service orders scheduled between two shop-local dates (max 62 days)",
+      tags = {"Operations"},
+      queryParams = {
+        @OpenApiParam(name = "from", type = String.class, required = true),
+        @OpenApiParam(name = "to", type = String.class, required = true)
+      },
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = ServiceOrder[].class)),
+        @OpenApiResponse(status = "400", description = "Invalid date range")
+      })
+  private static void registerAgenda(Jdbi jdbi) {
+    get(
+        "/api/operations/agenda",
+        JavalinRouteAdapter.adapt(ListAgendaControllerFactory.make(jdbi)));
   }
 
   @OpenApi(
