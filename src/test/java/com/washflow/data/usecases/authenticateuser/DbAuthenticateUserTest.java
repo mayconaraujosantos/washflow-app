@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.washflow.application.AppConfig;
@@ -76,6 +77,19 @@ class DbAuthenticateUserTest {
     assertEquals(params.name(), user.name());
     assertEquals(UserProfile.CUSTOMER, user.profile());
     verify(createUserRepository).create(any(), eq("bcrypt-hash"));
+  }
+
+  @Test
+  void requiresANameOnlyWhenCreatingTheCustomerAccount() {
+    when(loadUserByPhoneRepository.loadByPhone(params.phone())).thenReturn(Optional.empty());
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            sut.authenticate(
+                new AuthenticateUser.Params(
+                    params.phone(), " ", "senha-segura", UserProfile.CUSTOMER)));
+    verifyNoInteractions(createUserRepository);
   }
 
   @Test

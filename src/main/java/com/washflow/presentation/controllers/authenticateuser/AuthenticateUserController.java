@@ -54,6 +54,8 @@ public class AuthenticateUserController implements Controller {
               new AuthenticateUser.Params(phone, name, password, profile));
 
       return HttpHelper.ok(user);
+    } catch (IllegalArgumentException e) {
+      return HttpHelper.badRequest(e);
     } catch (InvalidCredentialsError e) {
       return HttpHelper.unauthorized(e);
     } catch (UserProfileMismatchError e) {

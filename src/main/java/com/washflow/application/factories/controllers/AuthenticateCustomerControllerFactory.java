@@ -22,9 +22,9 @@ public final class AuthenticateCustomerControllerFactory {
     Validation validation =
         new ValidationComposite(
             List.of(
-                new RequiredFieldValidation("phone"),
-                new RequiredFieldValidation("name"),
-                new RequiredFieldValidation("password")));
+                // "name" is only needed to create the account - DbAuthenticateUser checks it
+                // there, so returning customers can sign in with phone and password.
+                new RequiredFieldValidation("phone"), new RequiredFieldValidation("password")));
 
     return new AuthenticateUserController(
         AuthenticateUserFactory.make(jdbi, appConfig), validation, UserProfile.CUSTOMER);

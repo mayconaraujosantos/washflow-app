@@ -79,3 +79,32 @@ export function parseMoney(value: string): number | null {
   if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null
   return Number(normalized)
 }
+
+/** Progressive mask while typing: "9", "(92) 9912", "(92) 99123-4567". */
+export function maskPhoneInput(digits: string): string {
+  const d = digits.replace(/\D/g, '').slice(0, 11)
+  if (d.length === 0) return ''
+  if (d.length <= 2) return `(${d}`
+  const ddd = d.slice(0, 2)
+  const rest = d.slice(2)
+  const split = d.length === 11 ? 5 : 4
+  if (rest.length <= split) return `(${ddd}) ${rest}`
+  return `(${ddd}) ${rest.slice(0, split)}-${rest.slice(split)}`
+}
+
+/**
+ * Digits typed into a masked phone input. Deleting only a mask character
+ * ("-", ")") would leave the digits unchanged and the field stuck, so that
+ * case drops the last digit instead.
+ */
+export function phoneDigitsFromInput(
+  typed: string,
+  previousDigits: string,
+): string {
+  const digits = typed.replace(/\D/g, '').slice(0, 11)
+  const previousMasked = maskPhoneInput(previousDigits)
+  if (digits === previousDigits && typed.length < previousMasked.length) {
+    return previousDigits.slice(0, -1)
+  }
+  return digits
+}
