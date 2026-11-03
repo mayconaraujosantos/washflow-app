@@ -52,12 +52,15 @@ public final class RoutePermissionMatcher {
       case HTTP_GET ->
           path.matches("/api/operations/(report|yard|agenda|vehicles)")
               || path.equals("/api/users")
+              || path.equals("/api/sales")
               || isFeatureResource(path)
               || path.equals(CASH_TRANSACTIONS + "/report");
 
       case HTTP_POST ->
           path.equals("/api/users")
               || path.equals("/api/operations/entries")
+              || path.equals("/api/sales")
+              || path.equals("/api/services")
               || isFeatureResource(path);
 
       case HTTP_PATCH ->
