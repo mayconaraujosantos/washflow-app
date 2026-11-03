@@ -57,8 +57,9 @@ public final class AuthorizationMiddleware {
 
   private boolean isPublicRoute(Context ctx) {
     String path = ctx.path();
+    // Public API paths are read-only: POST /api/services (catalog) must still be authorized.
     return !path.startsWith("/api/")
-        || PUBLIC_API_PATHS.contains(path)
+        || (PUBLIC_API_PATHS.contains(path) && "GET".equals(ctx.method().name()))
         || isAuthenticationPath(path, ctx.method().name());
   }
 

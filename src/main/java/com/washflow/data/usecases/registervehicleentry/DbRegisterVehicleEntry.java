@@ -8,6 +8,7 @@ import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.LoadVehicleByPlateRepository;
 import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
+import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.User;
@@ -36,7 +37,6 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
 
   // Old format ABC1234 and Mercosul ABC1D23.
   private static final Pattern PLATE = Pattern.compile("^[A-Z]{3}\\d[A-Z0-9]\\d{2}$");
-  private static final Pattern PHONE = Pattern.compile("^\\d{10,11}$");
   private static final int MAX_NOTES = 500;
   private static final int MAX_NAME = 100;
   private static final int MAX_MODEL = 50;
@@ -82,8 +82,8 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
           SlotFullyBookedError {
     Instant now = Instant.now(clock);
     String plate = normalizePlate(params.plate());
-    String phone = normalizePhone(params.customerPhone());
-    String notes = limited(params.notes(), MAX_NOTES, "Observações");
+    String phone = ContactRules.normalizePhone(params.customerPhone());
+    String notes = ContactRules.limited(params.notes(), MAX_NOTES, "Observações");
     checkExpectedDelivery(params, now);
 
     loadServicePriceByIdRepository
@@ -136,9 +136,9 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
             UUID.randomUUID(),
             customerId,
             plate,
-            limited(params.vehicleModel(), MAX_MODEL, "Modelo"),
-            limited(params.vehicleColor(), MAX_COLOR, "Cor"),
-            walkIn ? limited(params.customerName(), MAX_NAME, "Nome") : null,
+            ContactRules.limited(params.vehicleModel(), MAX_MODEL, "Modelo"),
+            ContactRules.limited(params.vehicleColor(), MAX_COLOR, "Cor"),
+            walkIn ? ContactRules.limited(params.customerName(), MAX_NAME, "Nome") : null,
             walkIn ? phone : null));
   }
 
@@ -150,20 +150,6 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
     return plate;
   }
 
-  private static String normalizePhone(String raw) {
-    if (raw == null || raw.isBlank()) {
-      return null;
-    }
-    String digits = raw.replaceAll("\\D", "");
-    if (digits.startsWith("55") && digits.length() > 11) {
-      digits = digits.substring(2);
-    }
-    if (!PHONE.matcher(digits).matches()) {
-      throw new IllegalArgumentException("Telefone deve ter DDD + número (10 ou 11 dígitos)");
-    }
-    return digits;
-  }
-
   private static void checkExpectedDelivery(Params params, Instant now) {
     Instant expected = params.expectedDeliveryAt();
     if (expected == null) {
@@ -173,16 +159,5 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
     if (!expected.isAfter(start)) {
       throw new IllegalArgumentException("A previsão de entrega deve ser depois da entrada");
     }
-  }
-
-  private static String limited(String value, int max, String field) {
-    if (value == null || value.isBlank()) {
-      return null;
-    }
-    String trimmed = value.trim();
-    if (trimmed.length() > max) {
-      throw new IllegalArgumentException(field + " deve ter no máximo " + max + " caracteres");
-    }
-    return trimmed;
   }
 }

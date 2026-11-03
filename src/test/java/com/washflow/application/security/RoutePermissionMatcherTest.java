@@ -152,7 +152,10 @@ class RoutePermissionMatcherTest {
     "POST, /api/service-orders/abc-123/checklist",
     "GET, /api/service-orders/abc-123/photos",
     "POST, /api/service-orders/abc-123/photos",
-    "DELETE, /api/service-orders/abc-123/photos/photo-1"
+    "DELETE, /api/service-orders/abc-123/photos/photo-1",
+    "POST, /api/sales",
+    "GET, /api/sales",
+    "POST, /api/services"
   })
   void returnsManagerForBackOfficeRoutes(String method, String path) {
     assertEquals(UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile(method, path));

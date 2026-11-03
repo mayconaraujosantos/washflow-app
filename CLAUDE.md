@@ -81,6 +81,12 @@ Mantém o histórico das pausas feitas pelo lavador durante uma lavagem.
 * `descricao`: VARCHAR(200) (Obrigatória para `OTHER`)
 * `iniciada_em` / `retomada_em`: TIMESTAMP
 
+### 2.8 Tabelas: `vendas`, `venda_itens`, `venda_pagamentos`
+Venda rápida no balcão (`tipo = 'VENDA'`) e orçamento (`tipo = 'ORCAMENTO'`), sem passar pelo pátio.
+* `vendas`: `id`, `tipo`, `veiculo_id` (opcional), `cliente_nome`, `cliente_telefone`, `subtotal`, `desconto`, `total`, `observacoes`, `criado_por`, `criado_em`
+* `venda_itens`: item do catálogo `servicos_preco` com `descricao` e `preco_unitario` congelados, `quantidade` e `total`
+* `venda_pagamentos`: pagamentos parciais e em mais de uma forma (`CASH`, `PIX`, `DEBIT_CARD`, `CREDIT_CARD`); a soma nunca passa do total
+
 ---
 
 ## 3. Lógica das Consultas para as Filas (Portabilidade In-Memory)
@@ -118,6 +124,9 @@ Endpoints operacionais:
 * `POST /api/operations/entries`: o gerente registra a entrada pela placa (`plate`, `servicePriceId`; opcionais `vehicleModel`, `vehicleColor`, `customerName`, `customerPhone`, `expectedDeliveryAt`, `notes`). Placa nova cria o veículo; telefone de cliente cadastrado vincula o veículo à conta, senão fica como contato. Sem `scheduledAt` o atendimento entra direto em `AGUARDANDO_PATIO`; com `scheduledAt` fica `AGENDADO`, respeitando horário de funcionamento e capacidade por hora.
 * `GET /api/operations/vehicles?query=`: busca veículos por início da placa, nome ou telefone do dono (mínimo 2 caracteres, até 10 resultados).
 * `GET /api/operations/agenda?from=YYYY-MM-DD&to=YYYY-MM-DD`: atendimentos por data de agendamento (data Manaus, qualquer status), intervalo máximo de 62 dias.
+* `POST /api/sales`: registra venda rápida ou orçamento (`type` = `QUICK_SALE` ou `BUDGET`, `items` com `servicePriceId` e `quantity`, `discount`, `payments` com `method` e `amount`). Preços vêm do catálogo; desconto entre zero e o subtotal; pagamentos não excedem o total. A resposta traz `paidAmount` e `outstandingAmount`.
+* `GET /api/sales?from=YYYY-MM-DD&to=YYYY-MM-DD[&type=]`: vendas/orçamentos por data Manaus de criação.
+* `POST /api/services`: o gerente cadastra produto ou serviço no catálogo (`name`, `price`, `washerCommission`). Somente `GET /api/services` é público.
 * Caixa (`/api/cash-transactions`), categorias de despesa (`/api/expense-categories`) e checklist/fotos de atendimento são exclusivos do gerente.
 * `PATCH /api/service-orders/{id}/pause`: pausa uma lavagem atribuída ao lavador; exige motivo (`LUNCH`, `RESTROOM`, `OTHER`) e descrição para `OTHER`.
 * `PATCH /api/service-orders/{id}/resume`: retoma a lavagem pausada pelo próprio lavador.

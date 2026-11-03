@@ -43,6 +43,14 @@ class AuthorizationMiddlewareTest {
   }
 
   @Test
+  void allowsPublicCatalogReadButNotCatalogWritesWithoutToken() {
+    AuthorizationMiddleware middleware = createMiddleware();
+
+    assertTrue(middleware.authorize(mockContext("GET", "/api/services", null, null)));
+    assertFalse(middleware.authorize(mockContext("POST", "/api/services", null, null)));
+  }
+
+  @Test
   void allowsStaticFiles() {
     Context ctx = mockContext("GET", "/index.html", null, null);
     AuthorizationMiddleware middleware = createMiddleware();
