@@ -10,8 +10,10 @@ import com.washflow.application.routes.ServicePriceRoutes;
 import com.washflow.application.routes.SystemRoutes;
 import com.washflow.application.routes.UserRoutes;
 import com.washflow.application.routes.VehicleRoutes;
+import com.washflow.application.security.AccountSecurityGateway;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthorizationMiddleware;
+import com.washflow.infra.db.jdbi.JdbiAccountSecurityGateway;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -24,8 +26,10 @@ public class Application {
   public static void main(String[] args) {
     AppConfig appConfig = AppConfig.load();
     Jdbi jdbi = JdbiFactory.create(appConfig);
+    AccountSecurityGateway securityGateway = new JdbiAccountSecurityGateway(jdbi);
     AuthorizationMiddleware authorizationMiddleware =
-        new AuthorizationMiddleware(new AuthTokenService(appConfig.tokenSecret()), jdbi);
+        new AuthorizationMiddleware(
+            new AuthTokenService(appConfig.tokenSecret()), securityGateway, jdbi);
 
     Javalin app =
         Javalin.create(
