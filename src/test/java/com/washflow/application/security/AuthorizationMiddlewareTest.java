@@ -61,6 +61,24 @@ class AuthorizationMiddlewareTest {
   }
 
   @Test
+  void opensLoginEntryPointsAndTicketsButNotBadgeIssuing() {
+    AuthorizationMiddleware middleware = createMiddleware();
+
+    assertTrue(middleware.authorize(mockContext("POST", "/api/auth/washers/pin", null, null)));
+    assertTrue(middleware.authorize(mockContext("POST", "/api/auth/washers/badge", null, null)));
+    assertTrue(middleware.authorize(mockContext("POST", "/api/auth/customers/otp", null, null)));
+    assertTrue(
+        middleware.authorize(mockContext("POST", "/api/auth/customers/otp/verify", null, null)));
+    assertTrue(middleware.authorize(mockContext("POST", "/api/auth/customers/google", null, null)));
+    assertTrue(middleware.authorize(mockContext("GET", "/api/auth/options", null, null)));
+    assertTrue(
+        middleware.authorize(mockContext("GET", "/api/tickets/abcDEF123_-xyz789", null, null)));
+    assertFalse(middleware.authorize(mockContext("POST", "/api/users/x/badge", null, null)));
+    assertFalse(
+        middleware.authorize(mockContext("POST", "/api/service-orders/x/ticket", null, null)));
+  }
+
+  @Test
   void allowsStaticFiles() {
     Context ctx = mockContext("GET", "/index.html", null, null);
     AuthorizationMiddleware middleware = createMiddleware();

@@ -1,3 +1,4 @@
+import { makeRemoteAccess } from '@/main/factories/usecases/make-remote-access'
 import { makeRemoteEstablishment } from '@/main/factories/usecases/make-remote-establishment'
 import { makeRemoteFeatures } from '@/main/factories/usecases/make-remote-features'
 import { makeRemoteOperations } from '@/main/factories/usecases/make-remote-operations'
@@ -8,5 +9,6 @@ export const makeManagerDashboardPage = () => (
     operations={makeRemoteOperations()}
     features={makeRemoteFeatures()}
     establishment={makeRemoteEstablishment()}
+    access={makeRemoteAccess()}
   />
 )

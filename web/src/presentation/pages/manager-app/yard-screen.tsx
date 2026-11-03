@@ -12,6 +12,8 @@ import {
   OrderCard,
 } from '@/presentation/components/ui/blocks'
 import { errorMessage, formatMoney } from '@/presentation/helpers/format'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { TicketSheet } from './access-sheets'
 import { MANAGER_NAV, PAYMENT_METHODS, useManager } from './manager-context'
 
 const GROUPS: { title: string; statuses: ServiceOrderModel['status'][] }[] = [
@@ -27,6 +29,15 @@ export function YardScreen({ mode }: Props) {
   const { yard, operations, features, refresh, notify, openMenu } = useManager()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [paying, setPaying] = useState<ServiceOrderModel | null>(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [ticketFor, setTicketFor] = useState<ServiceOrderModel | null>(null)
+  // Right after registering an entry the counter hands the customer a ticket.
+  const ticketOrderId = (location.state as { ticketOrderId?: string } | null)
+    ?.ticketOrderId
+  const pendingTicket = ticketOrderId
+    ? (yard.find((order) => order.id === ticketOrderId) ?? null)
+    : null
   const [checklist, setChecklist] = useState<{
     orderId: string
     type: ChecklistType
@@ -154,6 +165,14 @@ export function YardScreen({ mode }: Props) {
               {group.orders.map((order) => (
                 <OrderCard key={order.id} order={order} showWasher>
                   {renderActions(order)}
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setTicketFor(order)}
+                  >
+                    <UiIcon name="qr" size={18} />
+                    Ticket
+                  </button>
                 </OrderCard>
               ))}
             </ul>
@@ -161,6 +180,13 @@ export function YardScreen({ mode }: Props) {
         ))
       )}
 
+      <TicketSheet
+        order={ticketFor ?? pendingTicket}
+        onClose={() => {
+          setTicketFor(null)
+          if (ticketOrderId) navigate('.', { replace: true, state: null })
+        }}
+      />
       <PaymentSheet
         order={paying}
         onClose={() => setPaying(null)}

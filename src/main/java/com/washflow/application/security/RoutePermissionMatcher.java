@@ -61,6 +61,8 @@ public final class RoutePermissionMatcher {
               || path.equals("/api/operations/entries")
               || path.equals("/api/sales")
               || path.equals("/api/services")
+              || path.matches("/api/users/[^/]+/badge")
+              || path.matches("/api/service-orders/[^/]+/ticket")
               || isFeatureResource(path);
 
       case HTTP_PATCH ->

@@ -24,6 +24,8 @@ type Props = Readonly<{
   setNotice: (msg: string | null) => void
   setError: (msg: string | null) => void
   onChanged?: () => void
+  // Badge (PIN + QR) for washers; called after creating one, too.
+  onIssueBadge?: (washer: UserModel) => void
 }>
 
 export function TeamManagementSection({
@@ -37,6 +39,7 @@ export function TeamManagementSection({
   setNotice,
   setError,
   onChanged,
+  onIssueBadge,
 }: Props) {
   const navigate = useNavigate()
   const [selectedProfiles, setSelectedProfiles] = useState<
@@ -53,17 +56,20 @@ export function TeamManagementSection({
     setError(null)
     setNotice(null)
     try {
-      await operations.createWasher({
+      const created = await operations.createWasher({
         name: washerName.trim(),
-        phone: washerPhone.trim(),
+        phone: washerPhone.replace(/\D/g, ''),
         password: washerPassword,
       })
       onChanged?.()
+      onIssueBadge?.(created)
       setWasherName('')
       setWasherPhone('')
       setWasherPassword('')
       setNotice(
-        'Conta de lavador criada. Entregue a senha inicial diretamente ao colaborador.',
+        washerPassword
+          ? 'Conta de lavador criada. Entregue a senha e o crachá diretamente ao colaborador.'
+          : 'Conta de lavador criada. Entregue o crachá (PIN e QR) diretamente ao colaborador.',
       )
     } catch (cause) {
       setError(
@@ -183,14 +189,13 @@ export function TeamManagementSection({
           />
         </label>
         <label>
-          Senha inicial
+          Senha (opcional — o crachá basta)
           <input
             autoComplete="new-password"
             minLength={8}
             type="password"
             value={washerPassword}
             onChange={(event) => setWasherPassword(event.target.value)}
-            required
           />
         </label>
         <button className="primary-btn" disabled={creatingWasher}>
@@ -254,6 +259,17 @@ export function TeamManagementSection({
                   onError={setError}
                 />
               )}
+              {account.profile === 'WASHER' &&
+                account.active &&
+                onIssueBadge && (
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => onIssueBadge(account)}
+                  >
+                    Gerar crachá (PIN e QR)
+                  </button>
+                )}
               <div className="team-controls">
                 <label>
                   Perfil

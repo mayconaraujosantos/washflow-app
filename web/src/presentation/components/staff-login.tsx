@@ -1,4 +1,4 @@
-import { SubmitEvent, useState } from 'react'
+import { SubmitEvent, useState, type ReactNode } from 'react'
 import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 import type { UserModel } from '@/domain/models/user-model'
 import { AuthLayout } from '@/presentation/components/ui/app-chrome'
@@ -20,6 +20,8 @@ type Props = Readonly<{
   identifier?: 'phone' | 'emailOrPhone'
   authenticate: (credentials: Credentials) => Promise<AuthenticatedSessionModel>
   saveSession: (session: AuthenticatedSessionModel) => void
+  // Extra link under the form (e.g. "Entrar com PIN ou crachá").
+  alternative?: ReactNode
 }>
 
 export type Credentials =
@@ -38,6 +40,7 @@ export function StaffLogin({
   identifier = 'phone',
   authenticate,
   saveSession,
+  alternative,
 }: Props) {
   const [phone, setPhone] = useState('')
   const [login, setLogin] = useState('')
@@ -110,6 +113,7 @@ export function StaffLogin({
         <button type="submit" className="btn btn-dark" disabled={loading}>
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
+        {alternative && <div className="auth-links">{alternative}</div>}
       </form>
     </AuthLayout>
   )

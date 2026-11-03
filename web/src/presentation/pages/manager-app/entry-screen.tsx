@@ -76,7 +76,11 @@ export function EntryScreen({ mode }: Props) {
           : `Entrada de ${shownPlate} registrada. Já está na fila do pátio.`,
       )
       await refresh()
-      navigate(isSchedule ? '/gerente/agenda' : '/gerente/patio')
+      if (isSchedule) {
+        navigate('/gerente/agenda')
+      } else {
+        navigate('/gerente/patio', { state: { ticketOrderId: order.id } })
+      }
     } catch (cause) {
       setError(errorMessage(cause, 'Não foi possível registrar'))
     } finally {
