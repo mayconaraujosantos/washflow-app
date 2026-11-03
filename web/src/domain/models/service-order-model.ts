@@ -3,6 +3,16 @@
 export type ServiceOrderStatus =
   'SCHEDULED' | 'WAITING_IN_YARD' | 'WASHING' | 'PAUSED' | 'READY' | 'DONE'
 
+// Display data joined by the API (ServiceOrder.Details) - absent on older responses.
+export type ServiceOrderDetails = {
+  vehiclePlate: string | null
+  vehicleModel: string | null
+  vehicleColor: string | null
+  customerName: string | null
+  serviceName: string | null
+  washerName: string | null
+}
+
 export type ServiceOrderModel = {
   id: string
   vehicleId: string
@@ -13,4 +23,5 @@ export type ServiceOrderModel = {
   createdAt: string
   updatedAt: string
   pauseReason?: 'LUNCH' | 'RESTROOM' | 'OTHER' | null
+  details?: ServiceOrderDetails | null
 }
