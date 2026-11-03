@@ -36,14 +36,15 @@ public class CashTransactionJdbiRepository
       INSERT INTO cash_transaction
         (id, tipo, valor, categoria_id, descricao, data_referencia, atendimento_id, criado_em, criado_por)
       VALUES
-        (:id, :type, :amount, :categoryId, :description, :referenceDate, :serviceOrderId, :createdAt, :createdBy)
+        (:id, :type, :amount, CAST(:categoryId AS UUID), :description, :referenceDate,
+         CAST(:serviceOrderId AS UUID), :createdAt, CAST(:createdBy AS UUID))
       """;
 
   private static final String UPDATE_TRANSACTION_SQL =
       """
       UPDATE cash_transaction
-      SET tipo = :type, valor = :amount, categoria_id = :categoryId,
-          descricao = :description, data_referencia = :referenceDate, atendimento_id = :serviceOrderId
+      SET tipo = :type, valor = :amount, categoria_id = CAST(:categoryId AS UUID),
+          descricao = :description, data_referencia = :referenceDate, atendimento_id = CAST(:serviceOrderId AS UUID)
       WHERE id = :id
       """;
 

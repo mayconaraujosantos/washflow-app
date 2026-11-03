@@ -93,4 +93,14 @@ class GetCashTransactionReportControllerTest {
 
     assertEquals(400, response.statusCode());
   }
+
+  @Test
+  void readsTheRangeFromTheQueryString() {
+    HttpRequest request =
+        new HttpRequest(Map.of(), Map.of(), Map.of("from", "2026-11-01", "to", "2026-11-03"));
+
+    HttpResponse response = sut.handle(request);
+
+    assertEquals(200, response.statusCode());
+  }
 }
