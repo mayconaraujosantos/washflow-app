@@ -2,6 +2,7 @@ package com.washflow.application.factories.usecases;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.registervehicleentry.DbRegisterVehicleEntry;
+import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
 import com.washflow.domain.usecases.RegisterVehicleEntry;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
@@ -22,10 +23,9 @@ public final class RegisterVehicleEntryFactory {
         vehicleRepository,
         new UserJdbiRepository(jdbi),
         new ServicePriceJdbiRepository(jdbi),
+        new SchedulingRules(serviceOrderRepository, EstablishmentHours.supplier(jdbi, appConfig)),
         serviceOrderRepository,
         serviceOrderRepository,
-        serviceOrderRepository,
-        Clock.systemUTC(),
-        appConfig.maxVehiclesPerHour());
+        Clock.systemUTC());
   }
 }

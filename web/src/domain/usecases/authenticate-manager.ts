@@ -7,10 +7,9 @@ export interface AuthenticateManager {
 }
 
 export namespace AuthenticateManager {
-  export type Params = {
-    phone: string
-    password: string
-  }
+  // Managers log in with e-mail (preferred) or, for older accounts, phone.
+  export type Params =
+    { email: string; password: string } | { phone: string; password: string }
 
   export type Model = AuthenticatedSessionModel
 }

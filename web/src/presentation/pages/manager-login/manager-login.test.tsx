@@ -18,8 +18,8 @@ const user: UserModel = {
 }
 const session = { user, token: 'signed-token' }
 
-const fillAndSubmit = async () => {
-  await userEvent.type(screen.getByLabelText('Telefone'), user.phone)
+const fillAndSubmit = async (login = user.phone) => {
+  await userEvent.type(screen.getByLabelText('E-mail ou telefone'), login)
   await userEvent.type(screen.getByLabelText('Senha'), 'senha-forte')
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 }
@@ -34,6 +34,19 @@ describe('ManagerLogin', () => {
 
     expect(authenticateManager.auth).toHaveBeenCalledWith({
       phone: user.phone,
+      password: 'senha-forte',
+    })
+  })
+
+  it('logs in by e-mail when the identifier has an @', async () => {
+    const authenticateManager: AuthenticateManager = { auth: vi.fn() }
+    vi.mocked(authenticateManager.auth).mockResolvedValueOnce(session)
+    render(<ManagerLogin authenticateManager={authenticateManager} />)
+
+    await fillAndSubmit(' Bia@LavaJato.com ')
+
+    expect(authenticateManager.auth).toHaveBeenCalledWith({
+      email: 'bia@lavajato.com',
       password: 'senha-forte',
     })
   })

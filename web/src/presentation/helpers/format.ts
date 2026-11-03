@@ -108,3 +108,16 @@ export function phoneDigitsFromInput(
   }
   return digits
 }
+
+/** "seg. a sáb., 08h às 18h" (or "todos os dias, ...") from the establishment settings. */
+export function formatBusinessHours(
+  settings:
+    | { openingHour: number; closingHour: number; openOnSunday: boolean }
+    | null
+    | undefined,
+): string {
+  if (!settings) return 'horário de funcionamento'
+  const pad = (hour: number) => `${String(hour).padStart(2, '0')}h`
+  const days = settings.openOnSunday ? 'todos os dias' : 'seg. a sáb.'
+  return `${days}, ${pad(settings.openingHour)} às ${pad(settings.closingHour)}`
+}

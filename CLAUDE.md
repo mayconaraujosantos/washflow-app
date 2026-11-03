@@ -25,6 +25,16 @@ Armazena todos os atores do sistema. O acesso às telas do PWA será controlado 
 * `criado_em`: TIMESTAMP
 * `ativo`: BOOLEAN (padrão `TRUE`); contas inativas não autenticam nem usam rotas protegidas
 
+### 2.1.1 Tabela: `estabelecimento`
+Instalação de um único lava-jato (linha única, `id = 1`), criada pelo assistente de primeiro acesso.
+* `nome`: VARCHAR(100)
+* `hora_abertura` / `hora_fechamento`: INT (horas inteiras, horário de Manaus; fechamento exclusivo)
+* `abre_domingo`: BOOLEAN
+* `max_veiculos_hora`: INT (capacidade do pátio por hora)
+* `configurado_em`: TIMESTAMP (nulo até concluir o assistente ou salvar os parâmetros)
+
+`usuarios.email` (único, minúsculo) é o login da gestão.
+
 ### 2.2 Tabela: `veiculos`
 Vincula os carros aos seus respectivos donos (clientes).
 * `id`: UUID ou BIGINT (Chave Primária)
@@ -98,7 +108,7 @@ Para garantir que a lógica funcione igual no banco físico ou em listas Java/Ko
 
 ### Painel do Gerente (Pátio Geral)
 * **Regra:** Listar atendimentos agrupados por status, priorizando `EM_LAVAGEM` e `AGUARDANDO_PATIO` para monitorar gargalos de tempo.
-* Os horários de agendamento e funcionamento usam o fuso `America/Manaus` (UTC-4), independentemente do fuso do navegador ou servidor. O funcionamento é de segunda a sábado, das 08:00 às 18:00.
+* Os horários de agendamento e funcionamento usam o fuso `America/Manaus` (UTC-4), independentemente do fuso do navegador ou servidor. Dias, horário e capacidade por hora vêm de `estabelecimento` (padrão: segunda a sábado, 08:00 às 18:00); até ser configurado, a capacidade usa `MAX_VEHICLES_PER_HOUR`.
 
 ---
 
@@ -139,8 +149,14 @@ Endpoints operacionais:
 
 O cliente mantém o painel aberto com atualização automática a cada 3 segundos. Quando o status é `PRONTO`, o painel mostra uma orientação persistente para retirada enquanto o atendimento não for finalizado. Não há envio de push com o app fechado.
 
+### Estabelecimento e primeiro acesso
+* `GET /api/setup` (público) informa se o assistente de configuração está pendente; a página inicial redireciona para `/configurar` nesse caso.
+* `POST /api/setup` (público, uma única vez) cria o estabelecimento e a conta do dono (gerente com e-mail e senha) e já devolve a sessão. Em produção exige o `SETUP_CODE` definido no servidor; sem ele, o assistente fica desabilitado.
+* `GET /api/establishment` (público) e `PUT /api/establishment` (gerente): nome, horário, domingos e capacidade do pátio. Salvar os parâmetros também encerra o assistente.
+* O gerente entra com e-mail e senha (`POST /api/auth/managers` com `email` ou, para contas antigas, `phone`). `PATCH /api/users/{id}/email` define o e-mail de acesso.
+
 ### Bootstrap e limites de autenticação
 * Em produção, configure `AUTH_TOKEN_SECRET` (mínimo 32 caracteres).
-* O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido.
+* O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido. Em instalações novas, prefira o assistente `/configurar` (com `SETUP_CODE` em produção).
 * Contas preexistentes sem `senha_hash` não podem entrar em produção até que sua senha seja configurada por um processo administrativo seguro. Apenas ambiente de desenvolvimento permite reivindicar uma conta sem hash no primeiro login.
 * A senha comprova acesso à conta após o cadastro, mas o telefone não é verificado por SMS/WhatsApp (OTP). Para comprovar posse do número, é necessária integração com provedor de OTP.

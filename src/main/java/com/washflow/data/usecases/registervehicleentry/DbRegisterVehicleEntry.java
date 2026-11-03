@@ -62,14 +62,34 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
       LoadServiceOrderByIdRepository loadServiceOrderByIdRepository,
       Clock clock,
       int maxVehiclesPerHour) {
+    this(
+        loadVehicleByPlateRepository,
+        createVehicleRepository,
+        loadUserByPhoneRepository,
+        loadServicePriceByIdRepository,
+        new SchedulingRules(countServiceOrdersScheduledInRangeRepository, maxVehiclesPerHour),
+        createServiceOrderRepository,
+        loadServiceOrderByIdRepository,
+        clock);
+  }
+
+  @SuppressWarnings("java:S107")
+  public DbRegisterVehicleEntry(
+      LoadVehicleByPlateRepository loadVehicleByPlateRepository,
+      CreateVehicleRepository createVehicleRepository,
+      LoadUserByPhoneRepository loadUserByPhoneRepository,
+      LoadServicePriceByIdRepository loadServicePriceByIdRepository,
+      SchedulingRules rules,
+      CreateServiceOrderRepository createServiceOrderRepository,
+      LoadServiceOrderByIdRepository loadServiceOrderByIdRepository,
+      Clock clock) {
     this.loadVehicleByPlateRepository = loadVehicleByPlateRepository;
     this.createVehicleRepository = createVehicleRepository;
     this.loadUserByPhoneRepository = loadUserByPhoneRepository;
     this.loadServicePriceByIdRepository = loadServicePriceByIdRepository;
     this.createServiceOrderRepository = createServiceOrderRepository;
     this.loadServiceOrderByIdRepository = loadServiceOrderByIdRepository;
-    this.rules =
-        new SchedulingRules(countServiceOrdersScheduledInRangeRepository, maxVehiclesPerHour);
+    this.rules = rules;
     this.clock = clock;
   }
 

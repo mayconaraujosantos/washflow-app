@@ -7,6 +7,7 @@ import { ScreenLayout } from '@/presentation/components/ui/app-chrome'
 import { Notice } from '@/presentation/components/ui/blocks'
 import {
   errorMessage,
+  formatBusinessHours,
   formatMoney,
   normalizePlate,
 } from '@/presentation/helpers/format'
@@ -21,7 +22,7 @@ type Props = Readonly<{ mode: 'entry' | 'schedule' }>
  * adds the date/time and follows the business-hours rules on the API.
  */
 export function EntryScreen({ mode }: Props) {
-  const { operations, servicePrices, notify, refresh } = useManager()
+  const { operations, servicePrices, notify, refresh, settings } = useManager()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const presetDate = searchParams.get('data')
@@ -195,7 +196,9 @@ export function EntryScreen({ mode }: Props) {
 
         {isSchedule && (
           <label className="field">
-            <span>Data e horário (Manaus · seg. a sáb., 08h às 18h)</span>
+            <span>
+              Data e horário (Manaus · {formatBusinessHours(settings)})
+            </span>
             <input
               type="datetime-local"
               value={scheduledAt}

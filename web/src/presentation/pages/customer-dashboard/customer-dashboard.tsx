@@ -22,7 +22,12 @@ import {
   KpiBand,
   Notice,
 } from '@/presentation/components/ui/blocks'
-import { firstName, greeting } from '@/presentation/helpers/format'
+import {
+  firstName,
+  formatBusinessHours,
+  greeting,
+} from '@/presentation/helpers/format'
+import type { Establishment } from '@/domain/usecases/establishment'
 import { ScheduleSection } from './schedule-section'
 import { TrackingSection } from './tracking-section'
 import { VehicleSection } from './vehicle-section'
@@ -33,6 +38,7 @@ type Props = Readonly<{
   listServicePrices: ListServicePrices
   scheduleServiceOrder: ScheduleServiceOrder
   listServiceOrdersByCustomer: ListServiceOrdersByCustomer
+  establishment?: Establishment
 }>
 
 const NAV: NavItem[] = [
@@ -59,6 +65,7 @@ export function CustomerDashboard({
   listServicePrices,
   scheduleServiceOrder,
   listServiceOrdersByCustomer,
+  establishment,
 }: Props) {
   const navigate = useNavigate()
   const [session] = useState(() => loadCustomerSession())
@@ -70,6 +77,7 @@ export function CustomerDashboard({
   const [loadError, setLoadError] = useState<string | null>(null)
   const [refreshingOrders, setRefreshingOrders] = useState(false)
   const [statusNotice, setStatusNotice] = useState<string | null>(null)
+  const [businessHours, setBusinessHours] = useState<string | undefined>()
   const previousStatuses = useRef<Map<
     string,
     ServiceOrderModel['status']
@@ -96,6 +104,16 @@ export function CustomerDashboard({
   useEffect(() => {
     if (!user) navigate('/login/cliente', { replace: true })
   }, [user, navigate])
+
+  useEffect(() => {
+    if (!establishment) return
+    establishment
+      .load()
+      .then((settings) => setBusinessHours(formatBusinessHours(settings)))
+      .catch(() => {
+        // The schedule form keeps its default hint; the API still enforces the rules.
+      })
+  }, [establishment])
 
   useEffect(() => {
     if (!user) return
@@ -267,6 +285,7 @@ export function CustomerDashboard({
                 vehicles={vehicles}
                 servicePrices={servicePrices}
                 scheduleServiceOrder={scheduleServiceOrder}
+                businessHours={businessHours}
                 onScheduled={(serviceOrder) =>
                   setServiceOrders((current) => [serviceOrder, ...current])
                 }

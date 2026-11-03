@@ -11,7 +11,7 @@ public final class AuthorizationMiddleware {
 
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
   private static final Set<String> PUBLIC_API_PATHS =
-      Set.of("/api/health", "/api/hello", "/api/services");
+      Set.of("/api/health", "/api/hello", "/api/services", "/api/setup", "/api/establishment");
   public static final String ERROR = "error";
 
   private final AuthTokenService tokenService;
@@ -65,7 +65,10 @@ public final class AuthorizationMiddleware {
 
   private boolean isAuthenticationPath(String path, String method) {
     return method.equals("POST")
-        && Set.of("/api/auth/customers", "/api/auth/washers", "/api/auth/managers").contains(path);
+        // POST /api/setup is open only while the establishment is unconfigured (and, in
+        // production, with the server's SETUP_CODE) - DbSetupEstablishment enforces both.
+        && Set.of("/api/auth/customers", "/api/auth/washers", "/api/auth/managers", "/api/setup")
+            .contains(path);
   }
 
   private String extractToken(Context ctx) {

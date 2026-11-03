@@ -64,10 +64,10 @@ public final class RoutePermissionMatcher {
               || isFeatureResource(path);
 
       case HTTP_PATCH ->
-          path.matches("/api/users/[^/]+/(profile|active)")
+          path.matches("/api/users/[^/]+/(profile|active|email)")
               || path.matches("/api/service-orders/[^/]+/(check-in|finalize)");
 
-      case "PUT" -> path.matches(CASH_TRANSACTIONS + "/[^/]+");
+      case "PUT" -> path.matches(CASH_TRANSACTIONS + "/[^/]+") || path.equals("/api/establishment");
 
       case HTTP_DELETE ->
           path.matches(CASH_TRANSACTIONS + "/[^/]+")

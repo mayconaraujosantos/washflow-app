@@ -26,6 +26,6 @@ public final class ScheduleServiceOrderFactory {
         serviceOrderRepository,
         serviceOrderRepository,
         Clock.systemUTC(),
-        appConfig.maxVehiclesPerHour());
+        EstablishmentHours.supplier(jdbi, appConfig));
   }
 }

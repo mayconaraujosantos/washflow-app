@@ -1,3 +1,4 @@
+import { makeRemoteEstablishment } from '@/main/factories/usecases/make-remote-establishment'
 import { CustomerDashboard } from '@/presentation/pages/customer-dashboard/customer-dashboard'
 import { makeRemoteCreateVehicle } from '@/main/factories/usecases/make-remote-create-vehicle'
 import { makeRemoteListVehiclesByCustomer } from '@/main/factories/usecases/make-remote-list-vehicles-by-customer'
@@ -13,6 +14,7 @@ export const makeCustomerDashboardPage = () => {
       listServicePrices={makeRemoteListServicePrices()}
       scheduleServiceOrder={makeRemoteScheduleServiceOrder()}
       listServiceOrdersByCustomer={makeRemoteListServiceOrdersByCustomer()}
+      establishment={makeRemoteEstablishment()}
     />
   )
 }

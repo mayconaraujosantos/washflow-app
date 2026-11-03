@@ -1556,6 +1556,12 @@ body:has(.role-screen) {
   text-align: center;
 }
 
+.role-shop {
+  color: var(--role-title);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
 .role-slogan {
   color: var(--role-text);
   font-size: 1rem;

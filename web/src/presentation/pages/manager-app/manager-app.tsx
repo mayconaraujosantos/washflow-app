@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import type { ServiceOrderModel } from '@/domain/models/service-order-model'
 import type { ServicePriceModel } from '@/domain/models/service-price-model'
+import type { EstablishmentModel } from '@/domain/models/establishment-model'
+import type { Establishment } from '@/domain/usecases/establishment'
 import type { Features } from '@/domain/usecases/features'
 import type { Operations } from '@/domain/usecases/operations'
 import {
@@ -20,17 +22,19 @@ import {
   type ManagerData,
 } from './manager-context'
 import { SaleScreen } from './sale-screen'
+import { SettingsScreen } from './settings-screen'
 import { YardScreen } from './yard-screen'
 
 type Props = Readonly<{
   operations: Operations
   features: Features
+  establishment: Establishment
 }>
 
 const REFRESH_MS = 3000
 const FLASH_MS = 4500
 
-export function ManagerApp({ operations, features }: Props) {
+export function ManagerApp({ operations, features, establishment }: Props) {
   const navigate = useNavigate()
   const [session] = useState(() => loadManagerSession())
   const user = session?.user ?? null
@@ -41,6 +45,7 @@ export function ManagerApp({ operations, features }: Props) {
     null,
   )
   const [menuOpen, setMenuOpen] = useState(false)
+  const [settings, setSettings] = useState<EstablishmentModel | null>(null)
 
   const notify = useCallback((tone: FlashTone, text: string) => {
     setFlash({ tone, text })
@@ -62,6 +67,17 @@ export function ManagerApp({ operations, features }: Props) {
     }
   }, [operations, notify])
 
+  const reloadSettings = useCallback(async () => {
+    try {
+      setSettings(await establishment.load())
+    } catch (cause) {
+      notify(
+        'error',
+        errorMessage(cause, 'Falha ao carregar o estabelecimento'),
+      )
+    }
+  }, [establishment, notify])
+
   useEffect(() => {
     if (!user) {
       navigate('/login/gerente', { replace: true })
@@ -70,13 +86,14 @@ export function ManagerApp({ operations, features }: Props) {
     const first = window.setTimeout(() => {
       void refresh()
       void reloadPrices()
+      void reloadSettings()
     }, 0)
     const timer = window.setInterval(() => void refresh(), REFRESH_MS)
     return () => {
       window.clearTimeout(first)
       window.clearInterval(timer)
     }
-  }, [user, navigate, refresh, reloadPrices])
+  }, [user, navigate, refresh, reloadPrices, reloadSettings])
 
   useEffect(() => {
     if (!flash) return
@@ -99,6 +116,9 @@ export function ManagerApp({ operations, features }: Props) {
         reloadPrices,
         notify,
         openMenu,
+        establishment,
+        settings,
+        reloadSettings,
       },
     [
       user,
@@ -110,6 +130,9 @@ export function ManagerApp({ operations, features }: Props) {
       reloadPrices,
       notify,
       openMenu,
+      establishment,
+      settings,
+      reloadSettings,
     ],
   )
 
@@ -135,6 +158,7 @@ export function ManagerApp({ operations, features }: Props) {
           <Route path="caixa" element={<CashScreen />} />
           <Route path="equipe" element={<TeamScreen />} />
           <Route path="relatorios" element={<ReportScreen />} />
+          <Route path="estabelecimento" element={<SettingsScreen />} />
           <Route path="*" element={<Navigate to="/gerente" replace />} />
         </Routes>
         {flash && (
@@ -158,6 +182,11 @@ export function ManagerApp({ operations, features }: Props) {
               label: 'Equipe e acessos',
               icon: 'manager',
               to: '/gerente/equipe',
+            },
+            {
+              label: 'Estabelecimento',
+              icon: 'tag',
+              to: '/gerente/estabelecimento',
             },
           ]}
           footer={[{ label: 'Sair', icon: 'logout', onClick: logout }]}

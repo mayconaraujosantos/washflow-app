@@ -19,7 +19,8 @@ public record AppConfig(
     int maxVehiclesPerHour,
     String tokenSecret,
     String bootstrapManagerPhone,
-    String bootstrapManagerPassword) {
+    String bootstrapManagerPassword,
+    String setupCode) {
 
   private static final int DEFAULT_PORT = 7000;
   private static final int DEFAULT_MAX_VEHICLES_PER_HOUR = 3;
@@ -67,7 +68,9 @@ public record AppConfig(
                 "MAX_VEHICLES_PER_HOUR"),
             tokenSecret,
             value(processEnv, dotenvValues, useDotenv, "BOOTSTRAP_MANAGER_PHONE", "11999993333"),
-            value(processEnv, dotenvValues, useDotenv, "BOOTSTRAP_MANAGER_PASSWORD", ""));
+            value(processEnv, dotenvValues, useDotenv, "BOOTSTRAP_MANAGER_PASSWORD", ""),
+            // Owner-only secret that unlocks the first-run setup wizard in production.
+            value(processEnv, dotenvValues, useDotenv, "SETUP_CODE", ""));
 
     if (isProduction(environment)
         && config.databaseUrl().isBlank()

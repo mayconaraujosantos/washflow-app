@@ -31,6 +31,7 @@ type PhoneFieldProps = Readonly<{
   label?: string
   value: string
   onChange: (digits: string) => void
+  required?: boolean
 }>
 
 /** Brazilian phone: "+55" prefix, masked as (92) 99123-4567, value kept as digits. */
@@ -38,6 +39,7 @@ export function PhoneField({
   label = 'Telefone',
   value,
   onChange,
+  required = true,
 }: PhoneFieldProps) {
   const id = useId()
   return (
@@ -60,7 +62,7 @@ export function PhoneField({
           onChange={(event) =>
             onChange(phoneDigitsFromInput(event.target.value, value))
           }
-          required
+          required={required}
         />
       </div>
     </div>
@@ -117,11 +119,15 @@ export function TextField({
   value,
   onChange,
   autoComplete,
+  inputMode,
+  maxLength = 100,
 }: Readonly<{
   label: string
   value: string
   onChange: (value: string) => void
   autoComplete?: string
+  inputMode?: 'text' | 'email'
+  maxLength?: number
 }>) {
   const id = useId()
   return (
@@ -134,7 +140,9 @@ export function TextField({
         className="input"
         placeholder={label}
         autoComplete={autoComplete}
-        maxLength={100}
+        inputMode={inputMode}
+        autoCapitalize={inputMode === 'email' ? 'none' : undefined}
+        maxLength={maxLength}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required

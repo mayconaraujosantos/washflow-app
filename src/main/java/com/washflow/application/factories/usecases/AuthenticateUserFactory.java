@@ -24,6 +24,7 @@ public final class AuthenticateUserFactory {
         userRepository,
         userRepository,
         new BCryptPasswordHasher(),
-        appConfig);
+        appConfig,
+        userRepository);
   }
 }
