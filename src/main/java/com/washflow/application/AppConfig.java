@@ -23,6 +23,8 @@ public record AppConfig(
 
   private static final int DEFAULT_PORT = 7000;
   private static final int DEFAULT_MAX_VEHICLES_PER_HOUR = 3;
+  public static final String WASHFLOW = "washflow";
+  private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
   public static AppConfig load() {
     Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
@@ -39,7 +41,7 @@ public record AppConfig(
     String tokenSecret = value(processEnv, dotenvValues, useDotenv, "AUTH_TOKEN_SECRET", "");
     if (tokenSecret.isBlank() && !isProduction(environment)) {
       byte[] secret = new byte[32];
-      new SecureRandom().nextBytes(secret);
+      SECURE_RANDOM.nextBytes(secret);
       tokenSecret = Base64.getEncoder().encodeToString(secret);
     }
 
@@ -52,9 +54,9 @@ public record AppConfig(
             value(processEnv, dotenvValues, useDotenv, "DATABASE_URL", ""),
             value(processEnv, dotenvValues, useDotenv, "DB_HOST", "localhost"),
             parsePort(value(processEnv, dotenvValues, useDotenv, "DB_PORT", "5432"), "DB_PORT"),
-            value(processEnv, dotenvValues, useDotenv, "DB_NAME", "washflow"),
-            value(processEnv, dotenvValues, useDotenv, "DB_USER", "washflow"),
-            value(processEnv, dotenvValues, useDotenv, "DB_PASSWORD", "washflow"),
+            value(processEnv, dotenvValues, useDotenv, "DB_NAME", WASHFLOW),
+            value(processEnv, dotenvValues, useDotenv, "DB_USER", WASHFLOW),
+            value(processEnv, dotenvValues, useDotenv, "DB_PASSWORD", WASHFLOW),
             parsePositiveInt(
                 value(
                     processEnv,

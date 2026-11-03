@@ -12,39 +12,38 @@ import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Builds the app's single {@link Jdbi} instance - the same job {@code spring-boot-starter-jdbc}
- * does via {@code application.properties}: read connection settings from the environment, pool them
- * with Hikari, done.
+ * Factory responsible for creating the Jdbi instance with connection pooling and schema migration.
  *
- * <p>Reads {@code DATABASE_URL} in the {@code postgres://user:pass@host:port/db} form platforms
- * like Railway inject; otherwise falls back to discrete {@code DB_HOST}/{@code DB_PORT}/{@code
- * DB_NAME}/{@code DB_USER}/{@code DB_PASSWORD} vars, defaulting to {@code docker-compose.yml}'s
- * {@code postgres} service for local dev.
+ * <p>Supports two modes:
  *
- * <p>If Postgres can't be reached at startup, development falls back to an in-memory H2 database;
- * production fails startup. The development fallback is decided once at startup and does not
- * recover if Postgres becomes available later. H2 runs in {@code MODE=PostgreSQL} against {@code
- * db/migration-h2}, a copy of the Postgres migrations with dialect-specific differences kept in
- * sync by hand.
+ * <ul>
+ *   <li><b>Production</b>: Uses PostgreSQL via {@code DATABASE_URL} or individual config
+ *       properties. Requires SSL mode for cloud platforms like Render.
+ *   <li><b>Development</b>: Falls back to in-memory H2 when PostgreSQL is unreachable.
+ * </ul>
  */
 public final class JdbiFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JdbiFactory.class);
 
-  // Matches docker-compose.yml's `postgres` service - the local dev default
-  // when no DB_* / DATABASE_URL env vars override it.
   private static final String LOCAL_DEFAULT = "washflow";
-
   private static final String H2_JDBC_URL =
       "jdbc:h2:mem:washflow;MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
+  private static final int POSTGRES_DEFAULT_PORT = 5432;
+  private static final int CONNECTION_TIMEOUT_MS = 10_000;
+  private static final int MAX_POOL_SIZE = 10;
+  private static final int MAX_RETRIES = 5;
+  private static final long RETRY_INTERVAL_MS = 2_000L;
 
   private JdbiFactory() {}
 
+  /**
+   * Creates a fully configured Jdbi instance with connection pooling and Flyway migrations applied.
+   */
   public static Jdbi create(AppConfig appConfig) {
     DataSource dataSource = createDataSource(appConfig);
     migrate(dataSource);
@@ -69,6 +68,10 @@ public final class JdbiFactory {
         && hikari.getJdbcUrl().startsWith("jdbc:h2:");
   }
 
+  /**
+   * Creates a DataSource, preferring PostgreSQL and falling back to H2 in non-production
+   * environments when the database is unreachable.
+   */
   public static DataSource createDataSource(AppConfig appConfig) {
     HikariDataSource postgres = createPostgresDataSource(appConfig);
     if (isReachableWithRetry(postgres)) {
@@ -84,106 +87,145 @@ public final class JdbiFactory {
     return createH2DataSource();
   }
 
+  private static HikariDataSource createH2DataSource() {
+    HikariConfig config = new HikariConfig();
+    config.setJdbcUrl(H2_JDBC_URL);
+    config.setPoolName("washflow-h2-pool");
+    config.setMaximumPoolSize(5);
+    // Keep at least one connection alive so the in-memory database is not dropped
+    config.setMinimumIdle(1);
+    // Don't block on pool construction — createDataSource() probes reachability explicitly
+    config.setInitializationFailTimeout(-1);
+    return new HikariDataSource(config);
+  }
+
   private static boolean isReachableWithRetry(HikariDataSource dataSource) {
-    int maxAttempts = 5;
-    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+    for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try (Connection ignored = dataSource.getConnection()) {
         return true;
       } catch (SQLException e) {
         LOGGER.warn(
             "Database connection attempt {}/{} failed: {} (jdbcUrl: {})",
             attempt,
-            maxAttempts,
+            MAX_RETRIES,
             e.getMessage(),
             dataSource.getJdbcUrl());
-        if (attempt < maxAttempts) {
-          try {
-            Thread.sleep(2000);
-          } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            return false;
-          }
+        if (attempt < MAX_RETRIES && !sleepQuietly(RETRY_INTERVAL_MS)) {
+          return false;
         }
       }
     }
     return false;
   }
 
-  private static HikariDataSource createPostgresDataSource(AppConfig appConfig) {
-    String jdbcUrl;
+  private static boolean sleepQuietly(long millis) {
+    try {
+      Thread.sleep(millis);
+      return true;
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+      return false;
+    }
+  }
 
+  /** Immutable DTO holding parsed username and password from a DATABASE_URL. */
+  private record DatabaseCredentials(String user, String password) {}
+
+  /**
+   * Creates a PostgreSQL DataSource from the application configuration.
+   *
+   * <p>When {@code DATABASE_URL} is present, it is parsed and SSL mode is enabled for cloud
+   * platforms. Otherwise, individual properties ({@code DB_HOST}, {@code DB_USER}, etc.) are used.
+   */
+  private static HikariDataSource createPostgresDataSource(AppConfig appConfig) {
     String databaseUrl = appConfig.databaseUrl();
-    String user = appConfig.databaseUser();
-    String password = appConfig.databasePassword();
-    if (databaseUrl != null && !databaseUrl.isBlank()) {
-      URI uri = URI.create(databaseUrl);
-      String userInfo = uri.getUserInfo();
-      if (userInfo != null) {
-        int firstColon = userInfo.indexOf(':');
-        if (firstColon > 0) {
-          user = URLDecoder.decode(userInfo.substring(0, firstColon), StandardCharsets.UTF_8);
-          password = URLDecoder.decode(userInfo.substring(firstColon + 1), StandardCharsets.UTF_8);
-        } else {
-          user = URLDecoder.decode(userInfo, StandardCharsets.UTF_8);
-        }
-      }
-      if (user == null || user.isEmpty()) {
-        user = LOCAL_DEFAULT;
-      }
-      int port = uri.getPort() > 0 ? uri.getPort() : 5432;
-      String host = uri.getHost();
-      // Handle IPv6 hosts that URI returns without brackets
-      if (host != null && host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      jdbcUrl = "jdbc:postgresql://" + host + ":" + port + uri.getPath();
-      LOGGER.info(
-          "Parsed DATABASE_URL: host={}, port={}, user={}, db={}", host, port, user, uri.getPath());
-    } else {
-      jdbcUrl =
-          "jdbc:postgresql://"
-              + appConfig.databaseHost()
-              + ":"
-              + appConfig.databasePort()
-              + "/"
-              + appConfig.databaseName();
+
+    if (databaseUrl == null || databaseUrl.isBlank()) {
+      return createPostgresDataSourceFromProperties(appConfig);
     }
 
-    HikariConfig config = createHikariConfig(jdbcUrl, user, password);
+    return createPostgresDataSourceFromUrl(databaseUrl);
+  }
 
+  private static HikariDataSource createPostgresDataSourceFromProperties(AppConfig appConfig) {
+    String jdbcUrl = buildFallbackJdbcUrl(appConfig);
+    HikariConfig config =
+        createHikariConfig(jdbcUrl, appConfig.databaseUser(), appConfig.databasePassword());
     return new HikariDataSource(config);
   }
 
-  @NotNull
+  private static HikariDataSource createPostgresDataSourceFromUrl(String databaseUrl) {
+    URI uri = URI.create(databaseUrl);
+    DatabaseCredentials credentials = parseCredentials(uri);
+    String jdbcUrl = buildJdbcUrlFromUri(uri);
+
+    LOGGER.info(
+        "Parsed DATABASE_URL: host={}, port={}, user={}, db={}",
+        uri.getHost(),
+        uri.getPort() > 0 ? uri.getPort() : POSTGRES_DEFAULT_PORT,
+        credentials.user(),
+        uri.getPath());
+
+    HikariConfig config = createHikariConfig(jdbcUrl, credentials.user(), credentials.password());
+    return new HikariDataSource(config);
+  }
+
+  private static String buildFallbackJdbcUrl(AppConfig appConfig) {
+    return "jdbc:postgresql://"
+        + appConfig.databaseHost()
+        + ":"
+        + appConfig.databasePort()
+        + "/"
+        + appConfig.databaseName();
+  }
+
+  /** Extracts username and password from the URI's userinfo component, URL-decoding each part. */
+  private static DatabaseCredentials parseCredentials(URI uri) {
+    String userInfo = uri.getUserInfo();
+    if (userInfo == null) {
+      return new DatabaseCredentials(LOCAL_DEFAULT, null);
+    }
+
+    int firstColon = userInfo.indexOf(':');
+    if (firstColon <= 0) {
+      String user = URLDecoder.decode(userInfo, StandardCharsets.UTF_8);
+      return new DatabaseCredentials(user.isEmpty() ? LOCAL_DEFAULT : user, null);
+    }
+
+    String rawUser = userInfo.substring(0, firstColon);
+    String rawPassword = userInfo.substring(firstColon + 1);
+
+    String user = URLDecoder.decode(rawUser, StandardCharsets.UTF_8);
+    String password = URLDecoder.decode(rawPassword, StandardCharsets.UTF_8);
+
+    return new DatabaseCredentials(user.isEmpty() ? LOCAL_DEFAULT : user, password);
+  }
+
+  /**
+   * Builds a JDBC URL from a DATABASE_URL URI, adding SSL mode required by cloud platforms (Render,
+   * Railway, etc.) and supporting IPv6 hosts.
+   */
+  private static String buildJdbcUrlFromUri(URI uri) {
+    String host = uri.getHost();
+    if (host != null && host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    int port = uri.getPort() > 0 ? uri.getPort() : POSTGRES_DEFAULT_PORT;
+    String base = "jdbc:postgresql://" + host + ":" + port + uri.getPath();
+    // Cloud platforms like Render require SSL for external connections
+    return base + "?sslmode=require";
+  }
+
   private static HikariConfig createHikariConfig(String jdbcUrl, String user, String password) {
     HikariConfig config = new HikariConfig();
     config.setJdbcUrl(jdbcUrl);
     config.setUsername(user);
     config.setPassword(password);
     config.setPoolName("washflow-pool");
-    config.setMaximumPoolSize(10);
-    // Increase timeout for cloud platforms (Render, Railway) where first
-    // connection may take longer due to cold starts or network latency.
-    config.setConnectionTimeout(10000);
-    // Don't block on pool construction itself - createDataSource() decides
-    // reachability with an explicit getConnection() probe right after this
-    // returns, so a slow/absent Postgres surfaces as a quick H2 fallback
-    // instead of a hung startup.
+    config.setMaximumPoolSize(MAX_POOL_SIZE);
+    config.setConnectionTimeout(CONNECTION_TIMEOUT_MS);
+    // Don't block on pool construction — createDataSource() probes reachability explicitly
     config.setInitializationFailTimeout(-1);
     return config;
-  }
-
-  private static HikariDataSource createH2DataSource() {
-    HikariConfig config = new HikariConfig();
-    config.setJdbcUrl(H2_JDBC_URL);
-    config.setUsername("sa");
-    config.setPassword("");
-    config.setPoolName("washflow-h2-fallback-pool");
-    // Keep at least one connection open for the lifetime of the pool - an
-    // in-memory H2 database is dropped once its last connection closes, and
-    // MODE=PostgreSQL's DB_CLOSE_DELAY=-1 only protects a single JVM-wide
-    // named instance, not this pool's own connection churn.
-    config.setMinimumIdle(1);
-    return new HikariDataSource(config);
   }
 }

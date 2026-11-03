@@ -6,12 +6,11 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import java.time.Instant;
-import java.util.Date;
 import java.util.UUID;
 
 public final class AuthTokenService {
 
-  private static final long TOKEN_LIFETIME_SECONDS = 8 * 60 * 60;
+  private static final long TOKEN_LIFETIME_SECONDS = 8L * 60 * 60;
   private final Algorithm algorithm;
 
   public AuthTokenService(String secret) {
@@ -23,8 +22,8 @@ public final class AuthTokenService {
     return JWT.create()
         .withSubject(user.id().toString())
         .withClaim("profile", user.profile().dbValue())
-        .withIssuedAt(Date.from(now))
-        .withExpiresAt(Date.from(now.plusSeconds(TOKEN_LIFETIME_SECONDS)))
+        .withIssuedAt(now)
+        .withExpiresAt(now.plusSeconds(TOKEN_LIFETIME_SECONDS))
         .sign(algorithm);
   }
 

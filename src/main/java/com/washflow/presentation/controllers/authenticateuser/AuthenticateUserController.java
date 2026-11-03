@@ -58,9 +58,7 @@ public class AuthenticateUserController implements Controller {
       return HttpHelper.unauthorized(e);
     } catch (UserProfileMismatchError e) {
       return HttpHelper.conflict(e);
-    } catch (ManagerSelfRegistrationNotAllowedError e) {
-      return HttpHelper.forbidden(e);
-    } catch (WasherSelfRegistrationNotAllowedError e) {
+    } catch (ManagerSelfRegistrationNotAllowedError | WasherSelfRegistrationNotAllowedError e) {
       return HttpHelper.forbidden(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
