@@ -23,6 +23,7 @@ export type UiIconName =
   | 'parking'
   | 'phone'
   | 'plus'
+  | 'qr'
   | 'search'
   | 'tag'
   | 'trash'
@@ -126,6 +127,14 @@ const ICONS: Record<UiIconName, ReactNode> = {
     <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z" />
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  qr: (
+    <>
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <rect x="14" y="4" width="6" height="6" rx="1" />
+      <rect x="4" y="14" width="6" height="6" rx="1" />
+      <path d="M14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18v2" />
+    </>
+  ),
   search: (
     <>
       <circle cx="11" cy="11" r="6" />
