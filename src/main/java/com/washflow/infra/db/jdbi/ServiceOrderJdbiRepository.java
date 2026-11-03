@@ -59,13 +59,25 @@ public class ServiceOrderJdbiRepository
         (:id, :vehicleId, :servicePriceId, :status, :scheduledAt, :createdAt, :updatedAt)
       """;
 
-  private static final String SELECT_SQL =
+  // Every read joins the display data (plate, customer, service, washer) the yard and queue
+  // screens show on each card - see ServiceOrder.Details.
+  private static final String SELECT_WITH_DETAILS =
       """
       SELECT a.id, a.veiculo_id, a.servico_preco_id, a.lavador_id, a.status,
              a.data_agendamento, a.criado_em, a.atualizado_em,
              (SELECT p.motivo FROM pausas_atendimento p
-              WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason
+              WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason,
+             v.placa AS vehicle_plate, v.modelo AS vehicle_model, v.cor AS vehicle_color,
+             c.nome AS customer_name, s.nome AS service_name, l.nome AS washer_name
       FROM atendimentos a
+      LEFT JOIN veiculos v ON v.id = a.veiculo_id
+      LEFT JOIN usuarios c ON c.id = v.cliente_id
+      LEFT JOIN servicos_preco s ON s.id = a.servico_preco_id
+      LEFT JOIN usuarios l ON l.id = a.lavador_id
+      """;
+
+  private static final String SELECT_SQL =
+      SELECT_WITH_DETAILS + """
       WHERE a.id = :id
       """;
 
@@ -90,13 +102,8 @@ public class ServiceOrderJdbiRepository
       """;
 
   private static final String SELECT_BY_CUSTOMER_ID_SQL =
-      """
-      SELECT a.id, a.veiculo_id, a.servico_preco_id, a.lavador_id, a.status,
-             a.data_agendamento, a.criado_em, a.atualizado_em,
-             (SELECT p.motivo FROM pausas_atendimento p
-              WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason
-      FROM atendimentos a
-      JOIN veiculos v ON v.id = a.veiculo_id
+      SELECT_WITH_DETAILS
+          + """
       WHERE v.cliente_id = :customerId
       ORDER BY a.atualizado_em DESC
       """;
@@ -105,23 +112,15 @@ public class ServiceOrderJdbiRepository
       "SELECT COUNT(*) FROM atendimentos WHERE data_agendamento >= :start AND data_agendamento < :end";
 
   private static final String WAITING_QUEUE_SQL =
-      """
-      SELECT a.id, a.veiculo_id, a.servico_preco_id, a.lavador_id, a.status,
-             a.data_agendamento, a.criado_em, a.atualizado_em,
-             (SELECT p.motivo FROM pausas_atendimento p
-              WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason
-      FROM atendimentos a
+      SELECT_WITH_DETAILS
+          + """
       WHERE a.status = 'AGUARDANDO_PATIO'
       ORDER BY a.atualizado_em ASC
       """;
 
   private static final String YARD_OVERVIEW_SQL =
-      """
-      SELECT a.id, a.veiculo_id, a.servico_preco_id, a.lavador_id, a.status,
-             a.data_agendamento, a.criado_em, a.atualizado_em,
-             (SELECT p.motivo FROM pausas_atendimento p
-              WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason
-      FROM atendimentos a
+      SELECT_WITH_DETAILS
+          + """
       WHERE a.status <> 'FINALIZADO'
       ORDER BY
         CASE a.status
@@ -136,12 +135,8 @@ public class ServiceOrderJdbiRepository
       """;
 
   private static final String WASHER_ACTIVE_SQL =
-      """
-      SELECT a.id, a.veiculo_id, a.servico_preco_id, a.lavador_id, a.status,
-             a.data_agendamento, a.criado_em, a.atualizado_em,
-             (SELECT p.motivo FROM pausas_atendimento p
-              WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason
-      FROM atendimentos a
+      SELECT_WITH_DETAILS
+          + """
       WHERE a.status IN ('EM_LAVAGEM', 'PAUSADA') AND a.lavador_id = :washerId
       ORDER BY a.atualizado_em ASC
       """;
@@ -545,6 +540,13 @@ public class ServiceOrderJdbiRepository
         rs.getTimestamp("data_agendamento").toInstant(),
         rs.getTimestamp("criado_em").toInstant(),
         rs.getTimestamp("atualizado_em").toInstant(),
-        rs.getString("pause_reason"));
+        rs.getString("pause_reason"),
+        new ServiceOrder.Details(
+            rs.getString("vehicle_plate"),
+            rs.getString("vehicle_model"),
+            rs.getString("vehicle_color"),
+            rs.getString("customer_name"),
+            rs.getString("service_name"),
+            rs.getString("washer_name")));
   }
 }
