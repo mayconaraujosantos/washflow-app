@@ -152,7 +152,12 @@ export function AccessScreen({
         navigate('/cliente')
       }
     } catch (cause) {
-      setError(errorMessage(cause, 'Não foi possível entrar'))
+      const message = errorMessage(cause, 'Não foi possível entrar')
+      if (directory && message === 'Lava-jato não encontrado') {
+        // The remembered lava-jato was suspended or removed: pick again.
+        changeEstablishment()
+      }
+      setError(message)
     } finally {
       setLoading(false)
     }

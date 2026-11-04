@@ -93,7 +93,11 @@ public class DbAuthenticateUser implements AuthenticateUser {
     }
 
     if (params.name() == null || params.name().isBlank()) {
-      throw new IllegalArgumentException("Informe seu nome para criar a conta");
+      // "Entrar" with a phone that has no account in this lava-jato (each one has its own
+      // customers): only the sign-up form sends a name.
+      throw new IllegalArgumentException(
+          "Não encontramos uma conta com este telefone neste lava-jato. Toque em Criar conta"
+              + " para se cadastrar.");
     }
     return createUserRepository.create(
         new User(

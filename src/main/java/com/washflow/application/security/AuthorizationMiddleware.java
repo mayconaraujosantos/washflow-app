@@ -159,6 +159,11 @@ public final class AuthorizationMiddleware {
       TenantContext.set(fromAccount.get());
       return true;
     }
+    // Only screens that work inside a lava-jato read the picked one: the directory, tickets and
+    // staff logins must keep working even if the remembered lava-jato was suspended.
+    if (!TENANT_REQUIRED_PATHS.contains(ctx.path())) {
+      return true;
+    }
     String slug = ctx.header(ESTABLISHMENT_HEADER);
     if (slug != null && !slug.isBlank()) {
       Optional<UUID> picked = securityGateway.findActiveEstablishmentBySlug(slug.trim());
@@ -169,11 +174,8 @@ public final class AuthorizationMiddleware {
       TenantContext.set(picked.get());
       return true;
     }
-    if (TENANT_REQUIRED_PATHS.contains(ctx.path()) && ctx.path().startsWith("/api/")) {
-      ctx.status(400).json(HttpHelper.errorBody("Escolha o lava-jato"));
-      return false;
-    }
-    return true;
+    ctx.status(400).json(HttpHelper.errorBody("Escolha o lava-jato"));
+    return false;
   }
 
   private Optional<UUID> establishmentOfOptionalToken(Context ctx) {
