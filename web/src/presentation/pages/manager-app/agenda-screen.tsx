@@ -36,8 +36,27 @@ function shiftMonth(month: string, delta: number) {
     .slice(0, 7)
 }
 
+/** Daily capacity: open hours x vehicles per hour (0 on a closed Sunday). */
+function dayCapacity(
+  day: string,
+  settings: {
+    openingHour: number
+    closingHour: number
+    openOnSunday: boolean
+    maxVehiclesPerHour: number
+  } | null,
+): number {
+  if (!settings) return 0
+  const [year, month, date] = day.split('-').map(Number)
+  const sunday = new Date(Date.UTC(year, month - 1, date)).getUTCDay() === 0
+  if (sunday && !settings.openOnSunday) return 0
+  return (
+    (settings.closingHour - settings.openingHour) * settings.maxVehiclesPerHour
+  )
+}
+
 export function AgendaScreen() {
-  const { operations, openMenu } = useManager()
+  const { operations, openMenu, settings } = useManager()
   const today = manausDate()
   const [month, setMonth] = useState(today.slice(0, 7))
   const [selected, setSelected] = useState(today)
@@ -104,7 +123,7 @@ export function AgendaScreen() {
 
       <Notice tone="error">{error}</Notice>
 
-      <div className="calendar-grid" role="grid" aria-label="Calendário">
+      <div className="calendar-grid" aria-label="Calendário">
         {WEEKDAYS.map((weekday) => (
           <span key={weekday} className="calendar-weekday">
             {weekday}
@@ -115,16 +134,18 @@ export function AgendaScreen() {
         ))}
         {days.map((day) => {
           const count = byDay.get(day)?.length ?? 0
+          const max = dayCapacity(day, settings)
           return (
             <button
               key={day}
               type="button"
               className={`calendar-day${day === today ? ' is-today' : ''}`}
               aria-pressed={day === selected}
-              aria-label={`${Number(day.slice(8, 10))}: ${count} agendamento(s)`}
+              aria-label={`Dia ${Number(day.slice(8, 10))}: ${count} agendado(s) de ${max}`}
               onClick={() => setSelected(day)}
             >
               <span className="calendar-num">{Number(day.slice(8, 10))}</span>
+              <span className="calendar-max">Máx: {max}</span>
               <span className={`calendar-count${count ? '' : ' is-zero'}`}>
                 Ag: {count}
               </span>

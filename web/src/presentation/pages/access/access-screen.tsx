@@ -24,6 +24,8 @@ type Props = Readonly<{
   // WhatsApp code / Google sign-in, shown when the API enables them.
   access?: Access
   initialMode?: 'signup' | 'signin'
+  // On the home page: links for washers and managers under the card.
+  staffLinks?: boolean
 }>
 
 /**
@@ -36,6 +38,7 @@ export function AccessScreen({
   authenticateCustomer,
   access,
   initialMode = 'signup',
+  staffLinks = false,
 }: Props) {
   const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>(initialMode)
@@ -120,7 +123,6 @@ export function AccessScreen({
       <h1 className="auth-brand">
         <BrandLogo size="lg" />
       </h1>
-      <p className="muted">Área do cliente</p>
 
       <section className="auth-card" aria-labelledby="auth-title">
         <h2 id="auth-title">{title}</h2>
@@ -229,9 +231,13 @@ export function AccessScreen({
       </section>
 
       <InstallApp />
-      <Link to="/" className="auth-back">
-        Voltar para a escolha de perfil
-      </Link>
+      {staffLinks && (
+        <p className="auth-staff">
+          É da equipe? <Link to="/login/lavador">Entrar como lavador</Link>
+          {' · '}
+          <Link to="/login/gerente">Entrar como gerente</Link>
+        </p>
+      )}
     </main>
   )
 }
