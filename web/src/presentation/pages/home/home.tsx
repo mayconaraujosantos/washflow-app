@@ -35,7 +35,7 @@ export function Home({
   useEffect(() => {
     if (!establishment) return
     let active = true
-    establishment
+    void establishment
       .setupStatus()
       .then((status) => {
         if (!active) return

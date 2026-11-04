@@ -11,7 +11,6 @@ import com.washflow.domain.entities.WasherCommission;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import org.flywaydb.core.Flyway;
 import org.h2.jdbcx.JdbcDataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
@@ -25,11 +24,7 @@ class ServiceOrderFinalizationIntegrationTest {
         "jdbc:h2:mem:"
             + UUID.randomUUID().toString().replace("-", "")
             + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    Flyway.configure()
-        .dataSource(dataSource)
-        .locations("classpath:db/migration-h2")
-        .load()
-        .migrate();
+    JdbiFactory.migrate(dataSource);
     Jdbi jdbi = TestDatabase.prepare(dataSource);
 
     UUID orderId = UUID.randomUUID();

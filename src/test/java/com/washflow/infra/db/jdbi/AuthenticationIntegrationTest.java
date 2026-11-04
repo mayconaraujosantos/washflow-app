@@ -14,7 +14,6 @@ import com.washflow.infra.security.BCryptPasswordHasher;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
-import org.flywaydb.core.Flyway;
 import org.h2.jdbcx.JdbcDataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
@@ -28,11 +27,7 @@ class AuthenticationIntegrationTest {
         "jdbc:h2:mem:"
             + UUID.randomUUID().toString().replace("-", "")
             + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    Flyway.configure()
-        .dataSource(dataSource)
-        .locations("classpath:db/migration-h2")
-        .load()
-        .migrate();
+    JdbiFactory.migrate(dataSource);
     Jdbi jdbi = TestDatabase.prepare(dataSource);
     UserJdbiRepository repository = new UserJdbiRepository(jdbi);
     DbAuthenticateUser authenticate =

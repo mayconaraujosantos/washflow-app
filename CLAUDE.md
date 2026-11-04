@@ -106,6 +106,8 @@ Venda rápida no balcão (`tipo = 'VENDA'`) e orçamento (`tipo = 'ORCAMENTO'`),
 
 ## 3. Lógica das Consultas para as Filas (Portabilidade In-Memory)
 
+As migrações ficam numa única pasta (`src/main/resources/db/migration`, histórico em `schema_history`) e rodam iguais no PostgreSQL e no H2: use só SQL comum aos dois (ver `infra/README.md`).
+
 Para garantir que a lógica funcione igual no banco físico ou em listas Java/Kotlin na memória, as listagens devem seguir estas regras:
 
 ### Fila de Espera dos Lavadores (Status: AGUARDANDO_PATIO)
