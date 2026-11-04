@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.washflow"
-version = "1.3.0"
+version = "1.4.0"
 
 repositories {
     mavenCentral()
@@ -48,8 +48,14 @@ dependencies {
     implementation("io.javalin.community.openapi:javalin-swagger-plugin:7.0.0")
     annotationProcessor("io.javalin.community.openapi:openapi-annotation-processor:7.0.0")
 
-    // Logs
-    implementation("org.slf4j:slf4j-simple:2.0.13")
+    // Logs: Logback writes one key=value line per event to stdout (Render shows
+    // and searches it); the request id travels in the MDC.
+    implementation("org.slf4j:slf4j-api:2.0.13")
+    implementation("ch.qos.logback:logback-classic:1.5.12")
+
+    // Metrics: Micrometer with a Prometheus registry served at /api/metrics.
+    implementation("io.micrometer:micrometer-core:1.13.6")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.13.6")
 
     // Optional local environment file; production configuration still comes from environment vars.
     implementation("io.github.cdimascio:dotenv-java:3.2.0")

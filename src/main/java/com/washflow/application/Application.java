@@ -3,9 +3,11 @@ package com.washflow.application;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.application.adapters.SpaFallbackHandler;
+import com.washflow.application.observability.RequestTracing;
 import com.washflow.application.routes.AccessRoutes;
 import com.washflow.application.routes.EstablishmentRoutes;
 import com.washflow.application.routes.FeatureRoutes;
+import com.washflow.application.routes.ObservabilityRoutes;
 import com.washflow.application.routes.OperationsRoutes;
 import com.washflow.application.routes.SaleRoutes;
 import com.washflow.application.routes.ScheduleRoutes;
@@ -19,6 +21,7 @@ import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthorizationMiddleware;
 import com.washflow.infra.db.jdbi.JdbiAccountSecurityGateway;
 import com.washflow.infra.db.jdbi.JdbiFactory;
+import com.washflow.infra.observability.Metrics;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinJackson;
@@ -35,17 +38,26 @@ public class Application {
         new AuthorizationMiddleware(
             new AuthTokenService(appConfig.tokenSecret()), securityGateway, jdbi);
 
+    RequestTracing tracing = new RequestTracing(Metrics.registry());
+
     Javalin app =
         Javalin.create(
             config -> {
               config.router.ignoreTrailingSlashes = true;
+              // Request id, access log, metrics and a JSON 500 for anything a
+              // handler leaks - around authorization, so denials are logged too.
               config.router.handlerWrapper(
                   endpoint ->
-                      ctx -> {
-                        if (authorizationMiddleware.authorize(ctx)) {
-                          endpoint.handler.handle(ctx);
-                        }
-                      });
+                      ctx ->
+                          tracing.handle(
+                              endpoint.method.name(),
+                              endpoint.path,
+                              ctx,
+                              () -> {
+                                if (authorizationMiddleware.authorize(ctx)) {
+                                  endpoint.handler.handle(ctx);
+                                }
+                              }));
               // Without JavaTimeModule, java.time.Instant fields (e.g.
               // ServiceOrder's) blow up serialization with an
               // InvalidDefinitionException; without disabling
@@ -98,6 +110,7 @@ public class Application {
                     EstablishmentRoutes.register(jdbi, appConfig);
                     AccessRoutes.register(jdbi, appConfig);
                     ScheduleRoutes.register(jdbi, appConfig);
+                    ObservabilityRoutes.register(appConfig);
                   });
 
               config.routes.error(404, SpaFallbackHandler::handle);

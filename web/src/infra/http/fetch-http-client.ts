@@ -27,7 +27,24 @@ export class FetchHttpClient<T = unknown> implements HttpClient<T> {
 
     return {
       statusCode: response.status,
-      body,
+      body: response.status >= 500 ? withSupportCode(body, response) : body,
     }
+  }
+}
+
+/**
+ * Server failures carry a request id (body or X-Request-Id header). Putting it
+ * in the message lets the user quote it, and the server log line has the same id.
+ */
+const withSupportCode = (body: unknown, response: Response): unknown => {
+  const payload =
+    body && typeof body === 'object' ? (body as Record<string, unknown>) : {}
+  const requestId =
+    (typeof payload.requestId === 'string' && payload.requestId) ||
+    response.headers?.get?.('X-Request-Id')
+  if (!requestId) return body
+  return {
+    ...payload,
+    error: `Erro no servidor. Tente novamente; se continuar, informe o código ${requestId}.`,
   }
 }

@@ -23,7 +23,8 @@ public record AppConfig(
     String setupCode,
     String otpChannel,
     String googleClientId,
-    String publicAppUrl) {
+    String publicAppUrl,
+    String metricsToken) {
 
   private static final int DEFAULT_PORT = 7000;
   private static final int DEFAULT_MAX_VEHICLES_PER_HOUR = 3;
@@ -82,7 +83,9 @@ public record AppConfig(
                 "OTP_CHANNEL",
                 isProduction(environment) ? "none" : "log"),
             value(processEnv, dotenvValues, useDotenv, "GOOGLE_CLIENT_ID", ""),
-            value(processEnv, dotenvValues, useDotenv, "APP_PUBLIC_URL", ""));
+            value(processEnv, dotenvValues, useDotenv, "APP_PUBLIC_URL", ""),
+            // Bearer token for GET /api/metrics; empty keeps the endpoint off.
+            value(processEnv, dotenvValues, useDotenv, "METRICS_TOKEN", ""));
 
     if (isProduction(environment)
         && config.databaseUrl().isBlank()
