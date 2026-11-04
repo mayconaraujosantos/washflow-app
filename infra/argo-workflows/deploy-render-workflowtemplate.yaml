@@ -1,0 +1,129 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: washflow-deploy-render
+  namespace: argo
+spec:
+  # Production deploy to Render, gated by the same checks as `make ci`:
+  #   checkout -> backend tests + frontend lint/format (washflow-ci templates)
+  #   -> build check -> Render deploy of that exact commit -> wait until live
+  #   -> smoke test GET /api/health on the public URL.
+  # Requires the render-credentials Secret (see infra/README.md):
+  #   RENDER_API_KEY, RENDER_SERVICE_ID, RENDER_SERVICE_URL.
+  # Turn Render's own "Auto-Deploy" off so this pipeline is the only way
+  # production changes (otherwise every push to main deploys before the checks).
+  entrypoint: deploy
+  arguments:
+    parameters:
+      - name: repo
+        value: https://github.com/mayconaraujosantos/washflow-app.git
+      - name: revision
+        value: main
+      # "true" skips the test/lint steps (emergency redeploy of an already
+      # verified commit). Default runs everything.
+      - name: skipChecks
+        value: "false"
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+  templates:
+    - name: deploy
+      steps:
+        - - name: checkout
+            template: checkout
+        - - name: quality-backend
+            templateRef: {name: washflow-ci, template: quality-backend}
+            when: "{{workflow.parameters.skipChecks}} != true"
+          - name: quality-frontend
+            templateRef: {name: washflow-ci, template: quality-frontend}
+            when: "{{workflow.parameters.skipChecks}} != true"
+        - - name: render-deploy
+            template: render-deploy
+            arguments:
+              parameters:
+                - name: commit
+                  value: "{{steps.checkout.outputs.parameters.commit}}"
+        - - name: smoke-test
+            template: smoke-test
+
+    # Same clone as washflow-ci, plus the resolved commit SHA so Render deploys
+    # exactly what was tested (not whatever main points to a minute later).
+    - name: checkout
+      container:
+        image: alpine/git:2.47.1
+        command: [sh, -c]
+        args:
+          - |
+            set -eu
+            git clone --depth 1 --branch "{{workflow.parameters.revision}}" "{{workflow.parameters.repo}}" /workspace/src
+            git -C /workspace/src rev-parse HEAD > /workspace/commit
+            echo "commit $(cat /workspace/commit)"
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+      outputs:
+        parameters:
+          - name: commit
+            valueFrom: {path: /workspace/commit}
+
+    # Render API: POST /v1/services/{id}/deploys with the commit, then poll
+    # the deploy until it is live (or fails / times out after 20 minutes).
+    - name: render-deploy
+      inputs:
+        parameters:
+          - name: commit
+      container:
+        image: alpine:3.20
+        command: [sh, -c]
+        args:
+          - |
+            set -eu
+            apk add --no-cache curl jq >/dev/null
+            API="https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys"
+            AUTH="Authorization: Bearer $RENDER_API_KEY"
+            COMMIT="{{inputs.parameters.commit}}"
+            echo "Deploying $COMMIT to Render service $RENDER_SERVICE_ID"
+            RESPONSE=$(curl -fsS -X POST "$API" -H "$AUTH" -H "Content-Type: application/json" \
+              -d "{\"commitId\": \"$COMMIT\", \"clearCache\": \"do_not_clear\"}")
+            DEPLOY_ID=$(echo "$RESPONSE" | jq -r '.id')
+            [ -n "$DEPLOY_ID" ] && [ "$DEPLOY_ID" != "null" ] || { echo "No deploy id: $RESPONSE"; exit 1; }
+            echo "Render deploy $DEPLOY_ID"
+            i=0
+            while [ $i -lt 120 ]; do
+              STATUS=$(curl -fsS "$API/$DEPLOY_ID" -H "$AUTH" | jq -r '.status')
+              echo "$(date -u +%H:%M:%S) $STATUS"
+              case "$STATUS" in
+                live) exit 0 ;;
+                build_failed|update_failed|pre_deploy_failed|canceled|deactivated)
+                  echo "Render deploy ended as $STATUS - see the Render dashboard logs"; exit 1 ;;
+              esac
+              i=$((i+1)); sleep 10
+            done
+            echo "Timed out waiting for the deploy to go live"; exit 1
+        envFrom:
+          - secretRef:
+              name: render-credentials
+
+    # The new version answers and reaches its database.
+    - name: smoke-test
+      retryStrategy:
+        limit: "6"
+        retryPolicy: Always
+        backoff: {duration: "10s", factor: "2"}
+      container:
+        image: alpine:3.20
+        command: [sh, -c]
+        args:
+          - |
+            set -eu
+            apk add --no-cache curl jq >/dev/null
+            BODY=$(curl -fsS "$RENDER_SERVICE_URL/api/health")
+            echo "$BODY"
+            [ "$(echo "$BODY" | jq -r '.database')" = "up" ]
+        envFrom:
+          - secretRef:
+              name: render-credentials

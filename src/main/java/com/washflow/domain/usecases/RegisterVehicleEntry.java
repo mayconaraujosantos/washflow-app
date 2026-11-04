@@ -6,6 +6,7 @@ import com.washflow.domain.errors.InvalidPlateError;
 import com.washflow.domain.errors.OutsideBusinessHoursError;
 import com.washflow.domain.errors.ServicePriceNotFoundError;
 import com.washflow.domain.errors.SlotFullyBookedError;
+import com.washflow.domain.errors.VehicleAlreadyInYardError;
 import java.time.Instant;
 
 /**
@@ -23,7 +24,8 @@ public interface RegisterVehicleEntry {
           ServicePriceNotFoundError,
           OutsideBusinessHoursError,
           InsufficientLeadTimeError,
-          SlotFullyBookedError;
+          SlotFullyBookedError,
+          VehicleAlreadyInYardError;
 
   record Params(
       String plate,

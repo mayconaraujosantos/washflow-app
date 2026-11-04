@@ -18,7 +18,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
-import org.h2.jdbcx.JdbcDataSource;
+import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +48,8 @@ class OperationsWorkflowIntegrationTest {
                 .bind("now", now)
                 .execute());
 
-    repository.updateStatus(orderId, ServiceOrderStatus.WASHING, washerId);
+    repository.updateStatus(
+        orderId, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, washerId);
     assertThrows(
         UserHasActiveWashesError.class,
         () -> new UserJdbiRepository(jdbi).updateProfile(washerId, UserProfile.MANAGER));
@@ -66,7 +67,10 @@ class OperationsWorkflowIntegrationTest {
     assertNull(resumed.pauseReason());
     assertFalse(repository.resumeWashing(orderId, washerId));
 
-    ServiceOrder ready = repository.updateStatus(orderId, ServiceOrderStatus.READY, washerId);
+    ServiceOrder ready =
+        repository
+            .updateStatus(orderId, ServiceOrderStatus.WASHING, ServiceOrderStatus.READY, washerId)
+            .orElseThrow();
     repository.finalizeSale(
         ready,
         new ServicePayment(
@@ -114,12 +118,7 @@ class OperationsWorkflowIntegrationTest {
   }
 
   private static Jdbi createJdbi() {
-    JdbcDataSource dataSource = new JdbcDataSource();
-    dataSource.setURL(
-        "jdbc:h2:mem:"
-            + UUID.randomUUID().toString().replace("-", "")
-            + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    JdbiFactory.migrate(dataSource);
+    DataSource dataSource = TestDatabase.newDatabase();
     return TestDatabase.prepare(dataSource);
   }
 }

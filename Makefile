@@ -91,7 +91,7 @@ help:
 	@echo "  make cluster-status      Show cluster/Argo CD/Argo Workflows health."
 	@echo "  make image-local         Build the app image and load it into the kind cluster."
 	@echo "  make ci                  Run the CI pipeline (test/lint/build) as an Argo Workflow."
-	@echo "  make deploy-prod         Deploy the current 'main' to Railway via an Argo Workflow."
+	@echo "  make deploy-prod         Test and deploy 'main' to Render via an Argo Workflow (REVISION=, SKIP_CHECKS=true)."
 	@echo "  make argocd-password     Print the Argo CD admin password."
 	@echo "  make argocd-port-forward Open the Argo CD UI at https://localhost:8081."
 	@echo "  make argo-port-forward   Open the Argo Workflows UI at https://localhost:2746."
@@ -127,7 +127,7 @@ run:
 	@$(MAKE) ip
 	@echo "Note: installing the PWA on a phone needs a secure context (HTTPS)."
 	@echo "Plain http://<lan-ip> works fine in a phone's browser, but Chrome/Android"
-	@echo "will only offer 'Add to Home screen' over HTTPS or on the deployed Railway URL."
+	@echo "will only offer 'Add to Home screen' over HTTPS or on the deployed Render URL."
 	@echo ""
 	$(GRADLE) run --console=plain
 
@@ -194,8 +194,8 @@ db-logs:
 	docker-compose logs -f postgres
 
 ## Local CI/CD: kind (via Podman) + Argo CD (GitOps) + Argo Workflows (pipelines).
-## Production still deploys to Railway (see `make deploy-prod`); Argo CD only
-## manages the local/staging copy of the app in the kind cluster.
+## Production deploys to Render through Argo Workflows (`make deploy-prod`); Argo
+## CD only manages the local/staging copy of the app in the kind cluster.
 cluster-up:
 	@echo "==> kind cluster ($(KIND_CLUSTER))"
 	@KIND_EXPERIMENTAL_PROVIDER=podman $(KIND) get clusters 2>/dev/null | grep -qx "$(KIND_CLUSTER)" \
@@ -249,11 +249,16 @@ image-local:
 ci:
 	argo submit -n argo --from workflowtemplate/washflow-ci -p revision=$(GIT_BRANCH) --watch
 
-## Deploy 'main' to Railway - the local replacement for the GitHub Actions
-## "Deploy to Railway" job. Requires the railway-credentials Secret (see
-## infra/argo-workflows/README.md).
+## Deploy to production on Render through Argo Workflows: runs the CI checks on
+## REVISION (default main), deploys that exact commit through the Render API,
+## waits until it is live and checks /api/health. Requires the
+## render-credentials Secret (see infra/README.md). SKIP_CHECKS=true redeploys
+## without running the tests again.
+REVISION ?= main
+SKIP_CHECKS ?= false
 deploy-prod:
-	argo submit -n argo --from workflowtemplate/washflow-deploy-railway -p revision=main --watch
+	kubectl apply -n argo -f infra/argo-workflows/
+	argo submit -n argo --from workflowtemplate/washflow-deploy-render 		-p revision=$(REVISION) -p skipChecks=$(SKIP_CHECKS) --watch
 
 ## Uses kubectl's own base64decode template function instead of piping to
 ## the external `base64` binary, which isn't on PATH in every shell/terminal

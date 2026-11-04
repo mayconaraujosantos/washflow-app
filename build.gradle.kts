@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.washflow"
-version = "1.5.1"
+version = "1.6.0"
 
 repositories {
     mavenCentral()
@@ -21,8 +21,7 @@ dependencies {
     implementation("org.jdbi:jdbi3-core:3.45.1")
     implementation("org.jdbi:jdbi3-sqlobject:3.45.1")
 
-    // Driver do Banco de Dados (CORRIGIDO: Parênteses e aspas duplas)
-    implementation("com.h2database:h2:2.2.224")
+    // Banco de dados: somente PostgreSQL (desenvolvimento, testes e produção).
     implementation("org.postgresql:postgresql:42.7.13")
 
     // Pool de conexões (o mesmo papel que o Spring Boot cobre "de graça" via
@@ -67,6 +66,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.mockito:mockito-core:5.18.0")
+    // Real PostgreSQL for the integration tests, started by the test JVM itself
+    // (downloads the binaries; no Docker/Podman needed).
+    testImplementation("io.zonky.test:embedded-postgres:2.2.2")
+    testImplementation(platform("io.zonky.test.postgres:embedded-postgres-binaries-bom:17.11.0"))
     testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
 }
 

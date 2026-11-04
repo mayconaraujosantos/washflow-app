@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -199,7 +201,13 @@ class DbRegisterVehicleEntryTest {
   }
 
   private void givenOrderIsPersisted() {
-    when(createServiceOrderRepository.create(any())).thenAnswer(call -> call.getArgument(0));
+    // Walk-ins use create, bookings createWithinCapacity (atomic per-hour capacity).
+    lenient()
+        .when(createServiceOrderRepository.create(any()))
+        .thenAnswer(call -> call.getArgument(0));
+    lenient()
+        .when(createServiceOrderRepository.createWithinCapacity(any(), any(), any(), anyInt()))
+        .thenAnswer(call -> Optional.of(call.getArgument(0)));
     when(loadServiceOrderByIdRepository.loadById(any())).thenReturn(Optional.empty());
   }
 

@@ -73,15 +73,21 @@ class DbCompleteServiceOrderTest {
             washingServiceOrder.createdAt(),
             Instant.now());
     when(updateServiceOrderStatusRepository.updateStatus(
-            params.serviceOrderId(), ServiceOrderStatus.READY, washingServiceOrder.washerId()))
-        .thenReturn(readyServiceOrder);
+            params.serviceOrderId(),
+            ServiceOrderStatus.WASHING,
+            ServiceOrderStatus.READY,
+            washingServiceOrder.washerId()))
+        .thenReturn(Optional.of(readyServiceOrder));
 
     ServiceOrder result = sut.complete(params);
 
     assertEquals(ServiceOrderStatus.READY, result.status());
     verify(updateServiceOrderStatusRepository)
         .updateStatus(
-            params.serviceOrderId(), ServiceOrderStatus.READY, washingServiceOrder.washerId());
+            params.serviceOrderId(),
+            ServiceOrderStatus.WASHING,
+            ServiceOrderStatus.READY,
+            washingServiceOrder.washerId());
   }
 
   @Test

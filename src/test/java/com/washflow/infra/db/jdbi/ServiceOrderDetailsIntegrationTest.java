@@ -8,7 +8,7 @@ import com.washflow.domain.entities.ServiceOrderStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import org.h2.jdbcx.JdbcDataSource;
+import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +37,8 @@ class ServiceOrderDetailsIntegrationTest {
     assertEquals("Lavagem Completa", details.serviceName());
     assertNull(details.washerName());
 
-    repository.updateStatus(orderId, ServiceOrderStatus.WASHING, DEMO_WASHER_ID);
+    repository.updateStatus(
+        orderId, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, DEMO_WASHER_ID);
 
     assertEquals("Lavador Demo", repository.loadYardOverview().get(0).details().washerName());
     assertEquals(
@@ -82,12 +83,7 @@ class ServiceOrderDetailsIntegrationTest {
   }
 
   private static Jdbi createJdbi() {
-    JdbcDataSource dataSource = new JdbcDataSource();
-    dataSource.setURL(
-        "jdbc:h2:mem:"
-            + UUID.randomUUID().toString().replace("-", "")
-            + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    JdbiFactory.migrate(dataSource);
+    DataSource dataSource = TestDatabase.newDatabase();
     return TestDatabase.prepare(dataSource);
   }
 }

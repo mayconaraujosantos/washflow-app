@@ -13,11 +13,13 @@ import static org.mockito.Mockito.when;
 import com.washflow.application.AppConfig;
 import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.protocols.db.CreateUserRepository;
+import com.washflow.data.protocols.db.DuplicateKeyError;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.LoadUserPasswordHashRepository;
 import com.washflow.data.protocols.db.SaveUserPasswordHashRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.errors.InvalidCredentialsError;
 import com.washflow.domain.errors.ManagerSelfRegistrationNotAllowedError;
 import com.washflow.domain.errors.UserProfileMismatchError;
 import com.washflow.domain.errors.WasherSelfRegistrationNotAllowedError;
@@ -77,6 +79,42 @@ class DbAuthenticateUserTest {
     assertEquals(params.name(), user.name());
     assertEquals(UserProfile.CUSTOMER, user.profile());
     verify(createUserRepository).create(any(), eq("bcrypt-hash"));
+  }
+
+  @Test
+  void signUpSentTwiceAtOnceSignsTheLoserInToTheAccountJustCreated() throws Exception {
+    // Both requests saw no account; the other one inserted first and this insert hit the
+    // unique phone index.
+    User createdByOther =
+        new User(
+            UUID.randomUUID(), "Cliente Demo", params.phone(), UserProfile.CUSTOMER, Instant.now());
+    when(loadUserByPhoneRepository.loadByPhone(params.phone()))
+        .thenReturn(Optional.empty(), Optional.of(createdByOther));
+    when(passwordHasher.hash(anyString())).thenReturn("bcrypt-hash");
+    when(createUserRepository.create(any(), anyString()))
+        .thenThrow(new DuplicateKeyError("usuarios_telefone", null));
+    when(loadUserPasswordHashRepository.loadPasswordHash(createdByOther.id()))
+        .thenReturn(Optional.of("other-hash"));
+    when(passwordHasher.matches(params.password(), "other-hash")).thenReturn(true);
+
+    assertEquals(createdByOther, sut.authenticate(params));
+  }
+
+  @Test
+  void signUpRaceWithAnotherPasswordIsRefusedAsWrongCredentials() {
+    User createdByOther =
+        new User(
+            UUID.randomUUID(), "Outra Pessoa", params.phone(), UserProfile.CUSTOMER, Instant.now());
+    when(loadUserByPhoneRepository.loadByPhone(params.phone()))
+        .thenReturn(Optional.empty(), Optional.of(createdByOther));
+    when(passwordHasher.hash(anyString())).thenReturn("bcrypt-hash");
+    when(createUserRepository.create(any(), anyString()))
+        .thenThrow(new DuplicateKeyError("usuarios_telefone", null));
+    when(loadUserPasswordHashRepository.loadPasswordHash(createdByOther.id()))
+        .thenReturn(Optional.of("other-hash"));
+    when(passwordHasher.matches(params.password(), "other-hash")).thenReturn(false);
+
+    assertThrows(InvalidCredentialsError.class, () -> sut.authenticate(params));
   }
 
   @Test

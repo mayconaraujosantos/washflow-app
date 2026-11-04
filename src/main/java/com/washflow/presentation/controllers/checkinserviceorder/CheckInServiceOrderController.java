@@ -2,6 +2,7 @@ package com.washflow.presentation.controllers.checkinserviceorder;
 
 import com.washflow.domain.errors.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.CheckInServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -30,7 +31,7 @@ public class CheckInServiceOrderController implements Controller {
       return HttpHelper.badRequest(e);
     } catch (ServiceOrderNotFoundError e) {
       return HttpHelper.notFound(e);
-    } catch (InvalidServiceOrderStatusError e) {
+    } catch (InvalidServiceOrderStatusError | VehicleAlreadyInYardError e) {
       return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

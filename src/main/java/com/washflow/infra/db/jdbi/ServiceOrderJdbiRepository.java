@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.StatementContext;
 
@@ -90,7 +91,8 @@ public class ServiceOrderJdbiRepository
 
   // lavador_id only changes when a washer is being assigned (DbStartServiceOrder) - every
   // other transition passes the vehicle's already-assigned washerId back in, so COALESCE
-  // keeps the column as-is instead of overwriting it with null.
+  // keeps the column as-is instead of overwriting it with null. "status = :expected" makes the
+  // transition a compare-and-set: of two requests racing for the same order, only one updates.
   private static final String UPDATE_STATUS_SQL =
       """
       UPDATE atendimentos
@@ -105,7 +107,7 @@ public class ServiceOrderJdbiRepository
             ELSE lavagem_concluida_em
           END,
           atualizado_em = :updatedAt
-      WHERE id = :id AND estabelecimento_id = :tenant
+      WHERE id = :id AND status = :expected AND estabelecimento_id = :tenant
       """;
 
   private static final String SELECT_BY_CUSTOMER_ID_SQL =
@@ -118,6 +120,11 @@ public class ServiceOrderJdbiRepository
   private static final String COUNT_SCHEDULED_BETWEEN_SQL =
       "SELECT COUNT(*) FROM atendimentos WHERE estabelecimento_id = :tenant"
           + " AND data_agendamento >= :start AND data_agendamento < :end";
+
+  // Transaction-scoped advisory lock keyed by lava-jato + slot start (see createWithinCapacity).
+  private static final String SLOT_LOCK_SQL =
+      "SELECT 1 FROM (SELECT pg_advisory_xact_lock(hashtextextended("
+          + "CAST(:tenant AS TEXT) || '|' || :slotKey, 0))) AS slot_lock";
 
   private static final String WAITING_QUEUE_SQL =
       SELECT_WITH_DETAILS
@@ -167,22 +174,52 @@ public class ServiceOrderJdbiRepository
 
   @Override
   public ServiceOrder create(ServiceOrder serviceOrder) {
-    jdbi.useHandle(
-        handle ->
-            handle
-                .createUpdate(INSERT_SQL)
-                .bind("id", serviceOrder.id())
-                .bind("vehicleId", serviceOrder.vehicleId())
-                .bind("servicePriceId", serviceOrder.servicePriceId())
-                .bind(STATUS, serviceOrder.status().dbValue())
-                .bind("scheduledAt", serviceOrder.scheduledAt())
-                .bind("createdAt", serviceOrder.createdAt())
-                .bind("updatedAt", serviceOrder.updatedAt())
-                .bind("expectedDeliveryAt", serviceOrder.expectedDeliveryAt())
-                .bind("notes", serviceOrder.notes())
-                .execute());
-
+    UniqueViolations.translate(() -> jdbi.useHandle(handle -> insert(handle, serviceOrder)));
     return serviceOrder;
+  }
+
+  @Override
+  public Optional<ServiceOrder> createWithinCapacity(
+      ServiceOrder serviceOrder, Instant slotStart, Instant slotEnd, int capacity) {
+    return UniqueViolations.translate(
+        () ->
+            jdbi.inTransaction(
+                handle -> {
+                  // One lock per lava-jato and hour, held until commit: concurrent bookings of
+                  // the same slot count and insert one at a time; other slots aren't blocked.
+                  handle
+                      .createQuery(SLOT_LOCK_SQL)
+                      .bind("slotKey", slotStart.toString())
+                      .mapTo(Integer.class)
+                      .one();
+                  int booked =
+                      handle
+                          .createQuery(COUNT_SCHEDULED_BETWEEN_SQL)
+                          .bind("start", slotStart)
+                          .bind("end", slotEnd)
+                          .mapTo(Integer.class)
+                          .one();
+                  if (booked >= capacity) {
+                    return Optional.<ServiceOrder>empty();
+                  }
+                  insert(handle, serviceOrder);
+                  return Optional.of(serviceOrder);
+                }));
+  }
+
+  private static void insert(Handle handle, ServiceOrder serviceOrder) {
+    handle
+        .createUpdate(INSERT_SQL)
+        .bind("id", serviceOrder.id())
+        .bind("vehicleId", serviceOrder.vehicleId())
+        .bind("servicePriceId", serviceOrder.servicePriceId())
+        .bind(STATUS, serviceOrder.status().dbValue())
+        .bind("scheduledAt", serviceOrder.scheduledAt())
+        .bind("createdAt", serviceOrder.createdAt())
+        .bind("updatedAt", serviceOrder.updatedAt())
+        .bind("expectedDeliveryAt", serviceOrder.expectedDeliveryAt())
+        .bind("notes", serviceOrder.notes())
+        .execute();
   }
 
   @Override
@@ -242,19 +279,27 @@ public class ServiceOrderJdbiRepository
   }
 
   @Override
-  public ServiceOrder updateStatus(UUID id, ServiceOrderStatus status, UUID washerId) {
-    return jdbi.inTransaction(
-        handle -> {
-          handle
-              .createUpdate(UPDATE_STATUS_SQL)
-              .bind("id", id)
-              .bind(STATUS, status.dbValue())
-              .bind("washerId", washerId)
-              .bind("updatedAt", Instant.now())
-              .execute();
-
-          return handle.createQuery(SELECT_SQL).bind("id", id).map(this::mapRow).one();
-        });
+  public Optional<ServiceOrder> updateStatus(
+      UUID id, ServiceOrderStatus expected, ServiceOrderStatus status, UUID washerId) {
+    return UniqueViolations.translate(
+        () ->
+            jdbi.inTransaction(
+                handle -> {
+                  int updated =
+                      handle
+                          .createUpdate(UPDATE_STATUS_SQL)
+                          .bind("id", id)
+                          .bind("expected", expected.dbValue())
+                          .bind(STATUS, status.dbValue())
+                          .bind("washerId", washerId)
+                          .bind("updatedAt", Instant.now())
+                          .execute();
+                  if (updated != 1) {
+                    return Optional.<ServiceOrder>empty();
+                  }
+                  return Optional.of(
+                      handle.createQuery(SELECT_SQL).bind("id", id).map(this::mapRow).one());
+                }));
   }
 
   @Override
@@ -513,7 +558,7 @@ public class ServiceOrderJdbiRepository
   }
 
   @Override
-  public ServiceOrder finalizeSale(
+  public Optional<ServiceOrder> finalizeSale(
       ServiceOrder serviceOrder, ServicePayment payment, WasherCommission commission) {
     return jdbi.inTransaction(
         handle -> {
@@ -529,7 +574,7 @@ public class ServiceOrderJdbiRepository
                   .bind("id", serviceOrder.id())
                   .execute();
           if (updated != 1) {
-            throw new IllegalStateException("Service order was finalized concurrently");
+            return Optional.<ServiceOrder>empty(); // finalized by a concurrent request
           }
           handle
               .createUpdate(
@@ -555,11 +600,8 @@ public class ServiceOrderJdbiRepository
               .bind("amount", commission.amount())
               .bind("creditedAt", commission.creditedAt())
               .execute();
-          return handle
-              .createQuery(SELECT_SQL)
-              .bind("id", serviceOrder.id())
-              .map(this::mapRow)
-              .one();
+          return Optional.of(
+              handle.createQuery(SELECT_SQL).bind("id", serviceOrder.id()).map(this::mapRow).one());
         });
   }
 

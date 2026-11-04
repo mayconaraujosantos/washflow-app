@@ -3,6 +3,7 @@ package com.washflow.data.usecases.registervehicleentry;
 import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.protocols.db.CreateServiceOrderRepository;
 import com.washflow.data.protocols.db.CreateVehicleRepository;
+import com.washflow.data.protocols.db.DuplicateKeyError;
 import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
 import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
@@ -19,6 +20,7 @@ import com.washflow.domain.errors.InvalidPlateError;
 import com.washflow.domain.errors.OutsideBusinessHoursError;
 import com.washflow.domain.errors.ServicePriceNotFoundError;
 import com.washflow.domain.errors.SlotFullyBookedError;
+import com.washflow.domain.errors.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.RegisterVehicleEntry;
 import java.time.Clock;
 import java.time.Duration;
@@ -99,7 +101,8 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
           ServicePriceNotFoundError,
           OutsideBusinessHoursError,
           InsufficientLeadTimeError,
-          SlotFullyBookedError {
+          SlotFullyBookedError,
+          VehicleAlreadyInYardError {
     Instant now = Instant.now(clock);
     String plate = normalizePlate(params.plate());
     String phone = ContactRules.normalizePhone(params.customerPhone());
@@ -122,21 +125,30 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
             .loadByPlate(plate)
             .orElseGet(() -> createVehicle(plate, phone, params));
 
-    ServiceOrder created =
-        createServiceOrderRepository.create(
-            new ServiceOrder(
-                UUID.randomUUID(),
-                vehicle.id(),
-                params.servicePriceId(),
-                null,
-                scheduled ? ServiceOrderStatus.SCHEDULED : ServiceOrderStatus.WAITING_IN_YARD,
-                scheduled ? params.scheduledAt() : now,
-                now,
-                now,
-                null,
-                params.expectedDeliveryAt(),
-                notes,
-                null));
+    ServiceOrder order =
+        new ServiceOrder(
+            UUID.randomUUID(),
+            vehicle.id(),
+            params.servicePriceId(),
+            null,
+            scheduled ? ServiceOrderStatus.SCHEDULED : ServiceOrderStatus.WAITING_IN_YARD,
+            scheduled ? params.scheduledAt() : now,
+            now,
+            now,
+            null,
+            params.expectedDeliveryAt(),
+            notes,
+            null);
+    ServiceOrder created;
+    try {
+      created =
+          scheduled
+              ? rules.book(createServiceOrderRepository, order)
+              : createServiceOrderRepository.create(order);
+    } catch (DuplicateKeyError e) {
+      // One open order per car in the yard (V3 index): the plate was entered twice.
+      throw new VehicleAlreadyInYardError(plate);
+    }
 
     return loadServiceOrderByIdRepository.loadById(created.id()).orElse(created);
   }

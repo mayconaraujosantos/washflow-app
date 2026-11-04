@@ -5,6 +5,7 @@ import com.washflow.domain.errors.InvalidPlateError;
 import com.washflow.domain.errors.OutsideBusinessHoursError;
 import com.washflow.domain.errors.ServicePriceNotFoundError;
 import com.washflow.domain.errors.SlotFullyBookedError;
+import com.washflow.domain.errors.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.RegisterVehicleEntry;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -58,7 +59,7 @@ public class RegisterVehicleEntryController implements Controller {
       return HttpHelper.badRequest(e);
     } catch (ServicePriceNotFoundError e) {
       return HttpHelper.notFound(e);
-    } catch (SlotFullyBookedError e) {
+    } catch (SlotFullyBookedError | VehicleAlreadyInYardError e) {
       return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

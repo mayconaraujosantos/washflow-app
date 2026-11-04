@@ -7,7 +7,7 @@ import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import java.time.Instant;
 import java.util.UUID;
-import org.h2.jdbcx.JdbcDataSource;
+import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 
@@ -36,8 +36,15 @@ class ServiceOrderStatusUpdateIntegrationTest {
     ServiceOrderJdbiRepository repository = new ServiceOrderJdbiRepository(jdbi);
 
     ServiceOrder checkedIn =
-        repository.updateStatus(orderId, ServiceOrderStatus.WAITING_IN_YARD, null);
-    ServiceOrder started = repository.updateStatus(orderId, ServiceOrderStatus.WASHING, washerId);
+        repository
+            .updateStatus(
+                orderId, ServiceOrderStatus.SCHEDULED, ServiceOrderStatus.WAITING_IN_YARD, null)
+            .orElseThrow();
+    ServiceOrder started =
+        repository
+            .updateStatus(
+                orderId, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, washerId)
+            .orElseThrow();
 
     assertEquals(ServiceOrderStatus.WAITING_IN_YARD, checkedIn.status());
     assertNull(checkedIn.washerId());
@@ -46,12 +53,7 @@ class ServiceOrderStatusUpdateIntegrationTest {
   }
 
   private static Jdbi createJdbi() {
-    JdbcDataSource dataSource = new JdbcDataSource();
-    dataSource.setURL(
-        "jdbc:h2:mem:"
-            + UUID.randomUUID().toString().replace("-", "")
-            + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    JdbiFactory.migrate(dataSource);
+    DataSource dataSource = TestDatabase.newDatabase();
     return TestDatabase.prepare(dataSource);
   }
 }

@@ -1,7 +1,7 @@
 package com.washflow.infra.db.jdbi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrder;
@@ -11,7 +11,7 @@ import com.washflow.domain.entities.WasherCommission;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import org.h2.jdbcx.JdbcDataSource;
+import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 
@@ -19,12 +19,7 @@ class ServiceOrderFinalizationIntegrationTest {
 
   @Test
   void finalizationPersistsPaymentStatusAndCommissionTogether() {
-    JdbcDataSource dataSource = new JdbcDataSource();
-    dataSource.setURL(
-        "jdbc:h2:mem:"
-            + UUID.randomUUID().toString().replace("-", "")
-            + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    JdbiFactory.migrate(dataSource);
+    DataSource dataSource = TestDatabase.newDatabase();
     Jdbi jdbi = TestDatabase.prepare(dataSource);
 
     UUID orderId = UUID.randomUUID();
@@ -55,7 +50,8 @@ class ServiceOrderFinalizationIntegrationTest {
                 new ServicePayment(
                     UUID.randomUUID(), orderId, PaymentMethod.PIX, new BigDecimal("60.00"), now),
                 new WasherCommission(
-                    UUID.randomUUID(), orderId, washerId, new BigDecimal("20.00"), now));
+                    UUID.randomUUID(), orderId, washerId, new BigDecimal("20.00"), now))
+            .orElseThrow();
 
     assertEquals(ServiceOrderStatus.DONE, finalized.status());
     assertEquals(
@@ -66,20 +62,16 @@ class ServiceOrderFinalizationIntegrationTest {
         Long.valueOf(1L),
         jdbi.withHandle(
             h -> h.createQuery("SELECT COUNT(*) FROM comissoes_lavador").mapTo(Long.class).one()));
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new ServiceOrderJdbiRepository(jdbi)
-                .finalizeSale(
-                    ready,
-                    new ServicePayment(
-                        UUID.randomUUID(),
-                        orderId,
-                        PaymentMethod.PIX,
-                        new BigDecimal("60.00"),
-                        now),
-                    new WasherCommission(
-                        UUID.randomUUID(), orderId, washerId, new BigDecimal("20.00"), now)));
+    // Already finalized: nothing is written and the caller gets an empty result (409 upstream).
+    assertTrue(
+        new ServiceOrderJdbiRepository(jdbi)
+            .finalizeSale(
+                ready,
+                new ServicePayment(
+                    UUID.randomUUID(), orderId, PaymentMethod.PIX, new BigDecimal("60.00"), now),
+                new WasherCommission(
+                    UUID.randomUUID(), orderId, washerId, new BigDecimal("20.00"), now))
+            .isEmpty());
     assertEquals(
         Long.valueOf(1L),
         jdbi.withHandle(

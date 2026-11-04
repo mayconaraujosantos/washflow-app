@@ -72,14 +72,21 @@ class DbCheckInServiceOrderTest {
             scheduledServiceOrder.createdAt(),
             Instant.now());
     when(updateServiceOrderStatusRepository.updateStatus(
-            params.serviceOrderId(), ServiceOrderStatus.WAITING_IN_YARD, null))
-        .thenReturn(waitingServiceOrder);
+            params.serviceOrderId(),
+            ServiceOrderStatus.SCHEDULED,
+            ServiceOrderStatus.WAITING_IN_YARD,
+            null))
+        .thenReturn(Optional.of(waitingServiceOrder));
 
     ServiceOrder result = sut.checkIn(params);
 
     assertEquals(ServiceOrderStatus.WAITING_IN_YARD, result.status());
     verify(updateServiceOrderStatusRepository)
-        .updateStatus(params.serviceOrderId(), ServiceOrderStatus.WAITING_IN_YARD, null);
+        .updateStatus(
+            params.serviceOrderId(),
+            ServiceOrderStatus.SCHEDULED,
+            ServiceOrderStatus.WAITING_IN_YARD,
+            null);
   }
 
   @Test

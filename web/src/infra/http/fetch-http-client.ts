@@ -5,6 +5,7 @@ import {
 } from '@/data/protocols/http/http-client'
 import { loadAccessToken } from '@/main/session/access-token'
 import { loadEstablishmentChoice } from '@/main/session/establishment-choice'
+import { sendIdempotentPost } from './idempotent-posts'
 
 export class FetchHttpClient<T = unknown> implements HttpClient<T> {
   async request(data: HttpRequest): Promise<HttpResponse<T>> {
@@ -17,11 +18,29 @@ export class FetchHttpClient<T = unknown> implements HttpClient<T> {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(establishment ? { 'X-Establishment': establishment } : {}),
     }
+    const send = (extraHeaders: Record<string, string> = {}) =>
+      this.send(data, { ...common, ...extraHeaders })
+
+    // Signed-in POSTs create things (sales, cash entries, entries, bookings):
+    // a double click or a retry must not create them twice.
+    if (data.method === 'post' && token) {
+      const fingerprint = `${token}|${data.url}|${JSON.stringify(data.body ?? null)}`
+      return sendIdempotentPost(fingerprint, (key) =>
+        send({ 'Idempotency-Key': key }),
+      )
+    }
+    return send()
+  }
+
+  private async send(
+    data: HttpRequest,
+    headers: Record<string, string>,
+  ): Promise<HttpResponse<T>> {
     const response = await fetch(data.url, {
       method: data.method.toUpperCase(),
       headers: data.body
-        ? { 'Content-Type': 'application/json', ...common }
-        : common,
+        ? { 'Content-Type': 'application/json', ...headers }
+        : headers,
       body: data.body ? JSON.stringify(data.body) : undefined,
     })
 

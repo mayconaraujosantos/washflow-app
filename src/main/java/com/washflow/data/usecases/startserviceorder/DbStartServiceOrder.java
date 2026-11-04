@@ -37,7 +37,22 @@ public class DbStartServiceOrder implements StartServiceOrder {
           serviceOrder.status(), ServiceOrderStatus.WAITING_IN_YARD);
     }
 
-    return updateServiceOrderStatusRepository.updateStatus(
-        params.serviceOrderId(), ServiceOrderStatus.WASHING, params.washerId());
+    // Compare-and-set: a concurrent request may have moved the order since it was loaded.
+    return updateServiceOrderStatusRepository
+        .updateStatus(
+            params.serviceOrderId(),
+            ServiceOrderStatus.WAITING_IN_YARD,
+            ServiceOrderStatus.WASHING,
+            params.washerId())
+        .orElseThrow(() -> changedConcurrently(params.serviceOrderId()));
+  }
+
+  private InvalidServiceOrderStatusError changedConcurrently(java.util.UUID id) {
+    ServiceOrderStatus current =
+        loadServiceOrderByIdRepository
+            .loadById(id)
+            .map(ServiceOrder::status)
+            .orElse(ServiceOrderStatus.WAITING_IN_YARD);
+    return new InvalidServiceOrderStatusError(current, ServiceOrderStatus.WAITING_IN_YARD);
   }
 }

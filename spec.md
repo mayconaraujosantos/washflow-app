@@ -21,9 +21,23 @@ Documento que lista todas as funcionalidades identificadas na análise comparati
 | 9 | Fila de espera | ✓ Implementado |
 | 10 | Visão geral do pátio | ✓ Implementado |
 | 11 | Relatórios operacionais (por período) | ✓ Implementado |
-| 12 | Autenticação JWT | ✓ Implementado |
+| 12 | Autenticação por token JWT (HS256, 8 h) com perfil fixado no login | ✓ Implementado |
 | 13 | PWA (Progressive Web App) | ✓ Implementado |
 | 14 | Swagger UI para documentação da API | ✓ Implementado |
+| 15 | Checklists de entrada/saída com assinatura, fotos e controle de caixa (ver abaixo) | ✓ Implementado |
+| 16 | Venda rápida no balcão e orçamento, com pagamentos parciais em várias formas | ✓ Implementado |
+| 17 | Entrada de veículo pela placa (cliente sem cadastro vira contato do veículo) e busca de veículos | ✓ Implementado |
+| 18 | Agenda do gerente e horários livres com capacidade por hora | ✓ Implementado |
+| 19 | **Multi-lava-jato**: uma instalação, vários lava-jatos isolados; administrador da plataforma (`/admin`), assistente `/configurar` | ✓ 1.5.0 |
+| 20 | Seletor de lava-jato do cliente (busca ou link `/?lavajato=slug`) | ✓ 1.5.0 |
+| 21 | Login do gerente por e-mail; crachá do lavador (QR ou PIN de 6 dígitos com bloqueio) | ✓ Implementado |
+| 22 | Login do cliente por código de WhatsApp (magic link) e Google | ✓ Parcial: falta o provedor real de WhatsApp |
+| 23 | Ticket público de acompanhamento para cliente presencial (`/ticket/:token`) | ✓ Implementado |
+| 24 | Observabilidade: logs com request id, métricas Prometheus, erros do navegador | ✓ 1.4.0 |
+| 25 | Somente PostgreSQL (testes com PostgreSQL embutido) e dados de demonstração para QA | ✓ develop |
+| 26 | Proteção contra concorrência e reenvio: transições condicionais, capacidade atômica, uma entrada por carro no pátio, `Idempotency-Key` | ✓ develop |
+
+> Arquitetura e fluxos atualizados em [docs/system-design](docs/system-design/README.md).
 
 ---
 
@@ -102,6 +116,7 @@ Documento que lista todas as funcionalidades identificadas na análise comparati
 ### Prioridade MÉDIA
 
 #### 4. 💬 Mensagens Automáticas WhatsApp
+- **Status**: Parcial. O código de acesso por WhatsApp já existe (canal `log` em desenvolvimento); falta integrar o provedor (`AccessFactory.otpSender`) e os gatilhos abaixo
 - **Descrição**: Envio automático de mensagens de confirmação, status do serviço e rechamada
 - **Por que implementar**: Melhora a experiência do cliente e aumenta a fidelização
 - **Complexidade**: Média
@@ -138,6 +153,7 @@ Documento que lista todas as funcionalidades identificadas na análise comparati
 ### Prioridade BAIXA
 
 #### 8. 📄 Orçamentos em PDF
+- **Status**: O orçamento já existe (`POST /api/sales` com `type = BUDGET`); falta gerar o PDF
 - **Descrição**: Gerar orçamentos profissionais em PDF para enviar ao cliente
 - **Por que implementar**: Profissionaliza o atendimento e facilita o fechamento de serviços
 - **Complexidade**: Baixa
@@ -176,6 +192,7 @@ Documento que lista todas as funcionalidades identificadas na análise comparati
 - **Observação**: Washflow já tem visão geral do pátio
 
 #### 14. 🏷️ Branding Personalizado
+- **Status**: Parcial. Cada lava-jato tem nome e link próprios (multi-tenant); faltam logo e cores
 - **Descrição**: Personalizar o app com logo, cores e nome do lava-jato
 - **Por que implementar**: Profissionaliza e reforça a marca
 - **Complexidade**: Baixa
