@@ -2,16 +2,23 @@ package com.washflow.infra.db.jdbi;
 
 import com.washflow.data.tenancy.TenantContext;
 import com.washflow.infra.db.tenancy.TenantBindingCustomizer;
+import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.SqlStatements;
 
 /**
- * Integration-test database: the migrated H2 schema, the production tenant binding, and the demo
- * fixtures the tests refer to (customer 1111..., vehicle 2222..., washer 3333..., manager 4444...,
- * service 1) inside one test lava-jato - which becomes the current establishment of the test
- * thread.
+ * Integration-test database: a real PostgreSQL started once per test run (embedded, no Docker), a
+ * fresh migrated database for every caller ({@link #newDatabase()}), the production tenant binding,
+ * and the demo fixtures the tests refer to (customer 1111..., vehicle 2222..., washer 3333...,
+ * manager 4444..., service 1) inside one test lava-jato - which becomes the current establishment
+ * of the test thread.
  */
 public final class TestDatabase {
 
@@ -19,7 +26,49 @@ public final class TestDatabase {
       UUID.fromString("eeeeeeee-eeee-eeee-eeee-000000000001");
   public static final String ESTABLISHMENT_SLUG = "lava-teste";
 
+  private static EmbeddedPostgres server;
+
   private TestDatabase() {}
+
+  /** An empty, fully migrated PostgreSQL database of its own. */
+  public static DataSource newDatabase() {
+    DataSource dataSource = server().getDatabase("postgres", createEmptyDatabase());
+    JdbiFactory.migrate(dataSource);
+    return dataSource;
+  }
+
+  /** Port of the embedded server (user {@code postgres}, no password). */
+  public static int port() {
+    return server().getPort();
+  }
+
+  /** Creates an empty database on the embedded server and returns its name. */
+  public static String createEmptyDatabase() {
+    String name = "t_" + UUID.randomUUID().toString().replace("-", "");
+    try (Connection connection = server().getPostgresDatabase().getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("CREATE DATABASE " + name);
+      return name;
+    } catch (SQLException e) {
+      throw new IllegalStateException("Could not create a test database", e);
+    }
+  }
+
+  private static synchronized EmbeddedPostgres server() {
+    if (server == null) {
+      try {
+        server = EmbeddedPostgres.builder().start();
+      } catch (IOException e) {
+        throw new UncheckedIOException("Could not start the embedded PostgreSQL", e);
+      }
+    }
+    return server;
+  }
+
+  /** A fresh database with the demo fixtures, as the current lava-jato of this thread. */
+  public static Jdbi prepare() {
+    return prepare(newDatabase());
+  }
 
   public static Jdbi prepare(DataSource dataSource) {
     Jdbi jdbi = Jdbi.create(dataSource);

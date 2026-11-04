@@ -11,7 +11,7 @@ import com.washflow.domain.entities.WasherCommission;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import org.h2.jdbcx.JdbcDataSource;
+import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 
@@ -19,12 +19,7 @@ class ServiceOrderFinalizationIntegrationTest {
 
   @Test
   void finalizationPersistsPaymentStatusAndCommissionTogether() {
-    JdbcDataSource dataSource = new JdbcDataSource();
-    dataSource.setURL(
-        "jdbc:h2:mem:"
-            + UUID.randomUUID().toString().replace("-", "")
-            + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    JdbiFactory.migrate(dataSource);
+    DataSource dataSource = TestDatabase.newDatabase();
     Jdbi jdbi = TestDatabase.prepare(dataSource);
 
     UUID orderId = UUID.randomUUID();

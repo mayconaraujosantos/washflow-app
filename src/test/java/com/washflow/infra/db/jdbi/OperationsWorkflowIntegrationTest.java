@@ -18,7 +18,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
-import org.h2.jdbcx.JdbcDataSource;
+import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 
@@ -114,12 +114,7 @@ class OperationsWorkflowIntegrationTest {
   }
 
   private static Jdbi createJdbi() {
-    JdbcDataSource dataSource = new JdbcDataSource();
-    dataSource.setURL(
-        "jdbc:h2:mem:"
-            + UUID.randomUUID().toString().replace("-", "")
-            + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    JdbiFactory.migrate(dataSource);
+    DataSource dataSource = TestDatabase.newDatabase();
     return TestDatabase.prepare(dataSource);
   }
 }

@@ -69,7 +69,6 @@ public class PlatformJdbiRepository implements PlatformRepository {
   public boolean createFirstAdmin(User admin, String passwordHash) {
     return jdbi.inTransaction(
         handle -> {
-          // Serializes concurrent wizards on Postgres; H2 runs single-node tests only.
           int existing =
               handle.createQuery("SELECT COUNT(*) FROM administradores").mapTo(Integer.class).one();
           if (existing > 0) {
@@ -211,9 +210,6 @@ public class PlatformJdbiRepository implements PlatformRepository {
           .bind("commission", new BigDecimal((String) service[2]))
           .execute();
     }
-    if (!tableExists(handle, "expense_category")) {
-      return; // the H2 fallback has no cash register tables
-    }
     for (String[] category : STARTER_EXPENSE_CATEGORIES) {
       handle
           .createUpdate(
@@ -225,22 +221,6 @@ public class PlatformJdbiRepository implements PlatformRepository {
           .bind("color", category[1])
           .bind("now", Instant.now())
           .execute();
-    }
-  }
-
-  private static boolean tableExists(Handle handle, String table) {
-    try {
-      java.sql.DatabaseMetaData metadata = handle.getConnection().getMetaData();
-      for (String name : List.of(table, table.toUpperCase(Locale.ROOT))) {
-        try (ResultSet tables = metadata.getTables(null, null, name, null)) {
-          if (tables.next()) {
-            return true;
-          }
-        }
-      }
-      return false;
-    } catch (SQLException e) {
-      throw new IllegalStateException("Could not inspect the database schema", e);
     }
   }
 
