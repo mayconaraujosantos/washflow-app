@@ -1,15 +1,15 @@
 # Local CI/CD (kind + Argo)
 
 Replaces GitHub Actions, which is blocked by a billing issue on the account.
-Runs entirely on your machine via Podman Desktop; production still deploys to
-Railway.
+Runs entirely on your machine via Podman Desktop; production runs on **Render**
+and is deployed by an Argo Workflow (`make deploy-prod`).
 
 | Component      | Role                                                           |
 | --------------- | --------------------------------------------------------------- |
 | kind            | Local Kubernetes cluster, backed by Podman (`infra/kind/`)      |
 | Argo Workflows  | CI: backend tests+coverage, formatting, frontend lint, build check, optional SonarCloud |
 | Argo CD         | GitOps CD: syncs `infra/k8s/local` onto the cluster (staging)   |
-| Railway CLI     | Production deploy, run as an Argo Workflow                      |
+| Render API      | Production deploy, run as an Argo Workflow after the CI checks  |
 
 ## First-time setup
 
@@ -79,7 +79,7 @@ builds the app's `Jdbi` + Hikari pool from this configuration:
   defaulting to `docker-compose.yml`'s `postgres` service - so `make dev` /
   `make run` connect with zero configuration once `make db-up` has run.
 - Or a single `DATABASE_URL` (`postgres://user:pass@host:port/db`), the form
-  Railway injects for its Postgres plugin - takes priority when set.
+  Render (and Railway) inject for a managed Postgres - takes priority when set.
 
 The application runs on PostgreSQL only, in every environment: if the
 database is unreachable or its migrations fail, startup stops with the error
@@ -172,10 +172,20 @@ production.
   registry in this local setup.
 - **release/\***: same as develop, run `make ci` against the release branch:
   `argo submit -n argo --from workflowtemplate/washflow-ci -p revision=release/x.y.z --watch`.
-- **main**: `make deploy-prod` — runs `railway up` against production inside
-  an Argo Workflow (`infra/argo-workflows/deploy-railway-workflowtemplate.yaml`).
-  This used to fire automatically on push in GitHub Actions; here it's a
-  deliberate, manual step since there's no webhook receiver watching this repo.
+- **main**: push `main` + tag, then `make deploy-prod` - an Argo Workflow
+  (`infra/argo-workflows/deploy-render-workflowtemplate.yaml`) that:
+  1. clones `main` and records the exact commit;
+  2. runs the CI checks (backend tests + Spotless, frontend lint + Prettier),
+     reusing the `washflow-ci` templates;
+  3. asks Render to deploy **that commit** (Render API) and waits until it is
+     `live` (fails on `build_failed`/`update_failed`, 20 min timeout);
+  4. smoke-tests `GET <RENDER_SERVICE_URL>/api/health` (`database: up`).
+
+  `make deploy-prod REVISION=v1.6.0` deploys a tag or branch;
+  `SKIP_CHECKS=true` redeploys an already verified commit without the tests.
+  It's a deliberate, manual step: there's no webhook receiver watching this
+  repo. In Render, set **Auto-Deploy = Off** for the service, so a push to
+  `main` doesn't deploy on its own before the checks.
 
 ## Code quality: JaCoCo, Spotless, SonarCloud
 
@@ -212,17 +222,29 @@ production.
 5. Run it: `argo submit -n argo --from workflowtemplate/washflow-ci -p revision=develop -p runSonar=true --watch`,
    or locally without the cluster at all: `SONAR_TOKEN=<token> make sonar`.
 
-## One-time: Railway credentials for `make deploy-prod`
+## One-time: Render credentials for `make deploy-prod`
 
-Not committed anywhere. Create the secret once, from the same values used in
-the old GitHub Actions secrets (`RAILWAY_TOKEN`, `RAILWAY_SERVICE_ID`):
+Not committed anywhere. In the Render dashboard:
+
+- **API key:** Account Settings → API Keys → Create API Key.
+- **Service id:** the `srv-...` part of the service URL
+  (`https://dashboard.render.com/web/srv-...`).
+- **Public URL:** e.g. `https://washflow-app-edxg.onrender.com`.
+- Service → Settings → **Auto-Deploy: Off** (Argo is the only deployer).
 
 ```
 kubectl create namespace argo --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n argo create secret generic railway-credentials \
-  --from-literal=RAILWAY_TOKEN=<token> \
-  --from-literal=RAILWAY_SERVICE_ID=<service-id>
+kubectl -n argo create secret generic render-credentials \
+  --from-literal=RENDER_API_KEY=<api-key> \
+  --from-literal=RENDER_SERVICE_ID=<srv-...> \
+  --from-literal=RENDER_SERVICE_URL=https://<service>.onrender.com
 ```
+
+Production environment variables (Render → Environment): `APP_ENV=production`,
+`DATABASE_URL` (from the Render Postgres), `AUTH_TOKEN_SECRET` (≥ 32 chars),
+`SETUP_CODE` (needed once, to create the platform admin in `/configurar`),
+`METRICS_TOKEN` (optional, enables `/api/metrics`), `APP_PUBLIC_URL`, and
+optionally `GOOGLE_CLIENT_ID` / `OTP_CHANNEL`.
 
 ## Tearing down
 

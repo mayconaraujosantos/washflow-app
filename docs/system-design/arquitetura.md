@@ -150,10 +150,22 @@ Sessões ficam no `localStorage`, uma chave por perfil (`washflow:customer-sessi
 flowchart LR
     DEV["feature/*"] -->|merge| DEVELOP[develop]
     DEVELOP -->|"release/x.y.z (make ci)"| MAIN[main + tag]
-    MAIN -->|push| RENDER["Render<br/>build Docker → deploy"]
     HOTFIX["hotfix/*"] --> MAIN
     MAIN -. back-merge .-> DEVELOP
+    MAIN -->|make deploy-prod| WF
+
+    subgraph WF["Argo Workflow washflow-deploy-render (kind local)"]
+        direction LR
+        CK[checkout<br/>commit exato] --> QB[testes backend<br/>+ Spotless]
+        CK --> QF[lint + Prettier<br/>frontend]
+        QB & QF --> RD["Render API:<br/>deploy do commit,<br/>espera live"]
+        RD --> SM["smoke test<br/>/api/health"]
+    end
+
+    RD --> RENDER["Render<br/>build Docker → deploy<br/>(Auto-Deploy off)"]
 ```
+
+O deploy de produção é feito pelo Argo Workflows rodando no cluster local (kind). O pipeline repete as verificações do CI e pede ao Render, pela API, o deploy **do commit testado**. Depois espera o status `live` e confere `/api/health`. O Auto-Deploy do Render fica desligado, então um push na `main` sozinho não publica nada. As credenciais ficam no Secret `render-credentials` (ver [infra/README.md](../../infra/README.md)).
 
 | Ambiente | Banco | Configuração |
 |---|---|---|

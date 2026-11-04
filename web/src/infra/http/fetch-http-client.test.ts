@@ -82,7 +82,11 @@ describe('FetchHttpClient', () => {
         'washflow:manager-session',
         JSON.stringify({ token: 'manager-token' }),
       )
-    const sale = { url: '/api/sales', method: 'post' as const, body: { total: 50 } }
+    const sale = {
+      url: '/api/sales',
+      method: 'post' as const,
+      body: { total: 50 },
+    }
     const keyOf = (call: number) =>
       (
         vi.mocked(fetch).mock.calls[call][1] as {
