@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import '@/presentation/styles/global.css'
+import { registerPwa } from '@/main/config/pwa'
 import { makeHomePage } from '@/main/factories/pages/make-home-page'
 import { makeSetupPage } from '@/main/factories/pages/make-setup-page'
 import {
@@ -17,6 +18,8 @@ import { makeManagerQrCodePage } from '@/main/factories/pages/make-manager-qr-co
 import { makeManagerLoginPage } from '@/main/factories/pages/make-manager-login-page'
 import { makeWasherDashboardPage } from '@/main/factories/pages/make-washer-dashboard-page'
 import { makeManagerDashboardPage } from '@/main/factories/pages/make-manager-dashboard-page'
+
+registerPwa()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
