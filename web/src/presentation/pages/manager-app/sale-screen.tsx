@@ -455,14 +455,18 @@ export function SaleScreen({ type }: Props) {
   )
 }
 
-function ProductPicker({
+/** Catalog picker in a bottom sheet; can also add a new product on the spot. */
+export function ProductPicker({
   open,
   onClose,
   onPick,
+  showQuantity = true,
 }: Readonly<{
   open: boolean
   onClose: () => void
   onPick: (servicePriceId: number, quantity: number) => void
+  // A service order has one service, so the entry form hides the quantity.
+  showQuantity?: boolean
 }>) {
   const { servicePrices, operations, reloadPrices } = useManager()
   const [query, setQuery] = useState('')
@@ -508,30 +512,32 @@ function ProductPicker({
       title="Selecione o produto ou serviço"
       onClose={onClose}
     >
-      <div className="quick-row">
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label="Diminuir quantidade"
-          onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-        >
-          <UiIcon name="minus" />
-        </button>
-        <span className="field" style={{ alignItems: 'center' }}>
-          <span>Quantidade</span>
-          <strong>{quantity}</strong>
-        </span>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label="Aumentar quantidade"
-          onClick={() =>
-            setQuantity((value) => Math.min(MAX_QUANTITY, value + 1))
-          }
-        >
-          <UiIcon name="plus" />
-        </button>
-      </div>
+      {showQuantity && (
+        <div className="quick-row">
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Diminuir quantidade"
+            onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+          >
+            <UiIcon name="minus" />
+          </button>
+          <span className="field" style={{ alignItems: 'center' }}>
+            <span>Quantidade</span>
+            <strong>{quantity}</strong>
+          </span>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Aumentar quantidade"
+            onClick={() =>
+              setQuantity((value) => Math.min(MAX_QUANTITY, value + 1))
+            }
+          >
+            <UiIcon name="plus" />
+          </button>
+        </div>
+      )}
 
       {creating ? (
         <div className="form">
