@@ -54,6 +54,9 @@ export function Home({ loadHealthStatus, establishment }: Props) {
   const navigate = useNavigate()
   const [health, setHealth] = useState<Health>('checking')
   const [shopName, setShopName] = useState<string | null>(null)
+  // Until /api/setup answers, a fresh install must not flash the login cards
+  // (on a cold server that answer can take a while).
+  const [checkingSetup, setCheckingSetup] = useState(Boolean(establishment))
 
   // A fresh install has no establishment yet: send the owner to the setup wizard.
   useEffect(() => {
@@ -63,11 +66,16 @@ export function Home({ loadHealthStatus, establishment }: Props) {
       .setupStatus()
       .then((status) => {
         if (!active) return
-        if (status.configured) setShopName(status.establishmentName)
-        else navigate('/configurar', { replace: true })
+        if (status.configured) {
+          setShopName(status.establishmentName)
+          setCheckingSetup(false)
+        } else {
+          navigate('/configurar', { replace: true })
+        }
       })
       .catch(() => {
-        // Offline/health issues are already shown by the status chip.
+        // Offline: show the cards; the status chip already reports the problem.
+        if (active) setCheckingSetup(false)
       })
     return () => {
       active = false
@@ -88,6 +96,21 @@ export function Home({ loadHealthStatus, establishment }: Props) {
       active = false
     }
   }, [loadHealthStatus])
+
+  if (checkingSetup) {
+    return (
+      <main className="role-screen">
+        <header className="role-header">
+          <h1 className="auth-brand">
+            <BrandLogo size="lg" />
+          </h1>
+          <p className="role-slogan" role="status">
+            Conectando ao sistema...
+          </p>
+        </header>
+      </main>
+    )
+  }
 
   return (
     <main className="role-screen">
