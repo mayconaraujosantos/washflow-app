@@ -72,6 +72,7 @@ describe('Home (role cards)', () => {
       setup: vi.fn(),
       load: vi.fn(),
       update: vi.fn(),
+      availability: vi.fn(),
     })
 
     const renderWithSetup = (shop: Establishment) =>

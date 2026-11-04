@@ -2,6 +2,7 @@ import type { HttpClient } from '@/data/protocols/http/http-client'
 import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 import type {
   EstablishmentModel,
+  ScheduleDayModel,
   SetupStatusModel,
 } from '@/domain/models/establishment-model'
 import type {
@@ -32,6 +33,14 @@ export class RemoteEstablishment implements Establishment {
 
   update(params: EstablishmentParams): Promise<EstablishmentModel> {
     return this.request<EstablishmentModel>('/api/establishment', 'put', params)
+  }
+
+  availability(date: string): Promise<ScheduleDayModel> {
+    const query = new URLSearchParams({ date })
+    return this.request<ScheduleDayModel>(
+      `/api/schedule/availability?${query.toString()}`,
+      'get',
+    )
   }
 
   private async request<T>(
