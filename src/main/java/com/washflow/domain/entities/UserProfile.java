@@ -8,7 +8,12 @@ package com.washflow.domain.entities;
 public enum UserProfile {
   CUSTOMER("CLIENTE"),
   WASHER("LAVADOR"),
-  MANAGER("GERENTE");
+  MANAGER("GERENTE"),
+  /**
+   * Platform administrator: creates and suspends lava-jatos. Lives in {@code administradores},
+   * never in {@code usuarios}, so it belongs to no establishment.
+   */
+  ADMIN("ADMIN");
 
   private final String dbValue;
 

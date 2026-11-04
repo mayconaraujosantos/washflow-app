@@ -1,5 +1,6 @@
 package com.washflow.presentation.helpers;
 
+import com.washflow.domain.errors.TenantRequiredError;
 import com.washflow.presentation.errors.ServerError;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.LinkedHashMap;
@@ -46,6 +47,9 @@ public final class HttpHelper {
   }
 
   public static HttpResponse serverError(Exception error) {
+    if (error instanceof TenantRequiredError) {
+      return badRequest(error);
+    }
     LOGGER.error("Unhandled controller error", new ServerError(error));
     return new HttpResponse(500, errorBody("Internal server error"));
   }

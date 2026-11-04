@@ -31,7 +31,7 @@ public class ServicePriceJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(SELECT_SQL + " WHERE id = :id")
+                .createQuery(SELECT_SQL + " WHERE id = :id AND estabelecimento_id = :tenant")
                 .bind("id", id)
                 .map(this::mapRow)
                 .findOne());
@@ -40,7 +40,11 @@ public class ServicePriceJdbiRepository
   @Override
   public List<ServicePrice> loadAll() {
     return jdbi.withHandle(
-        handle -> handle.createQuery(SELECT_SQL + " ORDER BY nome").map(this::mapRow).list());
+        handle ->
+            handle
+                .createQuery(SELECT_SQL + " WHERE estabelecimento_id = :tenant ORDER BY nome")
+                .map(this::mapRow)
+                .list());
   }
 
   @Override
@@ -50,8 +54,8 @@ public class ServicePriceJdbiRepository
           int id =
               handle
                   .createUpdate(
-                      "INSERT INTO servicos_preco (nome, preco, comissao_lavador)"
-                          + " VALUES (:name, :price, :commission)")
+                      "INSERT INTO servicos_preco (estabelecimento_id, nome, preco, comissao_lavador)"
+                          + " VALUES (:tenant, :name, :price, :commission)")
                   .bind("name", name)
                   .bind("price", price)
                   .bind("commission", washerCommission)

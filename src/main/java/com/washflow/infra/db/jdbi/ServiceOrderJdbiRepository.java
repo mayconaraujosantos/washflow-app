@@ -56,11 +56,11 @@ public class ServiceOrderJdbiRepository
   private static final String INSERT_SQL =
       """
       INSERT INTO atendimentos
-        (id, veiculo_id, servico_preco_id, status, data_agendamento, criado_em, atualizado_em,
-         previsao_entrega, observacoes)
+        (id, estabelecimento_id, veiculo_id, servico_preco_id, status, data_agendamento,
+         criado_em, atualizado_em, previsao_entrega, observacoes)
       VALUES
-        (:id, :vehicleId, :servicePriceId, :status, :scheduledAt, :createdAt, :updatedAt,
-         :expectedDeliveryAt, :notes)
+        (:id, :tenant, :vehicleId, :servicePriceId, :status, :scheduledAt, :createdAt,
+         :updatedAt, :expectedDeliveryAt, :notes)
       """;
 
   // Every read joins the display data (plate, customer, service, washer) the yard and queue
@@ -85,7 +85,7 @@ public class ServiceOrderJdbiRepository
 
   private static final String SELECT_SQL =
       SELECT_WITH_DETAILS + """
-      WHERE a.id = :id
+      WHERE a.id = :id AND a.estabelecimento_id = :tenant
       """;
 
   // lavador_id only changes when a washer is being assigned (DbStartServiceOrder) - every
@@ -105,30 +105,31 @@ public class ServiceOrderJdbiRepository
             ELSE lavagem_concluida_em
           END,
           atualizado_em = :updatedAt
-      WHERE id = :id
+      WHERE id = :id AND estabelecimento_id = :tenant
       """;
 
   private static final String SELECT_BY_CUSTOMER_ID_SQL =
       SELECT_WITH_DETAILS
           + """
-      WHERE v.cliente_id = :customerId
+      WHERE v.cliente_id = :customerId AND a.estabelecimento_id = :tenant
       ORDER BY a.atualizado_em DESC
       """;
 
   private static final String COUNT_SCHEDULED_BETWEEN_SQL =
-      "SELECT COUNT(*) FROM atendimentos WHERE data_agendamento >= :start AND data_agendamento < :end";
+      "SELECT COUNT(*) FROM atendimentos WHERE estabelecimento_id = :tenant"
+          + " AND data_agendamento >= :start AND data_agendamento < :end";
 
   private static final String WAITING_QUEUE_SQL =
       SELECT_WITH_DETAILS
           + """
-      WHERE a.status = 'AGUARDANDO_PATIO'
+      WHERE a.status = 'AGUARDANDO_PATIO' AND a.estabelecimento_id = :tenant
       ORDER BY a.atualizado_em ASC
       """;
 
   private static final String YARD_OVERVIEW_SQL =
       SELECT_WITH_DETAILS
           + """
-      WHERE a.status <> 'FINALIZADO'
+      WHERE a.status <> 'FINALIZADO' AND a.estabelecimento_id = :tenant
       ORDER BY
         CASE a.status
           WHEN 'EM_LAVAGEM' THEN 0
@@ -144,7 +145,7 @@ public class ServiceOrderJdbiRepository
   private static final String SCHEDULED_BETWEEN_SQL =
       SELECT_WITH_DETAILS
           + """
-      WHERE a.data_agendamento >= :start AND a.data_agendamento < :end
+      WHERE a.data_agendamento >= :start AND a.data_agendamento < :end AND a.estabelecimento_id = :tenant
       ORDER BY a.data_agendamento ASC
       """;
 
@@ -152,6 +153,7 @@ public class ServiceOrderJdbiRepository
       SELECT_WITH_DETAILS
           + """
       WHERE a.status IN ('EM_LAVAGEM', 'PAUSADA') AND a.lavador_id = :washerId
+        AND a.estabelecimento_id = :tenant
       ORDER BY a.atualizado_em ASC
       """;
 
@@ -271,6 +273,7 @@ public class ServiceOrderJdbiRepository
                       UPDATE atendimentos
                       SET status = 'PAUSADA', atualizado_em = :now
                       WHERE id = :id AND lavador_id = :washerId AND status = 'EM_LAVAGEM'
+                        AND estabelecimento_id = :tenant
                       """)
                   .bind("now", now)
                   .bind("id", orderId)
@@ -313,6 +316,7 @@ public class ServiceOrderJdbiRepository
                       UPDATE atendimentos
                       SET status = 'EM_LAVAGEM', atualizado_em = :now
                       WHERE id = :id AND lavador_id = :washerId AND status = 'PAUSADA'
+                        AND estabelecimento_id = :tenant
                       """)
                   .bind("now", now)
                   .bind("id", orderId)
@@ -363,6 +367,7 @@ public class ServiceOrderJdbiRepository
                       JOIN servicos_preco s ON s.id = a.servico_preco_id
                       LEFT JOIN comissoes_lavador c ON c.atendimento_id = a.id
                       WHERE p.recebido_em >= :start AND p.recebido_em < :end
+                        AND a.estabelecimento_id = :tenant
                       ORDER BY p.recebido_em ASC
                       """)
                   .bind("start", start)
@@ -518,7 +523,7 @@ public class ServiceOrderJdbiRepository
                       """
                       UPDATE atendimentos
                       SET status = 'FINALIZADO', atualizado_em = :updatedAt
-                      WHERE id = :id AND status = 'PRONTO'
+                      WHERE id = :id AND status = 'PRONTO' AND estabelecimento_id = :tenant
                       """)
                   .bind("updatedAt", payment.receivedAt())
                   .bind("id", serviceOrder.id())

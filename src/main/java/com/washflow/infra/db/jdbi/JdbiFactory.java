@@ -1,6 +1,7 @@
 package com.washflow.infra.db.jdbi;
 
 import com.washflow.application.AppConfig;
+import com.washflow.infra.db.tenancy.TenantBindingCustomizer;
 import com.washflow.infra.observability.Metrics;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -12,6 +13,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.SqlStatements;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,14 +49,16 @@ public final class JdbiFactory {
    */
   public static Jdbi create(AppConfig appConfig) {
     DataSource dataSource = createDataSource(appConfig);
-    migrate(dataSource);
-    return Jdbi.create(dataSource).installPlugin(new SqlObjectPlugin());
+    migrateOrClose(dataSource);
+    Jdbi jdbi = Jdbi.create(dataSource).installPlugin(new SqlObjectPlugin());
+    // Every ":tenant" gets the request's establishment (multi-lava-jato isolation).
+    jdbi.getConfig(SqlStatements.class).addCustomizer(new TenantBindingCustomizer());
+    return jdbi;
   }
 
-  private static void migrate(DataSource dataSource) {
-    String location = isH2(dataSource) ? "classpath:db/migration-h2" : "classpath:db/migration";
+  private static void migrateOrClose(DataSource dataSource) {
     try {
-      Flyway.configure().dataSource(dataSource).locations(location).load().migrate();
+      migrate(dataSource);
     } catch (RuntimeException e) {
       if (dataSource instanceof HikariDataSource hikari) {
         hikari.close();
@@ -64,9 +68,20 @@ public final class JdbiFactory {
     }
   }
 
-  private static boolean isH2(DataSource dataSource) {
-    return dataSource instanceof HikariDataSource hikari
-        && hikari.getJdbcUrl().startsWith("jdbc:h2:");
+  /**
+   * One set of migrations for PostgreSQL and H2 ({@code db/migration}). The history lives in {@code
+   * schema_history}; a database still carrying the pre-1.5.0 schema (no such table) is baselined at
+   * version 0, so V1 removes the legacy schema and V2 creates the current one.
+   */
+  public static void migrate(DataSource dataSource) {
+    Flyway.configure()
+        .dataSource(dataSource)
+        .locations("classpath:db/migration")
+        .table("schema_history")
+        .baselineOnMigrate(true)
+        .baselineVersion("0")
+        .load()
+        .migrate();
   }
 
   /**

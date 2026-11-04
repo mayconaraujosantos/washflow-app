@@ -29,8 +29,10 @@ public class VehicleJdbiRepository
   // rejects for a uuid column.
   private static final String INSERT_SQL =
       """
-      INSERT INTO veiculos (id, cliente_id, placa, modelo, cor, contato_nome, contato_telefone)
-      VALUES (:id, CAST(:customerId AS UUID), :plate, :model, :color, :contactName, :contactPhone)
+      INSERT INTO veiculos
+        (id, estabelecimento_id, cliente_id, placa, modelo, cor, contato_nome, contato_telefone)
+      VALUES (:id, :tenant, CAST(:customerId AS UUID), :plate, :model, :color, :contactName,
+        :contactPhone)
       """;
 
   // Registered owner first, walk-in contact as fallback - see Vehicle.contactName. Patterns are
@@ -43,11 +45,12 @@ public class VehicleJdbiRepository
              COALESCE(c.telefone, v.contato_telefone) AS owner_phone
       FROM veiculos v
       LEFT JOIN usuarios c ON c.id = v.cliente_id
-      WHERE (:platePrefix <> '' AND v.placa LIKE :platePattern)
+      WHERE v.estabelecimento_id = :tenant
+        AND ((:platePrefix <> '' AND v.placa LIKE :platePattern)
          OR (:text <> ''
              AND LOWER(COALESCE(c.nome, v.contato_nome, '')) LIKE :textPattern ESCAPE '!')
          OR (:digits <> ''
-             AND COALESCE(c.telefone, v.contato_telefone, '') LIKE :digitsPattern)
+             AND COALESCE(c.telefone, v.contato_telefone, '') LIKE :digitsPattern))
       ORDER BY v.placa
       LIMIT :limit
       """;
@@ -63,7 +66,7 @@ public class VehicleJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(SELECT_SQL + " WHERE id = :id")
+                .createQuery(SELECT_SQL + " WHERE id = :id AND estabelecimento_id = :tenant")
                 .bind("id", id)
                 .map(this::mapRow)
                 .findOne());
@@ -74,7 +77,7 @@ public class VehicleJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(SELECT_SQL + " WHERE placa = :plate")
+                .createQuery(SELECT_SQL + " WHERE placa = :plate AND estabelecimento_id = :tenant")
                 .bind("plate", plate)
                 .map(this::mapRow)
                 .findOne());
@@ -85,7 +88,8 @@ public class VehicleJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(SELECT_SQL + " WHERE cliente_id = :customerId")
+                .createQuery(
+                    SELECT_SQL + " WHERE cliente_id = :customerId AND estabelecimento_id = :tenant")
                 .bind("customerId", customerId)
                 .map(this::mapRow)
                 .list());

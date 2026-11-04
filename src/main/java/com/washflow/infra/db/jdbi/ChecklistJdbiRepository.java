@@ -27,19 +27,18 @@ public class ChecklistJdbiRepository
         (id, atendimento_id, tipo, itens, assinatura_imagem, criado_em, criado_por)
       VALUES
         (:id, :serviceOrderId, :type, :items, :signatureImage, :createdAt, :createdBy)
-      ON CONFLICT (atendimento_id, tipo)
-      DO UPDATE SET
-        itens = EXCLUDED.itens,
-        assinatura_imagem = EXCLUDED.assinatura_imagem,
-        criado_em = EXCLUDED.criado_em,
-        criado_por = EXCLUDED.createdBy
       """;
+
+  // One checklist per order and type: saving again replaces it (portable upsert).
+  private static final String DELETE_SAME_TYPE_SQL =
+      "DELETE FROM service_order_checklist WHERE atendimento_id = :serviceOrderId AND tipo = :type";
 
   private static final String SELECT_BY_ORDER_SQL =
       """
       SELECT id, atendimento_id, tipo, itens, assinatura_imagem, criado_em, criado_por
       FROM service_order_checklist
       WHERE atendimento_id = :serviceOrderId
+        AND atendimento_id IN (SELECT id FROM atendimentos WHERE estabelecimento_id = :tenant)
       ORDER BY criado_em ASC
       """;
 
@@ -48,6 +47,7 @@ public class ChecklistJdbiRepository
       SELECT id, atendimento_id, tipo, itens, assinatura_imagem, criado_em, criado_por
       FROM service_order_checklist
       WHERE atendimento_id = :serviceOrderId AND tipo = :type
+        AND atendimento_id IN (SELECT id FROM atendimentos WHERE estabelecimento_id = :tenant)
       """;
 
   private final Jdbi jdbi;
@@ -89,8 +89,13 @@ public class ChecklistJdbiRepository
 
   @Override
   public ServiceOrderChecklist save(ServiceOrderChecklist checklist) {
-    jdbi.useHandle(
+    jdbi.useTransaction(
         handle -> {
+          handle
+              .createUpdate(DELETE_SAME_TYPE_SQL)
+              .bind("serviceOrderId", checklist.serviceOrderId())
+              .bind("type", checklist.type().name())
+              .execute();
           handle
               .createUpdate(INSERT_SQL)
               .bind("id", checklist.id())

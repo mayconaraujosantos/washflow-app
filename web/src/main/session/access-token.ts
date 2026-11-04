@@ -2,6 +2,7 @@ const SESSION_KEYS = {
   customer: 'washflow:customer-session',
   washer: 'washflow:washer-session',
   manager: 'washflow:manager-session',
+  admin: 'washflow:admin-session',
 } as const
 
 export function loadAccessToken(): string | null {
@@ -18,6 +19,7 @@ function profileForPath(path: string): keyof typeof SESSION_KEYS | null {
   if (/^\/(?:qrcodes\/|login\/)?cliente(?:\/|$)/.test(path)) return 'customer'
   if (/^\/(?:qrcodes\/|login\/)?lavador(?:\/|$)/.test(path)) return 'washer'
   if (/^\/(?:qrcodes\/|login\/)?gerente(?:\/|$)/.test(path)) return 'manager'
+  if (/^\/(?:login\/)?admin(?:\/|$)/.test(path)) return 'admin'
   return null
 }
 

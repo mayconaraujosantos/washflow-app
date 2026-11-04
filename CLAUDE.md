@@ -25,13 +25,18 @@ Armazena todos os atores do sistema. O acesso às telas do PWA será controlado 
 * `criado_em`: TIMESTAMP
 * `ativo`: BOOLEAN (padrão `TRUE`); contas inativas não autenticam nem usam rotas protegidas
 
-### 2.1.1 Tabela: `estabelecimento`
-Instalação de um único lava-jato (linha única, `id = 1`), criada pelo assistente de primeiro acesso.
+### 2.1.1 Tabela: `estabelecimentos` (multi-lava-jato)
+Uma instalação atende vários lava-jatos. Cada um é criado pelo administrador da plataforma.
+* `id`: UUID (Chave Primária)
+* `slug`: VARCHAR(60) (único; endereço usado no link dos clientes `/?lavajato=<slug>`)
 * `nome`: VARCHAR(100)
 * `hora_abertura` / `hora_fechamento`: INT (horas inteiras, horário de Manaus; fechamento exclusivo)
 * `abre_domingo`: BOOLEAN
 * `max_veiculos_hora`: INT (capacidade do pátio por hora)
-* `configurado_em`: TIMESTAMP (nulo até concluir o assistente ou salvar os parâmetros)
+* `ativo`: BOOLEAN (suspenso = equipe e clientes sem acesso, dados preservados)
+* `criado_em` / `atualizado_em`: TIMESTAMP
+
+Todas as tabelas operacionais (`usuarios`, `veiculos`, `servicos_preco`, `atendimentos`, `vendas`, `cash_transaction`, `expense_category`, `codigos_acesso`) têm `estabelecimento_id` (Chave Estrangeira -> `estabelecimentos.id`); as demais pertencem ao lava-jato pelo atendimento ou pela venda. Telefone, placa e conta Google são únicos **dentro** do lava-jato; `usuarios.email` continua único na plataforma (o e-mail diz de qual lava-jato é o gerente). `administradores` (`id`, `nome`, `email` único, `senha_hash`) guarda o administrador da plataforma, que não pertence a nenhum lava-jato.
 
 `usuarios.email` (único, minúsculo) é o login da gestão. `usuarios.pin_hash` (BCrypt), `cracha_hash` (HMAC do token do QR), `pin_tentativas` / `pin_bloqueado_ate` guardam o crachá do lavador; `google_sub` liga a conta Google do cliente. `atendimentos.ticket_token` é o link público do ticket e `codigos_acesso` guarda os códigos de WhatsApp (só o hash).
 
@@ -101,6 +106,8 @@ Venda rápida no balcão (`tipo = 'VENDA'`) e orçamento (`tipo = 'ORCAMENTO'`),
 
 ## 3. Lógica das Consultas para as Filas (Portabilidade In-Memory)
 
+As migrações ficam numa única pasta (`src/main/resources/db/migration`, histórico em `schema_history`) e rodam iguais no PostgreSQL e no H2: use só SQL comum aos dois (ver `infra/README.md`).
+
 Para garantir que a lógica funcione igual no banco físico ou em listas Java/Kotlin na memória, as listagens devem seguir estas regras:
 
 ### Fila de Espera dos Lavadores (Status: AGUARDANDO_PATIO)
@@ -108,13 +115,13 @@ Para garantir que a lógica funcione igual no banco físico ou em listas Java/Ko
 
 ### Painel do Gerente (Pátio Geral)
 * **Regra:** Listar atendimentos agrupados por status, priorizando `EM_LAVAGEM` e `AGUARDANDO_PATIO` para monitorar gargalos de tempo.
-* Os horários de agendamento e funcionamento usam o fuso `America/Manaus` (UTC-4), independentemente do fuso do navegador ou servidor. Dias, horário e capacidade por hora vêm de `estabelecimento` (padrão: segunda a sábado, 08:00 às 18:00); até ser configurado, a capacidade usa `MAX_VEHICLES_PER_HOUR`.
+* Os horários de agendamento e funcionamento usam o fuso `America/Manaus` (UTC-4), independentemente do fuso do navegador ou servidor. Dias, horário e capacidade por hora vêm do lava-jato em `estabelecimentos` (padrão: segunda a sábado, 08:00 às 18:00, 3 veículos por hora).
 
 ---
 
 ## 4. Atores, autorização e operações
 Somente clientes podem se cadastrar publicamente. O login de lavador e gerente exige telefone e senha de uma conta provisionada ou promovida por gerente; informar um telefone novo nesses endpoints não concede perfil operacional.
-O campo nome é exigido no cadastro de cliente; para entrar (cliente, lavador ou gerente), bastam telefone e senha. A página inicial segue o layout de referência: logo e cartão "Entrar" (telefone e senha do cliente) com troca para "Criar uma conta", "Esqueci a senha", instalação do app e, no rodapé, links para o login do lavador e do gerente. Uma instalação nova vai antes para `/configurar`. O telefone é enviado só com dígitos.
+O campo nome é exigido no cadastro de cliente; para entrar (cliente, lavador ou gerente), bastam telefone e senha. A página inicial segue o layout de referência: logo e cartão "Entrar" (telefone e senha do cliente) com troca para "Criar uma conta", "Esqueci a senha", instalação do app e, no rodapé, links para o login do lavador e do gerente. Antes do cartão, o cliente escolhe o lava-jato (busca por nome ou link `/?lavajato=<slug>` do balcão, lembrado no aparelho) e pode trocá-lo; os links da equipe ficam sempre visíveis. Uma instalação nova vai antes para `/configurar`. O telefone é enviado só com dígitos.
 
 O login exige telefone e senha (mínimo de 8 caracteres); o nome só é exigido para criar a conta de cliente. A senha é armazenada com BCrypt. Após autenticar, a API emite um token HMAC assinado, com expiração de 8 horas e perfil fixado pelo endpoint de login. Rotas operacionais exigem `Authorization: Bearer <token>` e verificam o perfil atual do usuário.
 
@@ -150,10 +157,14 @@ Endpoints operacionais:
 
 O cliente mantém o painel aberto com atualização automática a cada 3 segundos. Quando o status é `PRONTO`, o painel mostra uma orientação persistente para retirada enquanto o atendimento não for finalizado. Não há envio de push com o app fechado.
 
-### Estabelecimento e primeiro acesso
-* `GET /api/setup` (público) informa se o assistente de configuração está pendente; a página inicial redireciona para `/configurar` nesse caso.
-* `POST /api/setup` (público, uma única vez) cria o estabelecimento e a conta do dono (gerente com e-mail e senha) e já devolve a sessão. Em produção exige o `SETUP_CODE` definido no servidor; sem ele, o assistente fica desabilitado.
-* `GET /api/establishment` (público) e `PUT /api/establishment` (gerente): nome, horário, domingos e capacidade do pátio. Salvar os parâmetros também encerra o assistente.
+### Plataforma, lava-jatos e primeiro acesso
+* **Isolamento:** cada requisição roda dentro de um lava-jato (`TenantContext`): o da conta autenticada ou, nas telas públicas do cliente, o escolhido na tela inicial (cabeçalho `X-Establishment: <slug>`). Toda consulta usa `estabelecimento_id = :tenant`, preenchido automaticamente pelo `TenantBindingCustomizer` do JDBI; sem lava-jato a consulta falha (400 "Escolha o lava-jato"). O middleware ainda recusa (403) ids de atendimento, conta ou caixa de outro lava-jato.
+* Catálogo, `/api/establishment`, agenda pública e login/cadastro de cliente exigem o lava-jato (400 sem cabeçalho, 404 para endereço inexistente ou suspenso). Logins da equipe dispensam: e-mail do gerente, crachá e PIN do lavador (telefone de conta da equipe com correspondência única) identificam o lava-jato.
+* `GET /api/setup` (público) informa se a plataforma já tem administrador; a página inicial redireciona para `/configurar` enquanto não tiver.
+* `POST /api/setup` (público, uma única vez: `ownerName`, `ownerEmail`, `ownerPassword`, `setupCode`) cria o administrador da plataforma e devolve a sessão (perfil `ADMIN`). Em produção exige o `SETUP_CODE`.
+* `POST /api/auth/admins` (e-mail e senha) e a página `/login/admin`; o painel `/admin` lista os lava-jatos, cria (`POST /api/admin/establishments`: nome, horário, capacidade e gerente inicial com e-mail e senha; cria também o catálogo inicial de serviços e categorias de despesa) e suspende/reativa (`PATCH /api/admin/establishments/{id}/active`). Rotas `/api/admin/**` são exclusivas do administrador, que não acessa dados de lava-jato.
+* `GET /api/establishments?query=` (público): lava-jatos ativos por nome, para o seletor do cliente.
+* `GET /api/establishment` (público, dentro do lava-jato) e `PUT /api/establishment` (gerente): nome, horário, domingos e capacidade do pátio.
 * O gerente entra com e-mail e senha (`POST /api/auth/managers` com `email` ou, para contas antigas, `phone`). `PATCH /api/users/{id}/email` define o e-mail de acesso.
 
 ### Acesso por perfil
@@ -170,6 +181,6 @@ O cliente mantém o painel aberto com atualização automática a cada 3 segundo
 
 ### Bootstrap e limites de autenticação
 * Em produção, configure `AUTH_TOKEN_SECRET` (mínimo 32 caracteres).
-* O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido. Em instalações novas, prefira o assistente `/configurar` (com `SETUP_CODE` em produção).
+* O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido. Em instalações novas, use o assistente `/configurar` (com `SETUP_CODE` em produção) e crie os lava-jatos pelo painel `/admin`.
 * Contas preexistentes sem `senha_hash` não podem entrar em produção até que sua senha seja configurada por um processo administrativo seguro. Apenas ambiente de desenvolvimento permite reivindicar uma conta sem hash no primeiro login.
 * A senha comprova acesso à conta após o cadastro, mas o telefone só é verificado no login por código de WhatsApp. O envio real exige integrar um provedor de WhatsApp em `AccessFactory.otpSender` (hoje só existe o canal `log`, de desenvolvimento).

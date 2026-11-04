@@ -34,28 +34,34 @@ public class CashTransactionJdbiRepository
   private static final String INSERT_TRANSACTION_SQL =
       """
       INSERT INTO cash_transaction
-        (id, tipo, valor, categoria_id, descricao, data_referencia, atendimento_id, criado_em, criado_por)
+        (id, estabelecimento_id, tipo, valor, categoria_id, descricao, data_referencia,
+         atendimento_id, criado_em, criado_por)
       VALUES
-        (:id, :type, :amount, CAST(:categoryId AS UUID), :description, :referenceDate,
-         CAST(:serviceOrderId AS UUID), :createdAt, CAST(:createdBy AS UUID))
+        (:id, :tenant, :type, :amount,
+         (SELECT c.id FROM expense_category c WHERE c.id = CAST(:categoryId AS UUID) AND c.estabelecimento_id = :tenant),
+         :description, :referenceDate,
+         (SELECT o.id FROM atendimentos o WHERE o.id = CAST(:serviceOrderId AS UUID) AND o.estabelecimento_id = :tenant),
+         :createdAt, CAST(:createdBy AS UUID))
       """;
 
   private static final String UPDATE_TRANSACTION_SQL =
       """
       UPDATE cash_transaction
-      SET tipo = :type, valor = :amount, categoria_id = CAST(:categoryId AS UUID),
-          descricao = :description, data_referencia = :referenceDate, atendimento_id = CAST(:serviceOrderId AS UUID)
-      WHERE id = :id
+      SET tipo = :type, valor = :amount,
+          categoria_id = (SELECT c.id FROM expense_category c WHERE c.id = CAST(:categoryId AS UUID) AND c.estabelecimento_id = :tenant),
+          descricao = :description, data_referencia = :referenceDate,
+          atendimento_id = (SELECT o.id FROM atendimentos o WHERE o.id = CAST(:serviceOrderId AS UUID) AND o.estabelecimento_id = :tenant)
+      WHERE id = :id AND estabelecimento_id = :tenant
       """;
 
   private static final String DELETE_TRANSACTION_SQL =
-      "DELETE FROM cash_transaction WHERE id = :id";
+      "DELETE FROM cash_transaction WHERE id = :id AND estabelecimento_id = :tenant";
 
   private static final String SELECT_BY_DATE_RANGE_SQL =
       """
       SELECT id, tipo, valor, categoria_id, descricao, data_referencia, atendimento_id, criado_em, criado_por
       FROM cash_transaction
-      WHERE data_referencia >= :from AND data_referencia <= :to
+      WHERE estabelecimento_id = :tenant AND data_referencia >= :from AND data_referencia <= :to
       ORDER BY data_referencia DESC, criado_em DESC
       """;
 
@@ -63,6 +69,7 @@ public class CashTransactionJdbiRepository
       """
       SELECT id, tipo, valor, categoria_id, descricao, data_referencia, atendimento_id, criado_em, criado_por
       FROM cash_transaction
+      WHERE estabelecimento_id = :tenant
       ORDER BY data_referencia DESC, criado_em DESC
       """;
 
@@ -70,17 +77,18 @@ public class CashTransactionJdbiRepository
       """
       SELECT id, tipo, valor, categoria_id, descricao, data_referencia, atendimento_id, criado_em, criado_por
       FROM cash_transaction
-      WHERE id = :id
+      WHERE id = :id AND estabelecimento_id = :tenant
       """;
 
   private static final String INSERT_CATEGORY_SQL =
       """
-      INSERT INTO expense_category (id, nome, cor, criado_em)
-      VALUES (:id, :name, :color, :createdAt)
+      INSERT INTO expense_category (id, estabelecimento_id, nome, cor, criado_em)
+      VALUES (:id, :tenant, :name, :color, :createdAt)
       """;
 
   private static final String SELECT_ALL_CATEGORIES_SQL =
-      "SELECT id, nome, cor, criado_em FROM expense_category ORDER BY nome";
+      "SELECT id, nome, cor, criado_em FROM expense_category"
+          + " WHERE estabelecimento_id = :tenant ORDER BY nome";
 
   private static final String REPORT_SQL =
       """
@@ -89,7 +97,7 @@ public class CashTransactionJdbiRepository
         COALESCE(SUM(CASE WHEN tipo = 'EXPENSE' THEN valor ELSE 0 END), 0) as total_expense,
         COUNT(*) as total_count
       FROM cash_transaction
-      WHERE data_referencia >= :from AND data_referencia <= :to
+      WHERE estabelecimento_id = :tenant AND data_referencia >= :from AND data_referencia <= :to
       """;
 
   private static final String REPORT_BY_CATEGORY_SQL =
@@ -100,7 +108,8 @@ public class CashTransactionJdbiRepository
              COUNT(*) as count
       FROM cash_transaction ct
       JOIN expense_category ec ON ec.id = ct.categoria_id
-      WHERE ct.data_referencia >= :from AND ct.data_referencia <= :to
+      WHERE ct.estabelecimento_id = :tenant
+        AND ct.data_referencia >= :from AND ct.data_referencia <= :to
       GROUP BY ec.nome, ec.cor, ct.tipo
       ORDER BY total DESC
       """;

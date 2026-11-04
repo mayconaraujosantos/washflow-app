@@ -33,6 +33,10 @@ public class UpdateUserProfileController implements Controller {
       UUID targetUserId = UUID.fromString(request.pathParams().get("id"));
       UUID requestedByUserId = UUID.fromString((String) request.body().get("managerId"));
       UserProfile newProfile = UserProfile.valueOf((String) request.body().get("newProfile"));
+      if (newProfile == UserProfile.ADMIN) {
+        // Platform administrators are not establishment accounts.
+        throw new IllegalArgumentException("Perfil inválido: ADMIN");
+      }
 
       var user =
           updateUserProfile.update(

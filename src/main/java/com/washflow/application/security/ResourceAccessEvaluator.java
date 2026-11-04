@@ -31,8 +31,9 @@ public final class ResourceAccessEvaluator {
       UUID userId,
       UserProfile profile,
       Jdbi jdbi) {
-    // Managers have access to all resources
-    if (profile == UserProfile.MANAGER) {
+    // Managers reach every resource of their own lava-jato (TenantResourceGuard checks which one);
+    // the platform administrator only reaches /api/admin routes.
+    if (profile == UserProfile.MANAGER || profile == UserProfile.ADMIN) {
       return true;
     }
 

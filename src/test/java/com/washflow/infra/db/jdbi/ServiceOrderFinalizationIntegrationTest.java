@@ -11,7 +11,6 @@ import com.washflow.domain.entities.WasherCommission;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import org.flywaydb.core.Flyway;
 import org.h2.jdbcx.JdbcDataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
@@ -25,12 +24,8 @@ class ServiceOrderFinalizationIntegrationTest {
         "jdbc:h2:mem:"
             + UUID.randomUUID().toString().replace("-", "")
             + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    Flyway.configure()
-        .dataSource(dataSource)
-        .locations("classpath:db/migration-h2")
-        .load()
-        .migrate();
-    Jdbi jdbi = Jdbi.create(dataSource);
+    JdbiFactory.migrate(dataSource);
+    Jdbi jdbi = TestDatabase.prepare(dataSource);
 
     UUID orderId = UUID.randomUUID();
     UUID vehicleId = UUID.fromString("22222222-2222-2222-2222-222222222222");
@@ -44,8 +39,8 @@ class ServiceOrderFinalizationIntegrationTest {
                 .createUpdate(
                     """
                     INSERT INTO atendimentos
-                      (id, veiculo_id, servico_preco_id, lavador_id, status, data_agendamento, criado_em, atualizado_em)
-                    VALUES (:id, :vehicleId, 1, :washerId, 'PRONTO', :now, :now, :now)
+                      (id, estabelecimento_id, veiculo_id, servico_preco_id, lavador_id, status, data_agendamento, criado_em, atualizado_em)
+                    VALUES (:id, :tenant, :vehicleId, 1, :washerId, 'PRONTO', :now, :now, :now)
                     """)
                 .bind("id", orderId)
                 .bind("vehicleId", vehicleId)

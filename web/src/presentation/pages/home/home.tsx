@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Access } from '@/domain/usecases/access'
 import type { AuthenticateCustomer } from '@/domain/usecases/authenticate-customer'
 import type { Establishment } from '@/domain/usecases/establishment'
+import type { EstablishmentDirectory } from '@/domain/usecases/platform'
 import { BrandLogo } from '@/presentation/components/ui/app-chrome'
 import { AccessScreen } from '@/presentation/pages/access/access-screen'
 
@@ -11,6 +12,8 @@ type Props = Readonly<{
   access?: Access
   // Optional so the page still renders where setup status is not wired (tests).
   establishment?: Establishment
+  // Lava-jato picker for customers (one installation, many lava-jatos).
+  directory?: EstablishmentDirectory
 }>
 
 /**
@@ -18,7 +21,12 @@ type Props = Readonly<{
  * conta"), with washer and manager access linked under it. A fresh install
  * goes to the setup wizard first.
  */
-export function Home({ authenticateCustomer, access, establishment }: Props) {
+export function Home({
+  authenticateCustomer,
+  access,
+  establishment,
+  directory,
+}: Props) {
   const navigate = useNavigate()
   // Until /api/setup answers, a fresh install must not flash the sign-in card
   // (on a cold server that answer can take a while).
@@ -27,7 +35,7 @@ export function Home({ authenticateCustomer, access, establishment }: Props) {
   useEffect(() => {
     if (!establishment) return
     let active = true
-    establishment
+    void establishment
       .setupStatus()
       .then((status) => {
         if (!active) return
@@ -62,6 +70,7 @@ export function Home({ authenticateCustomer, access, establishment }: Props) {
       access={access}
       initialMode="signin"
       staffLinks
+      directory={directory}
     />
   )
 }

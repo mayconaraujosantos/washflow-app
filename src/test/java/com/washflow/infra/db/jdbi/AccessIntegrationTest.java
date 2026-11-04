@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
-import org.flywaydb.core.Flyway;
 import org.h2.jdbcx.JdbcDataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
@@ -99,9 +98,9 @@ class AccessIntegrationTest {
                 .createUpdate(
                     """
                     INSERT INTO atendimentos
-                      (id, veiculo_id, servico_preco_id, status, data_agendamento,
+                      (id, estabelecimento_id, veiculo_id, servico_preco_id, status, data_agendamento,
                        criado_em, atualizado_em)
-                    VALUES (:id, '22222222-2222-2222-2222-222222222222', 1, 'EM_LAVAGEM',
+                    VALUES (:id, :tenant, '22222222-2222-2222-2222-222222222222', 1, 'EM_LAVAGEM',
                             :now, :now, :now)
                     """)
                 .bind("id", orderId)
@@ -116,7 +115,7 @@ class AccessIntegrationTest {
     assertEquals("ABC1D23", view.vehiclePlate());
     assertEquals("Lavagem Completa", view.serviceName());
     assertEquals(ServiceOrderStatus.WASHING, view.status());
-    assertEquals("Meu Lava-Jato", view.establishmentName());
+    assertEquals("Lava Teste", view.establishmentName());
     assertThrows(TicketNotFoundError.class, () -> ticket.view("x".repeat(32)));
     assertThrows(TicketNotFoundError.class, () -> ticket.view("../etc"));
   }
@@ -238,11 +237,7 @@ class AccessIntegrationTest {
         "jdbc:h2:mem:"
             + UUID.randomUUID().toString().replace("-", "")
             + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    Flyway.configure()
-        .dataSource(dataSource)
-        .locations("classpath:db/migration-h2")
-        .load()
-        .migrate();
-    return Jdbi.create(dataSource);
+    JdbiFactory.migrate(dataSource);
+    return TestDatabase.prepare(dataSource);
   }
 }
