@@ -7,20 +7,29 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.application.AppConfig;
+import com.washflow.data.tenancy.TenantContext;
 import com.washflow.data.usecases.authenticateuser.DbAuthenticateUser;
 import com.washflow.data.usecases.establishment.DbManageEstablishment;
 import com.washflow.data.usecases.establishment.DbSetupEstablishment;
+import com.washflow.data.usecases.platform.DbManagePlatform;
 import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
 import com.washflow.data.usecases.updateuseremail.DbUpdateUserEmail;
 import com.washflow.domain.entities.Establishment;
+import com.washflow.domain.entities.EstablishmentSummary;
+import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.Vehicle;
 import com.washflow.domain.errors.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.EstablishmentAlreadyConfiguredError;
+import com.washflow.domain.errors.EstablishmentSlugTakenError;
 import com.washflow.domain.errors.InvalidCredentialsError;
 import com.washflow.domain.errors.OutsideBusinessHoursError;
+import com.washflow.domain.errors.TenantRequiredError;
 import com.washflow.domain.usecases.AuthenticateUser;
 import com.washflow.domain.usecases.ManageEstablishment;
+import com.washflow.domain.usecases.ManagePlatform;
 import com.washflow.domain.usecases.SetupEstablishment;
 import com.washflow.infra.security.BCryptPasswordHasher;
 import java.time.Clock;
@@ -30,43 +39,119 @@ import java.util.UUID;
 import org.flywaydb.core.Flyway;
 import org.h2.jdbcx.JdbcDataSource;
 import org.jdbi.v3.core.Jdbi;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+/** Platform setup, lava-jato creation and the isolation between lava-jatos. */
 class EstablishmentIntegrationTest {
 
+  @AfterEach
+  void clearTenant() {
+    TenantContext.clear();
+  }
+
   @Test
-  void setupCreatesTheOwnerWhoThenLogsInByE_mail() throws Exception {
+  void setupCreatesThePlatformAdministratorOnce() throws Exception {
     Jdbi jdbi = createJdbi();
-    EstablishmentJdbiRepository establishments = new EstablishmentJdbiRepository(jdbi);
-    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    PlatformJdbiRepository platform = new PlatformJdbiRepository(jdbi);
     DbSetupEstablishment setup =
         new DbSetupEstablishment(
-            establishments, users, users, new BCryptPasswordHasher(), "", false, Clock.systemUTC());
+            platform, new BCryptPasswordHasher(), "", false, Clock.systemUTC());
 
     assertFalse(setup.status().configured());
-    User owner =
-        setup.setup(
-            new SetupEstablishment.Params(
-                null,
-                "Lava Rápido Centro",
-                7,
-                19,
-                true,
-                5,
-                "Dona Maria",
-                "Maria@LavaJato.com",
-                null,
-                "senha-forte-1"));
+    User admin = setup.setup(params("Dona Maria", "Maria@Washflow.com", "senha-forte-1"));
 
     assertTrue(setup.status().configured());
-    assertEquals("maria@lavajato.com", owner.email());
+    assertEquals(UserProfile.ADMIN, admin.profile());
+    assertEquals("maria@washflow.com", admin.email());
     assertThrows(
         EstablishmentAlreadyConfiguredError.class,
-        () ->
-            setup.setup(
-                new SetupEstablishment.Params(
-                    null, "Outro", 8, 18, false, 3, "X", "x@y.com", null, "senha-forte-2")));
+        () -> setup.setup(params("Outro", "x@y.com", "senha-forte-2")));
 
+    DbManagePlatform manage = platform(jdbi);
+    assertEquals(admin.id(), manage.signIn("MARIA@washflow.com", "senha-forte-1").id());
+    assertThrows(
+        InvalidCredentialsError.class, () -> manage.signIn("maria@washflow.com", "errada-1"));
+  }
+
+  @Test
+  void eachLavaJatoSeesOnlyItsOwnData() throws Exception {
+    Jdbi jdbi = createJdbi();
+    DbManagePlatform platform = platform(jdbi);
+    EstablishmentSummary centro =
+        platform.create(newEstablishment("Lava Rápido Centro", "ana@centro.com"));
+    EstablishmentSummary bairro =
+        platform.create(newEstablishment("Lava Bairro", "bia@bairro.com"));
+    assertEquals("lava-rapido-centro", centro.slug());
+    assertEquals("ana@centro.com", centro.managerEmail());
+
+    ServicePriceJdbiRepository services = new ServicePriceJdbiRepository(jdbi);
+    VehicleJdbiRepository vehicles = new VehicleJdbiRepository(jdbi);
+    ServiceOrderJdbiRepository orders = new ServiceOrderJdbiRepository(jdbi);
+
+    UUID centroVehicle = UUID.randomUUID();
+    UUID centroOrder = UUID.randomUUID();
+    TenantContext.set(centro.id());
+    assertEquals(8, services.loadAll().size(), "every lava-jato starts with the starter catalog");
+    int centroService = services.loadAll().get(0).id();
+    vehicles.create(new Vehicle(centroVehicle, null, "ABC1D23", "Onix", "Prata", "Ana", null));
+    Instant now = Instant.now();
+    orders.create(
+        new ServiceOrder(
+            centroOrder,
+            centroVehicle,
+            centroService,
+            null,
+            ServiceOrderStatus.WAITING_IN_YARD,
+            now,
+            now,
+            now,
+            null));
+    assertEquals(1, orders.loadYardOverview().size());
+
+    TenantContext.set(bairro.id());
+    // The same plate can exist in another lava-jato; nothing of "Centro" is visible here.
+    vehicles.create(new Vehicle(UUID.randomUUID(), null, "ABC1D23", "Gol", "Preto", "Bia", null));
+    assertTrue(vehicles.loadById(centroVehicle).isEmpty());
+    assertTrue(orders.loadById(centroOrder).isEmpty());
+    assertTrue(orders.loadYardOverview().isEmpty());
+    assertTrue(services.loadById(centroService).isEmpty());
+    assertEquals(1, vehicles.search("ABC", "", "", 10).size());
+
+    // Logins by e-mail are global and say which lava-jato the manager belongs to.
+    TenantContext.clear();
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    assertTrue(users.loadByEmail("ana@centro.com").isPresent());
+    assertThrows(TenantRequiredError.class, services::loadAll);
+
+    // Suspending a lava-jato blocks its staff logins and hides it from the customer picker.
+    platform.setActive(centro.id(), false);
+    assertTrue(users.loadByEmail("ana@centro.com").isEmpty());
+    assertEquals(1, platform.search("lava").size());
+    assertEquals("lava-bairro", platform.search("").get(0).slug());
+  }
+
+  @Test
+  void rejectsDuplicateAddressesAndE_mails() throws Exception {
+    Jdbi jdbi = createJdbi();
+    DbManagePlatform platform = platform(jdbi);
+    platform.create(newEstablishment("Lava Centro", "ana@centro.com"));
+
+    assertThrows(
+        EstablishmentSlugTakenError.class,
+        () -> platform.create(newEstablishment("Lava Centro", "outra@centro.com")));
+    assertThrows(
+        EmailAlreadyRegisteredError.class,
+        () -> platform.create(newEstablishment("Lava Norte", "ana@centro.com")));
+  }
+
+  @Test
+  void managerLogsInByE_mailIntoTheirLavaJato() throws Exception {
+    Jdbi jdbi = createJdbi();
+    EstablishmentSummary centro =
+        platform(jdbi).create(newEstablishment("Lava Centro", "ana@centro.com"));
+    TenantContext.clear();
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
     DbAuthenticateUser auth =
         new DbAuthenticateUser(
             users,
@@ -76,36 +161,32 @@ class EstablishmentIntegrationTest {
             new BCryptPasswordHasher(),
             AppConfig.load(Map.of("APP_ENV", "production-like"), Map.of()),
             users);
-    User loggedIn =
+
+    User manager =
         auth.authenticate(
             new AuthenticateUser.Params(
-                null, null, "senha-forte-1", UserProfile.MANAGER, "MARIA@lavajato.com"));
-    assertEquals(owner.id(), loggedIn.id());
+                null, null, "senha-do-gerente", UserProfile.MANAGER, "ANA@centro.com"));
+
+    assertEquals(UserProfile.MANAGER, manager.profile());
+    assertEquals(centro.managerName(), manager.name());
     assertThrows(
         InvalidCredentialsError.class,
         () ->
             auth.authenticate(
                 new AuthenticateUser.Params(
-                    null, null, "errada-123", UserProfile.MANAGER, "maria@lavajato.com")));
-    assertThrows(
-        InvalidCredentialsError.class,
-        () ->
-            auth.authenticate(
-                new AuthenticateUser.Params(
-                    null, null, "senha-forte-1", UserProfile.MANAGER, "ninguem@x.com")));
+                    null, null, "errada-123", UserProfile.MANAGER, "ana@centro.com")));
   }
 
   @Test
   void settingsDriveTheSchedulingRules() throws Exception {
-    Jdbi jdbi = createJdbi();
+    Jdbi jdbi = TestDatabase.prepare(migratedDataSource());
     EstablishmentJdbiRepository establishments = new EstablishmentJdbiRepository(jdbi);
     DbManageEstablishment manage = new DbManageEstablishment(establishments);
-    assertNull(manage.get().configuredAt());
+    assertEquals("Lava Teste", manage.get().name());
 
     Establishment saved = manage.update(new ManageEstablishment.Params("Lava 24h", 6, 22, true, 7));
 
     assertEquals(22, saved.closingHour());
-    assertTrue(saved.isConfigured(), "saving the settings closes the setup wizard");
     SchedulingRules rules =
         new SchedulingRules(
             new ServiceOrderJdbiRepository(jdbi),
@@ -124,7 +205,7 @@ class EstablishmentIntegrationTest {
 
   @Test
   void managersCanSetUniqueLoginE_mails() throws Exception {
-    Jdbi jdbi = createJdbi();
+    Jdbi jdbi = TestDatabase.prepare(migratedDataSource());
     UserJdbiRepository users = new UserJdbiRepository(jdbi);
     DbUpdateUserEmail update = new DbUpdateUserEmail(users, users, users);
     UUID demoManager = UUID.fromString("44444444-4444-4444-4444-444444444444");
@@ -137,7 +218,29 @@ class EstablishmentIntegrationTest {
     assertNull(update.update(demoManager, " ").email());
   }
 
+  private static SetupEstablishment.Params params(String name, String email, String password) {
+    return new SetupEstablishment.Params(null, name, email, password);
+  }
+
+  private static ManagePlatform.NewEstablishment newEstablishment(String name, String email) {
+    return new ManagePlatform.NewEstablishment(
+        name, null, 8, 18, false, 3, "Gerente " + name, email, null, "senha-do-gerente");
+  }
+
+  private static DbManagePlatform platform(Jdbi jdbi) {
+    return new DbManagePlatform(
+        new PlatformJdbiRepository(jdbi), new BCryptPasswordHasher(), Clock.systemUTC());
+  }
+
+  /** Empty platform (no test lava-jato): what a fresh installation looks like. */
   private static Jdbi createJdbi() {
+    Jdbi jdbi = Jdbi.create(migratedDataSource());
+    jdbi.getConfig(org.jdbi.v3.core.statement.SqlStatements.class)
+        .addCustomizer(new com.washflow.infra.db.tenancy.TenantBindingCustomizer());
+    return jdbi;
+  }
+
+  private static JdbcDataSource migratedDataSource() {
     JdbcDataSource dataSource = new JdbcDataSource();
     dataSource.setURL(
         "jdbc:h2:mem:"
@@ -148,6 +251,6 @@ class EstablishmentIntegrationTest {
         .locations("classpath:db/migration-h2")
         .load()
         .migrate();
-    return Jdbi.create(dataSource);
+    return dataSource;
   }
 }

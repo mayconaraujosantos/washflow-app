@@ -39,9 +39,9 @@ class OperationsWorkflowIntegrationTest {
                 .createUpdate(
                     """
                     INSERT INTO atendimentos
-                      (id, veiculo_id, servico_preco_id, lavador_id, status,
+                      (id, estabelecimento_id, veiculo_id, servico_preco_id, lavador_id, status,
                        data_agendamento, criado_em, atualizado_em)
-                    VALUES (:id, :vehicleId, 1, :washerId, 'AGUARDANDO_PATIO', :now, :now, :now)
+                    VALUES (:id, :tenant, :vehicleId, 1, :washerId, 'AGUARDANDO_PATIO', :now, :now, :now)
                     """)
                 .bind("id", orderId)
                 .bind("vehicleId", vehicleId)
@@ -125,6 +125,6 @@ class OperationsWorkflowIntegrationTest {
         .locations("classpath:db/migration-h2")
         .load()
         .migrate();
-    return Jdbi.create(dataSource);
+    return TestDatabase.prepare(dataSource);
   }
 }

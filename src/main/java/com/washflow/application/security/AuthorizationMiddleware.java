@@ -1,11 +1,13 @@
 package com.washflow.application.security;
 
+import com.washflow.data.tenancy.TenantContext;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import org.jdbi.v3.core.Jdbi;
 
 public final class AuthorizationMiddleware {
@@ -20,7 +22,22 @@ public final class AuthorizationMiddleware {
           "/api/establishment",
           "/api/auth/options",
           "/api/schedule/availability",
-          "/api/metrics");
+          "/api/metrics",
+          "/api/establishments");
+
+  // Public screens that only make sense inside one lava-jato: the customer must have picked it
+  // (X-Establishment header) or be signed in to it.
+  private static final Set<String> TENANT_REQUIRED_PATHS =
+      Set.of(
+          "/api/services",
+          "/api/establishment",
+          "/api/schedule/availability",
+          "/api/auth/customers",
+          "/api/auth/customers/otp",
+          "/api/auth/customers/otp/verify",
+          "/api/auth/customers/google");
+
+  public static final String ESTABLISHMENT_HEADER = "X-Establishment";
   // Login entry points (POST): each one fixes the profile it can sign into.
   private static final Set<String> AUTHENTICATION_PATHS =
       Set.of(
@@ -33,6 +50,7 @@ public final class AuthorizationMiddleware {
           "/api/auth/customers/otp",
           "/api/auth/customers/otp/verify",
           "/api/auth/customers/google",
+          "/api/auth/admins",
           "/api/client-errors");
   public static final String ERROR = "error";
 
@@ -48,8 +66,9 @@ public final class AuthorizationMiddleware {
   }
 
   public boolean authorize(Context ctx) {
+    TenantContext.clear();
     if (isPublicRoute(ctx)) {
-      return true;
+      return resolvePublicTenant(ctx);
     }
 
     String token = extractToken(ctx);
@@ -65,11 +84,21 @@ public final class AuthorizationMiddleware {
       return false;
     }
 
-    if (!validateAccountStatus(ctx, claims)) {
+    Optional<AccountSecurityGateway.AccountAccess> access = validateAccountStatus(ctx, claims);
+    if (access.isEmpty()) {
       return false;
+    }
+    UUID establishmentId = access.get().establishmentId();
+    if (establishmentId != null) {
+      TenantContext.set(establishmentId);
     }
 
     if (!validateRoleAndResourcePermissions(ctx, claims)) {
+      return false;
+    }
+
+    if (!TenantResourceGuard.allows(ctx.path(), establishmentId, jdbi)) {
+      ctx.status(403).json(HttpHelper.errorBody("Resource is outside your account"));
       return false;
     }
 
@@ -103,20 +132,65 @@ public final class AuthorizationMiddleware {
     return authorization.substring("Bearer ".length());
   }
 
-  private boolean validateAccountStatus(Context ctx, AuthTokenService.Claims claims) {
+  private Optional<AccountSecurityGateway.AccountAccess> validateAccountStatus(
+      Context ctx, AuthTokenService.Claims claims) {
     Optional<AccountSecurityGateway.AccountAccess> account =
         securityGateway.findAccessById(claims.userId());
 
     if (account.isEmpty() || !account.get().active()) {
       ctx.status(401).json(HttpHelper.errorBody("Account is inactive"));
-      return false;
+      return Optional.empty();
     }
 
     if (!account.get().profile().equals(claims.profile())) {
       ctx.status(401).json(HttpHelper.errorBody("Access token is no longer valid"));
+      return Optional.empty();
+    }
+    return account;
+  }
+
+  /**
+   * Public routes still run inside a lava-jato when one is known: the signed-in account's (staff
+   * screens read the public catalog too) or the one picked on the home screen.
+   */
+  private boolean resolvePublicTenant(Context ctx) {
+    Optional<UUID> fromAccount = establishmentOfOptionalToken(ctx);
+    if (fromAccount.isPresent()) {
+      TenantContext.set(fromAccount.get());
+      return true;
+    }
+    String slug = ctx.header(ESTABLISHMENT_HEADER);
+    if (slug != null && !slug.isBlank()) {
+      Optional<UUID> picked = securityGateway.findActiveEstablishmentBySlug(slug.trim());
+      if (picked.isEmpty()) {
+        ctx.status(404).json(HttpHelper.errorBody("Lava-jato não encontrado"));
+        return false;
+      }
+      TenantContext.set(picked.get());
+      return true;
+    }
+    if (TENANT_REQUIRED_PATHS.contains(ctx.path()) && ctx.path().startsWith("/api/")) {
+      ctx.status(400).json(HttpHelper.errorBody("Escolha o lava-jato"));
       return false;
     }
     return true;
+  }
+
+  private Optional<UUID> establishmentOfOptionalToken(Context ctx) {
+    String authorization = ctx.header("Authorization");
+    if (authorization == null || !authorization.startsWith("Bearer ")) {
+      return Optional.empty();
+    }
+    try {
+      AuthTokenService.Claims claims =
+          tokenService.verify(authorization.substring("Bearer ".length()));
+      return securityGateway
+          .findAccessById(claims.userId())
+          .filter(AccountSecurityGateway.AccountAccess::active)
+          .map(AccountSecurityGateway.AccountAccess::establishmentId);
+    } catch (AuthTokenService.InvalidTokenException e) {
+      return Optional.empty();
+    }
   }
 
   private boolean validateRoleAndResourcePermissions(Context ctx, AuthTokenService.Claims claims) {

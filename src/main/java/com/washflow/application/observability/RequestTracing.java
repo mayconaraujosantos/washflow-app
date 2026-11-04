@@ -1,6 +1,8 @@
 package com.washflow.application.observability;
 
 import com.washflow.application.security.AuthTokenService;
+import com.washflow.data.tenancy.TenantContext;
+import com.washflow.domain.errors.TenantRequiredError;
 import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -49,10 +51,13 @@ public final class RequestTracing {
     long started = System.nanoTime();
     try {
       work.run();
+    } catch (TenantRequiredError e) {
+      ctx.status(400).json(HttpHelper.errorBody(e.getMessage()));
     } catch (Exception e) {
       ERRORS.error("Unhandled error method={} route={}", method, route, e);
       ctx.status(500).json(HttpHelper.errorBody("Internal server error"));
     } finally {
+      TenantContext.clear();
       long elapsed = System.nanoTime() - started;
       int status = ctx.statusCode();
       log(method, route, ctx, status, TimeUnit.NANOSECONDS.toMillis(elapsed));

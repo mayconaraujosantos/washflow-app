@@ -33,7 +33,7 @@ class AuthenticationIntegrationTest {
         .locations("classpath:db/migration-h2")
         .load()
         .migrate();
-    Jdbi jdbi = Jdbi.create(dataSource);
+    Jdbi jdbi = TestDatabase.prepare(dataSource);
     UserJdbiRepository repository = new UserJdbiRepository(jdbi);
     DbAuthenticateUser authenticate =
         new DbAuthenticateUser(

@@ -43,7 +43,7 @@ public class AccessJdbiRepository
                     UPDATE usuarios
                     SET pin_hash = :pinHash, cracha_hash = :badgeHash,
                         pin_tentativas = 0, pin_bloqueado_ate = NULL
-                    WHERE id = :id
+                    WHERE id = :id AND estabelecimento_id = :tenant
                     """)
                 .bind("id", userId)
                 .bind("pinHash", pinHash)
@@ -92,7 +92,11 @@ public class AccessJdbiRepository
 
   @Override
   public Optional<User> loadByBadgeHash(String badgeHash) {
-    return loadUser("cracha_hash", badgeHash);
+    // Badge tokens are random and unique across establishments: the badge says which one.
+    return loadUser(
+        "cracha_hash",
+        badgeHash,
+        " AND estabelecimento_id IN (SELECT id FROM estabelecimentos WHERE ativo = TRUE)");
   }
 
   // ------------------------------------------------------------ tickets
@@ -105,13 +109,15 @@ public class AccessJdbiRepository
               .createUpdate(
                   """
                   UPDATE atendimentos SET ticket_token = :token
-                  WHERE id = :id AND ticket_token IS NULL
+                  WHERE id = :id AND ticket_token IS NULL AND estabelecimento_id = :tenant
                   """)
               .bind("id", serviceOrderId)
               .bind("token", candidate)
               .execute();
           return handle
-              .createQuery("SELECT ticket_token FROM atendimentos WHERE id = :id")
+              .createQuery(
+                  "SELECT ticket_token FROM atendimentos WHERE id = :id"
+                      + " AND estabelecimento_id = :tenant")
               .bind("id", serviceOrderId)
               .mapTo(String.class)
               .findOne();
@@ -132,8 +138,8 @@ public class AccessJdbiRepository
                     FROM atendimentos a
                     JOIN veiculos v ON v.id = a.veiculo_id
                     JOIN servicos_preco s ON s.id = a.servico_preco_id
-                    CROSS JOIN estabelecimento e
-                    WHERE a.ticket_token = :token AND e.id = 1
+                    JOIN estabelecimentos e ON e.id = a.estabelecimento_id
+                    WHERE a.ticket_token = :token
                     """)
                 .bind("token", token)
                 .map(
@@ -158,14 +164,17 @@ public class AccessJdbiRepository
     jdbi.useTransaction(
         handle -> {
           handle
-              .createUpdate("DELETE FROM codigos_acesso WHERE telefone = :phone")
+              .createUpdate(
+                  "DELETE FROM codigos_acesso WHERE telefone = :phone"
+                      + " AND estabelecimento_id = :tenant")
               .bind("phone", phone)
               .execute();
           handle
               .createUpdate(
                   """
-                  INSERT INTO codigos_acesso (id, telefone, codigo_hash, tentativas, expira_em, criado_em)
-                  VALUES (:id, :phone, :hash, 0, :expiresAt, :createdAt)
+                  INSERT INTO codigos_acesso
+                    (id, estabelecimento_id, telefone, codigo_hash, tentativas, expira_em, criado_em)
+                  VALUES (:id, :tenant, :phone, :hash, 0, :expiresAt, :createdAt)
                   """)
               .bind("id", UUID.randomUUID())
               .bind("phone", phone)
@@ -184,7 +193,7 @@ public class AccessJdbiRepository
                 .createQuery(
                     """
                     SELECT id, codigo_hash, tentativas, expira_em, criado_em
-                    FROM codigos_acesso WHERE telefone = :phone
+                    FROM codigos_acesso WHERE telefone = :phone AND estabelecimento_id = :tenant
                     ORDER BY criado_em DESC
                     """)
                 .bind("phone", phone)
@@ -205,7 +214,8 @@ public class AccessJdbiRepository
         handle ->
             handle
                 .createUpdate(
-                    "UPDATE codigos_acesso SET tentativas = tentativas + 1 WHERE id = :id")
+                    "UPDATE codigos_acesso SET tentativas = tentativas + 1 WHERE id = :id"
+                        + " AND estabelecimento_id = :tenant")
                 .bind("id", codeId)
                 .execute());
   }
@@ -215,7 +225,9 @@ public class AccessJdbiRepository
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate("DELETE FROM codigos_acesso WHERE telefone = :phone")
+                .createUpdate(
+                    "DELETE FROM codigos_acesso WHERE telefone = :phone"
+                        + " AND estabelecimento_id = :tenant")
                 .bind("phone", phone)
                 .execute());
   }
@@ -224,7 +236,8 @@ public class AccessJdbiRepository
 
   @Override
   public Optional<User> loadByGoogleSubject(String subject) {
-    return loadUser("google_sub", subject);
+    // Customer accounts belong to one lava-jato: the same Google account can sign up in several.
+    return loadUser("google_sub", subject, " AND estabelecimento_id = :tenant");
   }
 
   @Override
@@ -232,7 +245,9 @@ public class AccessJdbiRepository
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate("UPDATE usuarios SET google_sub = :sub WHERE id = :id")
+                .createUpdate(
+                    "UPDATE usuarios SET google_sub = :sub WHERE id = :id"
+                        + " AND estabelecimento_id = :tenant")
                 .bind("id", userId)
                 .bind("sub", subject)
                 .execute());
@@ -240,13 +255,18 @@ public class AccessJdbiRepository
 
   // ------------------------------------------------------------ helpers
 
-  private Optional<User> loadUser(String column, String value) {
+  private Optional<User> loadUser(String column, String value, String scope) {
     // column is one of two constants above, never user input.
     return jdbi.withHandle(
         handle ->
             handle
                 .createQuery(
-                    "SELECT " + USER_COLUMNS + " FROM usuarios WHERE " + column + " = :value")
+                    "SELECT "
+                        + USER_COLUMNS
+                        + " FROM usuarios WHERE "
+                        + column
+                        + " = :value"
+                        + scope)
                 .bind("value", value)
                 .map(
                     (rs, ctx) ->

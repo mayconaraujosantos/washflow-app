@@ -74,4 +74,20 @@ describe('FetchHttpClient', () => {
       'Placa já cadastrada',
     )
   })
+
+  it('tells public screens which lava-jato the customer picked', async () => {
+    localStorage.setItem(
+      'washflow:establishment',
+      JSON.stringify({ slug: 'lava-centro', name: 'Lava Centro' }),
+    )
+
+    await new FetchHttpClient().request({ url: '/api/services', method: 'get' })
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/services',
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'X-Establishment': 'lava-centro' }),
+      }),
+    )
+  })
 })

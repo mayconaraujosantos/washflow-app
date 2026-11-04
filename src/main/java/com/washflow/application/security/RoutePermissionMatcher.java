@@ -20,6 +20,9 @@ public final class RoutePermissionMatcher {
    * specific role is required (e.g., public endpoints).
    */
   public static UserProfile requiredProfile(String method, String path) {
+    if (path.startsWith("/api/admin/")) {
+      return UserProfile.ADMIN;
+    }
     if (isCustomerResource(method, path)) {
       return UserProfile.CUSTOMER;
     }

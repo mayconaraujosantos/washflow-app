@@ -70,9 +70,9 @@ class ServiceOrderDetailsIntegrationTest {
                 .createUpdate(
                     """
                     INSERT INTO atendimentos
-                      (id, veiculo_id, servico_preco_id, status,
+                      (id, estabelecimento_id, veiculo_id, servico_preco_id, status,
                        data_agendamento, criado_em, atualizado_em)
-                    VALUES (:id, :vehicleId, 1, :status, :now, :now, :now)
+                    VALUES (:id, :tenant, :vehicleId, 1, :status, :now, :now, :now)
                     """)
                 .bind("id", orderId)
                 .bind("vehicleId", DEMO_VEHICLE_ID)
@@ -93,6 +93,6 @@ class ServiceOrderDetailsIntegrationTest {
         .locations("classpath:db/migration-h2")
         .load()
         .migrate();
-    return Jdbi.create(dataSource);
+    return TestDatabase.prepare(dataSource);
   }
 }

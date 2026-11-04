@@ -40,6 +40,7 @@ public class ChecklistJdbiRepository
       SELECT id, atendimento_id, tipo, itens, assinatura_imagem, criado_em, criado_por
       FROM service_order_checklist
       WHERE atendimento_id = :serviceOrderId
+        AND atendimento_id IN (SELECT id FROM atendimentos WHERE estabelecimento_id = :tenant)
       ORDER BY criado_em ASC
       """;
 
@@ -48,6 +49,7 @@ public class ChecklistJdbiRepository
       SELECT id, atendimento_id, tipo, itens, assinatura_imagem, criado_em, criado_por
       FROM service_order_checklist
       WHERE atendimento_id = :serviceOrderId AND tipo = :type
+        AND atendimento_id IN (SELECT id FROM atendimentos WHERE estabelecimento_id = :tenant)
       """;
 
   private final Jdbi jdbi;

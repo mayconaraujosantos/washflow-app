@@ -31,7 +31,8 @@ public class CreateCashTransactionController implements Controller {
       }
       TransactionType type = TransactionType.valueOf(typeStr);
 
-      String amountStr = (String) body.get("amount");
+      Object amountValue = body.get("amount");
+      String amountStr = amountValue == null ? null : amountValue.toString();
       if (amountStr == null || amountStr.isBlank()) {
         return HttpHelper.badRequest(new IllegalArgumentException("amount is required"));
       }

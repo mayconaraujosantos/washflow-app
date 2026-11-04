@@ -1,7 +1,10 @@
 package com.washflow.data.usecases.establishment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -10,25 +13,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.PasswordHasher;
-import com.washflow.data.protocols.db.EstablishmentRepository;
-import com.washflow.data.protocols.db.LoadUserByEmailRepository;
-import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
-import com.washflow.domain.entities.Establishment;
+import com.washflow.data.protocols.db.PlatformRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.EstablishmentAlreadyConfiguredError;
 import com.washflow.domain.errors.InvalidSetupCodeError;
 import com.washflow.domain.usecases.SetupEstablishment;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -40,45 +36,38 @@ class DbSetupEstablishmentTest {
 
   private static final Instant NOW = Instant.parse("2026-11-03T14:00:00Z");
 
-  @Mock private EstablishmentRepository establishments;
-  @Mock private LoadUserByEmailRepository usersByEmail;
-  @Mock private LoadUserByPhoneRepository usersByPhone;
+  @Mock private PlatformRepository platform;
   @Mock private PasswordHasher passwordHasher;
 
   @BeforeEach
-  void setUp() throws Exception {
-    when(establishments.load())
-        .thenReturn(new Establishment("Meu Lava-Jato", 8, 18, false, 3, null));
-    when(usersByEmail.loadByEmail(anyString())).thenReturn(Optional.empty());
-    when(usersByPhone.loadByPhone(anyString())).thenReturn(Optional.empty());
+  void setUp() {
+    when(platform.adminExists()).thenReturn(false);
+    when(platform.createFirstAdmin(any(), anyString())).thenReturn(true);
     when(passwordHasher.hash(anyString())).thenReturn("bcrypt");
-    when(establishments.completeSetup(any(), any(), anyString()))
-        .thenAnswer(call -> call.getArgument(1));
   }
 
   private DbSetupEstablishment sut(String code, boolean required) {
     return new DbSetupEstablishment(
-        establishments,
-        usersByEmail,
-        usersByPhone,
-        passwordHasher,
-        code,
-        required,
-        Clock.fixed(NOW, ZoneOffset.UTC));
+        platform, passwordHasher, code, required, Clock.fixed(NOW, ZoneOffset.UTC));
   }
 
   @Test
-  void createsTheConfiguredEstablishmentAndItsOwnerManager() throws Exception {
-    User owner = sut("", false).setup(params(null));
+  void createsThePlatformAdministrator() throws Exception {
+    User admin = sut("", false).setup(params(null));
 
-    ArgumentCaptor<Establishment> establishment = ArgumentCaptor.forClass(Establishment.class);
-    verify(establishments).completeSetup(establishment.capture(), any(), eq("bcrypt"));
-    assertEquals("Lava Rápido Centro", establishment.getValue().name());
-    assertEquals(7, establishment.getValue().openingHour());
-    assertEquals(NOW, establishment.getValue().configuredAt());
-    assertEquals(UserProfile.MANAGER, owner.profile());
-    assertEquals("dono@lavajato.com", owner.email());
-    assertEquals("92991234567", owner.phone());
+    verify(platform).createFirstAdmin(any(), eq("bcrypt"));
+    assertEquals(UserProfile.ADMIN, admin.profile());
+    assertEquals("dono@washflow.com", admin.email());
+    assertNull(admin.phone());
+    assertEquals(NOW, admin.createdAt());
+  }
+
+  @Test
+  void reportsWhetherThePlatformIsConfigured() {
+    assertFalse(sut("", false).status().configured());
+    when(platform.adminExists()).thenReturn(true);
+    assertTrue(sut("x", true).status().configured());
+    assertTrue(sut("x", true).status().setupCodeRequired());
   }
 
   @Test
@@ -93,77 +82,42 @@ class DbSetupEstablishmentTest {
   void acceptsTheRightSetupCode() throws Exception {
     sut("s3gredo", true).setup(params(" s3gredo "));
 
-    verify(establishments).completeSetup(any(), any(), anyString());
+    verify(platform).createFirstAdmin(any(), anyString());
   }
 
   @Test
-  void runsOnlyOnce() throws Exception {
-    when(establishments.load())
-        .thenReturn(new Establishment("Lava", 8, 18, false, 3, NOW.minusSeconds(60)));
+  void runsOnlyOnce() {
+    when(platform.adminExists()).thenReturn(true);
 
     assertThrows(
         EstablishmentAlreadyConfiguredError.class, () -> sut("", false).setup(params(null)));
-    verify(establishments, never()).completeSetup(any(), any(), anyString());
+    verify(platform, never()).createFirstAdmin(any(), anyString());
   }
 
   @Test
-  void rejectsAnE_mailThatAlreadyHasAnAccount() {
-    when(usersByEmail.loadByEmail("dono@lavajato.com"))
-        .thenReturn(
-            Optional.of(
-                new User(UUID.randomUUID(), "X", null, UserProfile.MANAGER, NOW, true, "x")));
+  void losesTheRaceToAnotherWizard() {
+    when(platform.createFirstAdmin(any(), anyString())).thenReturn(false);
 
-    assertThrows(EmailAlreadyRegisteredError.class, () -> sut("", false).setup(params(null)));
+    assertThrows(
+        EstablishmentAlreadyConfiguredError.class, () -> sut("", false).setup(params(null)));
   }
 
   @Test
-  void validatesHoursCapacityEmailAndPassword() {
+  void validatesNameEmailAndPassword() {
     DbSetupEstablishment sut = sut("", false);
-    assertThrows(IllegalArgumentException.class, () -> sut.setup(withHours(18, 8)));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            sut.setup(
-                new SetupEstablishment.Params(
-                    null, "Lava", 8, 18, false, 0, "Ana", "a@b.com", null, "senha-forte")));
+        () -> sut.setup(new SetupEstablishment.Params(null, " ", "a@b.com", "senha-forte")));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            sut.setup(
-                new SetupEstablishment.Params(
-                    null, "Lava", 8, 18, false, 3, "Ana", "sem-arroba", null, "senha-forte")));
+        () -> sut.setup(new SetupEstablishment.Params(null, "Ana", "sem-arroba", "senha-forte")));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            sut.setup(
-                new SetupEstablishment.Params(
-                    null, "Lava", 8, 18, false, 3, "Ana", "a@b.com", null, "curta")));
-  }
-
-  @Test
-  void reportsStatusForTheWizard() {
-    SetupEstablishment.Status status = sut("x", true).status();
-
-    assertEquals(false, status.configured());
-    assertEquals(true, status.setupCodeRequired());
-  }
-
-  private static SetupEstablishment.Params withHours(int opening, int closing) {
-    return new SetupEstablishment.Params(
-        null, "Lava", opening, closing, false, 3, "Ana", "a@b.com", null, "senha-forte");
+        () -> sut.setup(new SetupEstablishment.Params(null, "Ana", "a@b.com", "curta")));
   }
 
   private static SetupEstablishment.Params params(String code) {
     return new SetupEstablishment.Params(
-        code,
-        "Lava Rápido Centro",
-        7,
-        19,
-        true,
-        4,
-        "Dono",
-        " Dono@LavaJato.com ",
-        "(92) 99123-4567",
-        "senha-forte");
+        code, "Dono da Plataforma", "Dono@Washflow.com", "senha-forte");
   }
 }

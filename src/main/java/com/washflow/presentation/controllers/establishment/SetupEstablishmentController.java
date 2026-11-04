@@ -1,9 +1,7 @@
 package com.washflow.presentation.controllers.establishment;
 
-import com.washflow.domain.errors.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.EstablishmentAlreadyConfiguredError;
 import com.washflow.domain.errors.InvalidSetupCodeError;
-import com.washflow.domain.errors.PhoneAlreadyRegisteredError;
 import com.washflow.domain.usecases.SetupEstablishment;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -31,22 +29,14 @@ public class SetupEstablishmentController implements Controller {
           setupEstablishment.setup(
               new SetupEstablishment.Params(
                   BodyValues.text(body, "setupCode"),
-                  BodyValues.text(body, "establishmentName"),
-                  BodyValues.integer(body, "openingHour"),
-                  BodyValues.integer(body, "closingHour"),
-                  Boolean.TRUE.equals(body.get("openOnSunday")),
-                  BodyValues.integer(body, "maxVehiclesPerHour"),
                   BodyValues.text(body, "ownerName"),
                   BodyValues.text(body, "ownerEmail"),
-                  BodyValues.text(body, "ownerPhone"),
                   BodyValues.text(body, "ownerPassword"))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
     } catch (InvalidSetupCodeError e) {
       return HttpHelper.forbidden(e);
-    } catch (EstablishmentAlreadyConfiguredError
-        | EmailAlreadyRegisteredError
-        | PhoneAlreadyRegisteredError e) {
+    } catch (EstablishmentAlreadyConfiguredError e) {
       return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

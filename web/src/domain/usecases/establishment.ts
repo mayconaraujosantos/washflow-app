@@ -13,18 +13,17 @@ export type EstablishmentParams = {
   maxVehiclesPerHour: number
 }
 
-export type SetupParams = Omit<EstablishmentParams, 'name'> & {
+/** First run: the platform administrator, who then creates each lava-jato. */
+export type SetupParams = {
   setupCode?: string
-  establishmentName: string
   ownerName: string
   ownerEmail: string
-  ownerPhone?: string
   ownerPassword: string
 }
 
 export interface Establishment {
   setupStatus: () => Promise<SetupStatusModel>
-  /** Creates the establishment and the owner manager; resolves with the owner's session. */
+  /** Creates the platform administrator; resolves with the admin session. */
   setup: (params: SetupParams) => Promise<AuthenticatedSessionModel>
   load: () => Promise<EstablishmentModel>
   update: (params: EstablishmentParams) => Promise<EstablishmentModel>

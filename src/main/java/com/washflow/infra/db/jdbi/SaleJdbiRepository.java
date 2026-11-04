@@ -34,10 +34,13 @@ public class SaleJdbiRepository implements SaveSaleRepository, LoadSalesReposito
               .createUpdate(
                   """
                   INSERT INTO vendas
-                    (id, tipo, veiculo_id, cliente_nome, cliente_telefone, subtotal, desconto,
-                     total, observacoes, criado_por, criado_em)
+                    (id, estabelecimento_id, tipo, veiculo_id, cliente_nome, cliente_telefone,
+                     subtotal, desconto, total, observacoes, criado_por, criado_em)
                   VALUES
-                    (:id, :type, CAST(:vehicleId AS UUID), :customerName, :customerPhone, :subtotal, :discount,
+                    (:id, :tenant, :type,
+                     (SELECT v.id FROM veiculos v
+                      WHERE v.id = CAST(:vehicleId AS UUID) AND v.estabelecimento_id = :tenant),
+                     :customerName, :customerPhone, :subtotal, :discount,
                      :total, :notes, CAST(:createdBy AS UUID), :createdAt)
                   """)
               .bind("id", sale.id())
@@ -100,7 +103,8 @@ public class SaleJdbiRepository implements SaveSaleRepository, LoadSalesReposito
                       SELECT id, tipo, veiculo_id, cliente_nome, cliente_telefone, desconto,
                              observacoes, criado_por, criado_em
                       FROM vendas
-                      WHERE criado_em >= :start AND criado_em < :end
+                      WHERE estabelecimento_id = :tenant
+                        AND criado_em >= :start AND criado_em < :end
                         AND (:type IS NULL OR tipo = :type)
                       ORDER BY criado_em DESC
                       """)

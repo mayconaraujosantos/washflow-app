@@ -101,6 +101,6 @@ class SaleIntegrationTest {
         .locations("classpath:db/migration-h2")
         .load()
         .migrate();
-    return Jdbi.create(dataSource);
+    return TestDatabase.prepare(dataSource);
   }
 }

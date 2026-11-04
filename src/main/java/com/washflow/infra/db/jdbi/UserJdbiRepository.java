@@ -11,11 +11,13 @@ import com.washflow.data.protocols.db.SaveUserPasswordHashRepository;
 import com.washflow.data.protocols.db.UpdateUserActiveRepository;
 import com.washflow.data.protocols.db.UpdateUserEmailRepository;
 import com.washflow.data.protocols.db.UpdateUserProfileRepository;
+import com.washflow.data.tenancy.TenantContext;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.UserHasActiveWashesError;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.jdbi.v3.core.Jdbi;
@@ -43,12 +45,15 @@ public class UserJdbiRepository
   private static final String SELECT_SQL =
       "SELECT id, nome, telefone, email, perfil, criado_em, ativo FROM usuarios";
 
+  private static final String IN_TENANT = " AND estabelecimento_id = :tenant";
+  private static final String ACTIVE_ESTABLISHMENT =
+      " AND estabelecimento_id IN (SELECT id FROM estabelecimentos WHERE ativo = TRUE)";
   private static final String UPDATE_PROFILE_SQL =
-      "UPDATE usuarios SET perfil = :profile WHERE id = :id";
+      "UPDATE usuarios SET perfil = :profile WHERE id = :id" + IN_TENANT;
   private static final String UPDATE_PASSWORD_HASH_SQL =
       "UPDATE usuarios SET senha_hash = :passwordHash WHERE id = :id";
   private static final String UPDATE_ACTIVE_SQL =
-      "UPDATE usuarios SET ativo = :active WHERE id = :id";
+      "UPDATE usuarios SET ativo = :active WHERE id = :id" + IN_TENANT;
 
   private final Jdbi jdbi;
 
@@ -64,9 +69,11 @@ public class UserJdbiRepository
                 .createUpdate(
                     """
                     INSERT INTO usuarios
-                      (id, nome, telefone, email, senha_hash, perfil, criado_em, ativo)
+                      (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
+                       criado_em, ativo)
                     VALUES
-                      (:id, :name, :phone, :email, :passwordHash, :profile, :createdAt, :active)
+                      (:id, :tenant, :name, :phone, :email, :passwordHash, :profile,
+                       :createdAt, :active)
                     """)
                 .bind("id", user.id())
                 .bind("name", user.name())
@@ -86,28 +93,55 @@ public class UserJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(SELECT_SQL + " WHERE id = :id")
+                .createQuery(SELECT_SQL + " WHERE id = :id" + tenantScope())
                 .bind("id", id)
                 .map(this::mapRow)
                 .findOne());
   }
 
+  /**
+   * Inside an establishment: that establishment's account with this phone. Without one (washer PIN
+   * login on a shared device): the staff account with this phone, only when exactly one exists -
+   * customers always pick their lava-jato first.
+   */
   @Override
   public Optional<User> loadByPhone(String phone) {
-    return jdbi.withHandle(
-        handle ->
-            handle
-                .createQuery(SELECT_SQL + " WHERE telefone = :phone")
-                .bind("phone", phone)
-                .map(this::mapRow)
-                .findOne());
+    if (TenantContext.current().isPresent()) {
+      return jdbi.withHandle(
+          handle ->
+              handle
+                  .createQuery(SELECT_SQL + " WHERE telefone = :phone" + IN_TENANT)
+                  .bind("phone", phone)
+                  .map(this::mapRow)
+                  .findOne());
+    }
+    List<User> staff =
+        jdbi.withHandle(
+            handle ->
+                handle
+                    .createQuery(
+                        SELECT_SQL
+                            + " WHERE telefone = :phone AND perfil IN ('LAVADOR', 'GERENTE')"
+                            + ACTIVE_ESTABLISHMENT)
+                    .bind("phone", phone)
+                    .map(this::mapRow)
+                    .list());
+    return staff.size() == 1 ? Optional.of(staff.get(0)) : Optional.empty();
+  }
+
+  private static String tenantScope() {
+    return TenantContext.current().isPresent() ? IN_TENANT : "";
   }
 
   @Override
   public java.util.List<User> loadAll() {
     return jdbi.withHandle(
         handle ->
-            handle.createQuery(SELECT_SQL + " ORDER BY nome, telefone").map(this::mapRow).list());
+            handle
+                .createQuery(
+                    SELECT_SQL + " WHERE estabelecimento_id = :tenant ORDER BY nome, telefone")
+                .map(this::mapRow)
+                .list());
   }
 
   @Override
@@ -122,7 +156,7 @@ public class UserJdbiRepository
           if (!active) {
             String profile =
                 handle
-                    .createQuery("SELECT perfil FROM usuarios WHERE id = :id")
+                    .createQuery("SELECT perfil FROM usuarios WHERE id = :id" + IN_TENANT)
                     .bind("id", id)
                     .mapTo(String.class)
                     .findOne()
@@ -158,7 +192,7 @@ public class UserJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery("SELECT senha_hash FROM usuarios WHERE id = :id")
+                .createQuery("SELECT senha_hash FROM usuarios WHERE id = :id" + tenantScope())
                 .bind("id", userId)
                 .mapTo(String.class)
                 .findOne());
@@ -225,7 +259,8 @@ public class UserJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(SELECT_SQL + " WHERE email = :email")
+                // E-mail login is global (it says which lava-jato); a suspended one can't sign in.
+                .createQuery(SELECT_SQL + " WHERE email = :email" + ACTIVE_ESTABLISHMENT)
                 .bind("email", email)
                 .map(this::mapRow)
                 .findOne());
@@ -236,7 +271,7 @@ public class UserJdbiRepository
     return jdbi.inTransaction(
         handle -> {
           handle
-              .createUpdate("UPDATE usuarios SET email = :email WHERE id = :id")
+              .createUpdate("UPDATE usuarios SET email = :email WHERE id = :id" + IN_TENANT)
               .bind("id", userId)
               .bind("email", email)
               .execute();
