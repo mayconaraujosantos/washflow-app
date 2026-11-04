@@ -1,50 +1,66 @@
+%% Fluxo de uso do Washflow (multi-lava-jato). Detalhes e diagramas de sequência: docs/system-design/
 graph TD
-    %% Estilos
+    classDef admin fill:#e2d9f3,stroke:#333,stroke-width:2px;
     classDef cliente fill:#d4ebf2,stroke:#333,stroke-width:2px;
     classDef lavador fill:#ffe5b4,stroke:#333,stroke-width:2px;
     classDef gerente fill:#d1e7dd,stroke:#333,stroke-width:2px;
-    classDef notificacao fill:#f8d7da,stroke:#f5c2c7,stroke-width:1px,stroke-dasharray: 5 5;
+    classDef sistema fill:#f8d7da,stroke:#f5c2c7,stroke-width:1px,stroke-dasharray: 5 5;
 
-    %% Canal do Cliente
-    subgraph C1 [1. VISÃO DO CLIENTE - PWA]
-        A[Acessa Link/QR Code] --> B[Escolhe Lavagem, Data/Hora]
-        B --> VALIDA{Valida Vagas e Horário Comercial?}
-        
-        VALIDA -->|Não: Erro/Pátio Lotado| B
-        VALIDA -->|Sim| C[Salva Agendamento]
-        
-        C -->|Confirmação visual| NOT1[🔔 Agendamento confirmado no painel]
-        C -->|Status: AGENDADO| D(Acompanha Painel de Status no Celular)
-        D -.->|Polling a cada 3 segundos| C
+    %% 0. Plataforma
+    subgraph P0 [0. PLATAFORMA - Administrador]
+        S1[Instalação nova: /configurar cria o administrador<br/>SETUP_CODE em produção] --> S2["/admin: cria o lava-jato<br/>horário, capacidade, gerente inicial"]
+        S2 --> S3[Catálogo e categorias de despesa padrão<br/>+ link /?lavajato=slug para o balcão]
+        S2 -.->|suspender / reativar| S4[Lava-jato suspenso: sem acesso, dados preservados]
     end
 
-    %% Canal do Gerente (Entrada)
-    subgraph G1 [3. VISÃO DO GERENTE - Painel]
-        C --> E[Vê Carro na Agenda do Dia]
-        E --> F[Cliente Chega: Recebe o Carro no Pátio]
-        F -->|Status: AGUARDANDO_PATIO| G[Disponibiliza na Fila Geral do Pátio]
+    %% 1. Cliente
+    subgraph C1 [1. CLIENTE - PWA]
+        A[Abre o link/QR do balcão ou busca o lava-jato pelo nome] --> A2[Entra ou cria conta<br/>telefone+senha, WhatsApp ou Google]
+        A2 --> B[Escolhe veículo, serviço, dia e hora livre]
+        B --> VALIDA{Horário de funcionamento,<br/>antecedência e vaga na hora?}
+        VALIDA -->|Não| B
+        VALIDA -->|Sim: reserva atômica| C[AGENDADO]
+        C --> D(Painel do cliente<br/>atualiza a cada 3 s)
     end
 
-    %% Canal do Lavador
-    subgraph L1 [2. VISÃO DO LAVADOR - PWA]
-        G --> H[Vê Carro na Fila do PWA<br/>AGUARDANDO_PATIO por atualizado_em ASC]
-        H --> I[Clica em 'Iniciar Lavagem' - Puxa o Carro para Si]
-        
-        I -->|Status: EM LAVAGEM| NOT2[🔔 Painel do cliente atualiza em até 3s]
-        I --> J[Realiza o Serviço no Veículo]
-        J --> K[Clica em 'Concluir Lavagem']
+    %% 2. Gerente: entrada
+    subgraph G1 [2. GERENTE - entrada]
+        GL[Login: e-mail + senha] --> E[Agenda do dia]
+        C --> E
+        E --> F[Recebe o carro agendado]
+        W[Carro chega sem agendamento:<br/>entrada pela placa] --> PLACA{Carro já está no pátio?}
+        PLACA -->|Sim| W409[Recusado: finalize o atendimento atual]
+        PLACA -->|Não| G
+        F --> G[AGUARDANDO_PATIO]
+        G -.-> TK[Ticket por QR/link/WhatsApp<br/>/ticket/:token sem login]
     end
 
-    %% Canal do Gerente / Cliente (Saída)
-    K -->|Status: PRONTO| NOT3[🔔 Painel do cliente mostra carro pronto]
-    K --> M[Gerente Valida a Qualidade da Lavagem]
-    M --> N[Registra Cobrança / Recebe Pagamento]
-    N -->|Registra pagamento e comissão em transação| N1[Pagamento: dinheiro, Pix ou cartão]
-    N1 -->|Status: FINALIZADO| O[Libera o Carro para o Cliente]
-    O --> P[Sistema calcula e credita Comissão do Lavador]
+    %% 3. Lavador
+    subgraph L1 [3. LAVADOR - PWA]
+        LL[Login: crachá QR ou telefone + PIN] --> H
+        G --> H[Fila: AGUARDANDO_PATIO por atualizado_em ASC]
+        H --> I{Iniciar lavagem}
+        I -->|Outro lavador pegou antes| H
+        I -->|Primeiro| J[EM_LAVAGEM]
+        J <-->|almoço, banheiro, outro| JP[PAUSADA]
+        J --> K[Concluir: PRONTO]
+    end
 
-    %% Aplicando Classes
-    class A,B,C,D cliente;
-    class H,I,J,K lavador;
-    class E,F,G,M,N,O,P gerente;
-    class NOT1,NOT2,NOT3 notificacao;
+    %% 4. Gerente: saída
+    subgraph G2 [4. GERENTE - saída e balcão]
+        K --> M[Valida a lavagem]
+        M --> N[Recebe: dinheiro, Pix, débito ou crédito]
+        N -->|uma transação: status + pagamento + comissão| O[FINALIZADO]
+        V[Venda rápida / orçamento] --> CX[Caixa: entradas e despesas]
+        O --> R[Relatórios: faturamento, comissões, tempo médio]
+    end
+
+    K -.->|painel e ticket mostram| PR[Orientação de retirada]
+    D -.-> PR
+    N -.->|clique duplo ou reenvio: Idempotency-Key / 409| DUP[Nunca duplica]
+
+    class S1,S2,S3,S4 admin;
+    class A,A2,B,C,D cliente;
+    class LL,H,I,J,JP,K lavador;
+    class GL,E,F,W,G,M,N,O,V,CX,R,PLACA,W409,TK gerente;
+    class VALIDA,PR,DUP sistema;
