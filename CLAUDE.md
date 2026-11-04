@@ -1,6 +1,6 @@
 # Domínio e Estrutura de Dados (Washflow)
 
-Este documento define as entidades de negócio, os estados do fluxo do veículo (fila lógica) e a estrutura relacional do sistema para garantir portabilidade entre bancos de dados físicos (ex: PostgreSQL) e ambientes de teste *In-Memory* (ex: H2 / Repositórios em memória).
+Este documento define as entidades de negócio, os estados do fluxo do veículo (fila lógica) e a estrutura relacional do sistema O banco é somente PostgreSQL (desenvolvimento, testes com PostgreSQL embutido e produção); as regras de fila também valem para repositórios em memória.
 
 ---
 
@@ -106,7 +106,7 @@ Venda rápida no balcão (`tipo = 'VENDA'`) e orçamento (`tipo = 'ORCAMENTO'`),
 
 ## 3. Lógica das Consultas para as Filas (Portabilidade In-Memory)
 
-As migrações ficam numa única pasta (`src/main/resources/db/migration`, histórico em `schema_history`) e rodam iguais no PostgreSQL e no H2: use só SQL comum aos dois (ver `infra/README.md`).
+As migrações ficam em `src/main/resources/db/migration` (histórico em `schema_history`), aplicadas por `JdbiFactory.migrate` no app e nos testes (PostgreSQL embutido, ver `infra/README.md`).
 
 Para garantir que a lógica funcione igual no banco físico ou em listas Java/Kotlin na memória, as listagens devem seguir estas regras:
 

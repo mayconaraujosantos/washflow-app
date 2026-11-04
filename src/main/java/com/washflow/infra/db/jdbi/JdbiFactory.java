@@ -21,21 +21,15 @@ import org.slf4j.LoggerFactory;
 /**
  * Factory responsible for creating the Jdbi instance with connection pooling and schema migration.
  *
- * <p>Supports two modes:
- *
- * <ul>
- *   <li><b>Production</b>: Uses PostgreSQL via {@code DATABASE_URL} or individual config
- *       properties. Requires SSL mode for cloud platforms like Render.
- *   <li><b>Development</b>: Falls back to in-memory H2 when PostgreSQL is unreachable.
- * </ul>
+ * <p>PostgreSQL only, in every environment: {@code DATABASE_URL} (SSL, as injected by Render and
+ * Railway) or the individual {@code DB_*} properties. An unreachable database stops the startup
+ * instead of serving requests without data.
  */
 public final class JdbiFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JdbiFactory.class);
 
   private static final String LOCAL_DEFAULT = "washflow";
-  private static final String H2_JDBC_URL =
-      "jdbc:h2:mem:washflow;MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
   private static final int POSTGRES_DEFAULT_PORT = 5432;
   private static final int CONNECTION_TIMEOUT_MS = 10_000;
   private static final int MAX_POOL_SIZE = 10;
@@ -69,9 +63,9 @@ public final class JdbiFactory {
   }
 
   /**
-   * One set of migrations for PostgreSQL and H2 ({@code db/migration}). The history lives in {@code
-   * schema_history}; a database still carrying the pre-1.5.0 schema (no such table) is baselined at
-   * version 0, so V1 removes the legacy schema and V2 creates the current one.
+   * The migrations in {@code db/migration}. The history lives in {@code schema_history}; a database
+   * still carrying the pre-1.5.0 schema (no such table) is baselined at version 0, so V1 removes
+   * the legacy schema and V2 creates the current one.
    */
   public static void migrate(DataSource dataSource) {
     Flyway.configure()
@@ -84,36 +78,19 @@ public final class JdbiFactory {
         .migrate();
   }
 
-  /**
-   * Creates a DataSource, preferring PostgreSQL and falling back to H2 in non-production
-   * environments when the database is unreachable.
-   */
+  /** Creates the PostgreSQL DataSource; fails when the database can't be reached. */
   public static DataSource createDataSource(AppConfig appConfig) {
     HikariDataSource postgres = createPostgresDataSource(appConfig);
     if (isReachableWithRetry(postgres)) {
       return postgres;
     }
-    if (appConfig.isProduction()) {
-      postgres.close();
-      throw new IllegalStateException(
-          "Configured PostgreSQL database is unreachable in production");
-    }
-    LOGGER.warn("Postgres unreachable at {} - falling back to in-memory H2", postgres.getJdbcUrl());
+    String jdbcUrl = postgres.getJdbcUrl();
     postgres.close();
-    return createH2DataSource();
-  }
-
-  private static HikariDataSource createH2DataSource() {
-    HikariConfig config = new HikariConfig();
-    config.setJdbcUrl(H2_JDBC_URL);
-    config.setPoolName("washflow-h2-pool");
-    config.setMetricRegistry(Metrics.registry());
-    config.setMaximumPoolSize(5);
-    // Keep at least one connection alive so the in-memory database is not dropped
-    config.setMinimumIdle(1);
-    // Don't block on pool construction — createDataSource() probes reachability explicitly
-    config.setInitializationFailTimeout(-1);
-    return new HikariDataSource(config);
+    throw new IllegalStateException(
+        "PostgreSQL database is unreachable at "
+            + jdbcUrl
+            + " - start it (make db-up) or set DATABASE_URL / DB_HOST, DB_PORT, DB_NAME, DB_USER"
+            + " and DB_PASSWORD");
   }
 
   private static boolean isReachableWithRetry(HikariDataSource dataSource) {

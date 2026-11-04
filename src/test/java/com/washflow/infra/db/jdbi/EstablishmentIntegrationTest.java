@@ -36,7 +36,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
-import org.h2.jdbcx.JdbcDataSource;
+import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -239,13 +239,7 @@ class EstablishmentIntegrationTest {
     return jdbi;
   }
 
-  private static JdbcDataSource migratedDataSource() {
-    JdbcDataSource dataSource = new JdbcDataSource();
-    dataSource.setURL(
-        "jdbc:h2:mem:"
-            + UUID.randomUUID().toString().replace("-", "")
-            + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    JdbiFactory.migrate(dataSource);
-    return dataSource;
+  private static DataSource migratedDataSource() {
+    return TestDatabase.newDatabase();
   }
 }
