@@ -100,6 +100,10 @@ class AuthorizationMiddlewareTest {
     verify(unknown).status(404);
     // Staff logins say which lava-jato by themselves (e-mail, badge, phone of a staff account).
     assertTrue(middleware.authorize(washerPin));
+    // A remembered lava-jato that no longer exists must not block the directory itself.
+    Context directory = mockContext("GET", "/api/establishments", null, null);
+    when(directory.header(AuthorizationMiddleware.ESTABLISHMENT_HEADER)).thenReturn("nao-existe");
+    assertTrue(middleware.authorize(directory));
   }
 
   @Test
