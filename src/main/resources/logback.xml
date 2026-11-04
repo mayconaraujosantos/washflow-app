@@ -1,0 +1,19 @@
+<configuration>
+  <!--
+    One line per event, key=value friendly, to stdout (captured by Render).
+    request_id comes from the MDC set by RequestTracing; LOG_LEVEL tunes verbosity.
+  -->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX,UTC} %-5level request_id=%X{request_id:--} logger=%logger{0} %msg%n%ex</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="org.eclipse.jetty" level="WARN"/>
+  <logger name="com.zaxxer.hikari.pool" level="WARN"/>
+  <logger name="io.javalin" level="WARN"/>
+
+  <root level="${LOG_LEVEL:-INFO}">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>

@@ -1,6 +1,7 @@
 package com.washflow.infra.db.jdbi;
 
 import com.washflow.application.AppConfig;
+import com.washflow.infra.observability.Metrics;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.net.URI;
@@ -91,6 +92,7 @@ public final class JdbiFactory {
     HikariConfig config = new HikariConfig();
     config.setJdbcUrl(H2_JDBC_URL);
     config.setPoolName("washflow-h2-pool");
+    config.setMetricRegistry(Metrics.registry());
     config.setMaximumPoolSize(5);
     // Keep at least one connection alive so the in-memory database is not dropped
     config.setMinimumIdle(1);
@@ -217,6 +219,14 @@ public final class JdbiFactory {
   }
 
   private static HikariConfig createHikariConfig(String jdbcUrl, String user, String password) {
+    HikariConfig metered = createUnmeteredHikariConfig(jdbcUrl, user, password);
+    // Pool size, wait time and timeouts as hikaricp_* series on /api/metrics.
+    metered.setMetricRegistry(Metrics.registry());
+    return metered;
+  }
+
+  private static HikariConfig createUnmeteredHikariConfig(
+      String jdbcUrl, String user, String password) {
     HikariConfig config = new HikariConfig();
     config.setJdbcUrl(jdbcUrl);
     config.setUsername(user);

@@ -1,6 +1,7 @@
 package com.washflow.application.security;
 
 import com.washflow.domain.entities.UserProfile;
+import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
 import java.util.Map;
 import java.util.Optional;
@@ -18,7 +19,8 @@ public final class AuthorizationMiddleware {
           "/api/setup",
           "/api/establishment",
           "/api/auth/options",
-          "/api/schedule/availability");
+          "/api/schedule/availability",
+          "/api/metrics");
   // Login entry points (POST): each one fixes the profile it can sign into.
   private static final Set<String> AUTHENTICATION_PATHS =
       Set.of(
@@ -30,7 +32,8 @@ public final class AuthorizationMiddleware {
           "/api/auth/washers/badge",
           "/api/auth/customers/otp",
           "/api/auth/customers/otp/verify",
-          "/api/auth/customers/google");
+          "/api/auth/customers/google",
+          "/api/client-errors");
   public static final String ERROR = "error";
 
   private final AuthTokenService tokenService;
@@ -58,7 +61,7 @@ public final class AuthorizationMiddleware {
     try {
       claims = tokenService.verify(token);
     } catch (AuthTokenService.InvalidTokenException e) {
-      ctx.status(401).json(Map.of(ERROR, "Invalid or expired access token"));
+      ctx.status(401).json(HttpHelper.errorBody("Invalid or expired access token"));
       return false;
     }
 
@@ -94,7 +97,7 @@ public final class AuthorizationMiddleware {
   private String extractToken(Context ctx) {
     String authorization = ctx.header("Authorization");
     if (authorization == null || !authorization.startsWith("Bearer ")) {
-      ctx.status(401).json(Map.of(ERROR, "Authentication required"));
+      ctx.status(401).json(HttpHelper.errorBody("Authentication required"));
       return null;
     }
     return authorization.substring("Bearer ".length());
@@ -105,12 +108,12 @@ public final class AuthorizationMiddleware {
         securityGateway.findAccessById(claims.userId());
 
     if (account.isEmpty() || !account.get().active()) {
-      ctx.status(401).json(Map.of(ERROR, "Account is inactive"));
+      ctx.status(401).json(HttpHelper.errorBody("Account is inactive"));
       return false;
     }
 
     if (!account.get().profile().equals(claims.profile())) {
-      ctx.status(401).json(Map.of(ERROR, "Access token is no longer valid"));
+      ctx.status(401).json(HttpHelper.errorBody("Access token is no longer valid"));
       return false;
     }
     return true;
@@ -120,14 +123,14 @@ public final class AuthorizationMiddleware {
     UserProfile requiredProfile =
         RoutePermissionMatcher.requiredProfile(ctx.method().name(), ctx.path());
     if (requiredProfile == null || claims.profile() != requiredProfile) {
-      ctx.status(403).json(Map.of(ERROR, "Insufficient permissions"));
+      ctx.status(403).json(HttpHelper.errorBody("Insufficient permissions"));
       return false;
     }
 
     Map<String, Object> body = parseBody(ctx);
     if (!ResourceAccessEvaluator.isAuthorized(
         ctx.method().name(), ctx.path(), body, claims.userId(), claims.profile(), jdbi)) {
-      ctx.status(403).json(Map.of(ERROR, "Resource is outside your account"));
+      ctx.status(403).json(HttpHelper.errorBody("Resource is outside your account"));
       return false;
     }
     return true;
