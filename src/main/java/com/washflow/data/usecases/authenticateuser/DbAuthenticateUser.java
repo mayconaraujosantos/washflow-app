@@ -3,6 +3,7 @@ package com.washflow.data.usecases.authenticateuser;
 import com.washflow.application.AppConfig;
 import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.protocols.db.CreateUserRepository;
+import com.washflow.data.protocols.db.DuplicateKeyError;
 import com.washflow.data.protocols.db.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.LoadUserPasswordHashRepository;
@@ -99,14 +100,21 @@ public class DbAuthenticateUser implements AuthenticateUser {
           "Não encontramos uma conta com este telefone neste lava-jato. Toque em Criar conta"
               + " para se cadastrar.");
     }
-    return createUserRepository.create(
-        new User(
-            UUID.randomUUID(),
-            params.name().trim(),
-            params.phone(),
-            params.expectedProfile(),
-            Instant.now()),
-        passwordHasher.hash(params.password()));
+    try {
+      return createUserRepository.create(
+          new User(
+              UUID.randomUUID(),
+              params.name().trim(),
+              params.phone(),
+              params.expectedProfile(),
+              Instant.now()),
+          passwordHasher.hash(params.password()));
+    } catch (DuplicateKeyError e) {
+      // The same sign-up sent twice at once (double tap, retry): the other request created the
+      // account a moment ago - sign in to it like any existing account (same password checks).
+      User created = loadUserByPhoneRepository.loadByPhone(params.phone()).orElseThrow(() -> e);
+      return verifyExisting(created, params);
+    }
   }
 
   private User verifyExisting(User user, Params params)

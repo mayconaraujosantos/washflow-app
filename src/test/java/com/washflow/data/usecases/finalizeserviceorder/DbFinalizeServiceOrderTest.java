@@ -91,7 +91,7 @@ class DbFinalizeServiceOrderTest {
             readyServiceOrder.createdAt(),
             Instant.now());
     when(finalizeServiceOrderRepository.finalizeSale(any(), any(), any()))
-        .thenReturn(doneServiceOrder);
+        .thenReturn(Optional.of(doneServiceOrder));
 
     ServiceOrder result = sut.finalize(params);
 

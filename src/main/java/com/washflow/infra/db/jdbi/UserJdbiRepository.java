@@ -63,11 +63,13 @@ public class UserJdbiRepository
 
   @Override
   public User create(User user, String passwordHash) {
-    jdbi.useHandle(
-        handle ->
-            handle
-                .createUpdate(
-                    """
+    UniqueViolations.translate(
+        () ->
+            jdbi.useHandle(
+                handle ->
+                    handle
+                        .createUpdate(
+                            """
                     INSERT INTO usuarios
                       (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
                        criado_em, ativo)
@@ -75,15 +77,15 @@ public class UserJdbiRepository
                       (:id, :tenant, :name, :phone, :email, :passwordHash, :profile,
                        :createdAt, :active)
                     """)
-                .bind("id", user.id())
-                .bind("name", user.name())
-                .bind("phone", user.phone())
-                .bind("email", user.email())
-                .bind("passwordHash", passwordHash)
-                .bind(PROFILE_PARAM, user.profile().dbValue())
-                .bind("createdAt", user.createdAt())
-                .bind("active", user.active())
-                .execute());
+                        .bind("id", user.id())
+                        .bind("name", user.name())
+                        .bind("phone", user.phone())
+                        .bind("email", user.email())
+                        .bind("passwordHash", passwordHash)
+                        .bind(PROFILE_PARAM, user.profile().dbValue())
+                        .bind("createdAt", user.createdAt())
+                        .bind("active", user.active())
+                        .execute()));
 
     return user;
   }

@@ -37,7 +37,8 @@ class ServiceOrderDetailsIntegrationTest {
     assertEquals("Lavagem Completa", details.serviceName());
     assertNull(details.washerName());
 
-    repository.updateStatus(orderId, ServiceOrderStatus.WASHING, DEMO_WASHER_ID);
+    repository.updateStatus(
+        orderId, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, DEMO_WASHER_ID);
 
     assertEquals("Lavador Demo", repository.loadYardOverview().get(0).details().washerName());
     assertEquals(

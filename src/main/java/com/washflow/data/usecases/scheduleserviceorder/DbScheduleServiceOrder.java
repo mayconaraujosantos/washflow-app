@@ -99,6 +99,6 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
             now,
             now);
 
-    return createServiceOrderRepository.create(newServiceOrder);
+    return rules.book(createServiceOrderRepository, newServiceOrder);
   }
 }

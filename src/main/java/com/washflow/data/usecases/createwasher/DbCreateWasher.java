@@ -2,6 +2,7 @@ package com.washflow.data.usecases.createwasher;
 
 import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.protocols.db.CreateWasherRepository;
+import com.washflow.data.protocols.db.DuplicateKeyError;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
@@ -50,6 +51,10 @@ public class DbCreateWasher implements CreateWasher {
     User washer = new User(UUID.randomUUID(), name, phone, UserProfile.WASHER, Instant.now(), true);
     String passwordHash = password.isEmpty() ? null : passwordHasher.hash(password);
 
-    return createRepository.createWasher(washer, passwordHash);
+    try {
+      return createRepository.createWasher(washer, passwordHash);
+    } catch (DuplicateKeyError e) {
+      throw new PhoneAlreadyRegisteredError(); // created by a concurrent request
+    }
   }
 }

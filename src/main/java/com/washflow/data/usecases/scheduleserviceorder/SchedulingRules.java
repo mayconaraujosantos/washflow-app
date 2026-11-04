@@ -1,6 +1,8 @@
 package com.washflow.data.usecases.scheduleserviceorder;
 
 import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
+import com.washflow.data.protocols.db.CreateServiceOrderRepository;
+import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.errors.InsufficientLeadTimeError;
 import com.washflow.domain.errors.OutsideBusinessHoursError;
 import com.washflow.domain.errors.SlotFullyBookedError;
@@ -60,13 +62,35 @@ public final class SchedulingRules {
     }
   }
 
-  /** At most {@code maxVehiclesPerHour} orders scheduled within the same shop-local hour. */
+  /**
+   * At most {@code maxVehiclesPerHour} orders scheduled within the same shop-local hour. A quick
+   * early check (before creating the vehicle); the booking itself goes through {@link #book}.
+   */
   public void checkCapacity(Instant scheduledAt) throws SlotFullyBookedError {
     int maxVehiclesPerHour = hours.get().maxVehiclesPerHour();
-    Instant slotStart = scheduledAt.atZone(STORE_ZONE).truncatedTo(ChronoUnit.HOURS).toInstant();
+    Instant slotStart = slotStart(scheduledAt);
     Instant slotEnd = slotStart.plus(1, ChronoUnit.HOURS);
     if (countRepository.countScheduledBetween(slotStart, slotEnd) >= maxVehiclesPerHour) {
       throw new SlotFullyBookedError(scheduledAt, maxVehiclesPerHour);
     }
+  }
+
+  /**
+   * Creates the scheduled order only if its hour still has room, counting and inserting atomically:
+   * simultaneous bookings can't overfill the slot.
+   */
+  public ServiceOrder book(CreateServiceOrderRepository repository, ServiceOrder serviceOrder)
+      throws SlotFullyBookedError {
+    int maxVehiclesPerHour = hours.get().maxVehiclesPerHour();
+    Instant slotStart = slotStart(serviceOrder.scheduledAt());
+    return repository
+        .createWithinCapacity(
+            serviceOrder, slotStart, slotStart.plus(1, ChronoUnit.HOURS), maxVehiclesPerHour)
+        .orElseThrow(
+            () -> new SlotFullyBookedError(serviceOrder.scheduledAt(), maxVehiclesPerHour));
+  }
+
+  private static Instant slotStart(Instant scheduledAt) {
+    return scheduledAt.atZone(STORE_ZONE).truncatedTo(ChronoUnit.HOURS).toInstant();
   }
 }

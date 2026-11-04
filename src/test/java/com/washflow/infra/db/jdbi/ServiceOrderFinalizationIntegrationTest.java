@@ -1,7 +1,7 @@
 package com.washflow.infra.db.jdbi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrder;
@@ -50,7 +50,8 @@ class ServiceOrderFinalizationIntegrationTest {
                 new ServicePayment(
                     UUID.randomUUID(), orderId, PaymentMethod.PIX, new BigDecimal("60.00"), now),
                 new WasherCommission(
-                    UUID.randomUUID(), orderId, washerId, new BigDecimal("20.00"), now));
+                    UUID.randomUUID(), orderId, washerId, new BigDecimal("20.00"), now))
+            .orElseThrow();
 
     assertEquals(ServiceOrderStatus.DONE, finalized.status());
     assertEquals(
@@ -61,20 +62,16 @@ class ServiceOrderFinalizationIntegrationTest {
         Long.valueOf(1L),
         jdbi.withHandle(
             h -> h.createQuery("SELECT COUNT(*) FROM comissoes_lavador").mapTo(Long.class).one()));
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new ServiceOrderJdbiRepository(jdbi)
-                .finalizeSale(
-                    ready,
-                    new ServicePayment(
-                        UUID.randomUUID(),
-                        orderId,
-                        PaymentMethod.PIX,
-                        new BigDecimal("60.00"),
-                        now),
-                    new WasherCommission(
-                        UUID.randomUUID(), orderId, washerId, new BigDecimal("20.00"), now)));
+    // Already finalized: nothing is written and the caller gets an empty result (409 upstream).
+    assertTrue(
+        new ServiceOrderJdbiRepository(jdbi)
+            .finalizeSale(
+                ready,
+                new ServicePayment(
+                    UUID.randomUUID(), orderId, PaymentMethod.PIX, new BigDecimal("60.00"), now),
+                new WasherCommission(
+                    UUID.randomUUID(), orderId, washerId, new BigDecimal("20.00"), now))
+            .isEmpty());
     assertEquals(
         Long.valueOf(1L),
         jdbi.withHandle(

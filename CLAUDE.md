@@ -173,6 +173,15 @@ O cliente mantém o painel aberto com atualização automática a cada 3 segundo
 * **Cliente presencial:** o gerente gera o ticket do atendimento (`POST /api/service-orders/{id}/ticket`), entregue por QR, link ou WhatsApp; `GET /api/tickets/{token}` e a página `/ticket/:token` mostram veículo, serviço e andamento sem login e sem dados do cliente.
 * **Cliente com conta:** telefone + senha, código de 6 dígitos por WhatsApp (`POST /api/auth/customers/otp` e `/otp/verify`; vale 10 minutos, 5 tentativas, reenvio após 60 s; o link `/entrar/whatsapp?telefone=...&codigo=...` funciona como magic link) ou Google (`POST /api/auth/customers/google`). Telefone/conta Google novos viram conta de cliente; contas da equipe nunca entram por esses caminhos. `GET /api/auth/options` informa o que está habilitado (`OTP_CHANNEL`, `GOOGLE_CLIENT_ID`).
 
+### Concorrência e idempotência
+Cliques duplos, reenvios após timeout e duas pessoas agindo ao mesmo tempo não podem duplicar nada (histórico em `docs/testes-mundo-real.md`):
+* **Transições de status** são compare-and-set: o `UPDATE` só grava se o atendimento ainda estiver no status esperado (`status = :expected`); quem perde a corrida recebe 409. Ex.: dois lavadores iniciando o mesmo carro, finalizar com clique duplo (um único pagamento).
+* **Capacidade por hora** é verificada e reservada de forma atômica (`createWithinCapacity`, trava `pg_advisory_xact_lock` por lava-jato e hora): agendamentos simultâneos nunca passam de `max_veiculos_hora`.
+* **Um atendimento aberto por veículo no pátio** (`AGUARDANDO_PATIO`, `EM_LAVAGEM`, `PAUSADA`, `PRONTO`), garantido pelo índice único `ux_atendimentos_veiculo_no_patio`: nova entrada da mesma placa é recusada com 409 até o atendimento atual ser finalizado. Agendamentos futuros (`AGENDADO`) não contam.
+* **Violação de unicidade** do banco (SQLState 23505) vira `DuplicateKeyError`, nunca 500: cadastro de cliente enviado duas vezes entra na conta recém-criada (mesma senha) e lavador duplicado vira 409.
+* **`Idempotency-Key`** (tabela `chaves_idempotencia`): todo `POST` autenticado que traz o cabeçalho grava a primeira resposta de sucesso por 24 horas, por usuário; o reenvio com a mesma chave devolve a mesma resposta (cabeçalho `Idempotent-Replayed: true`) sem executar de novo. Mesma chave com outro conteúdo → 422; mesma chave enquanto a primeira ainda roda → 409; falhas liberam a chave. O PWA (`FetchHttpClient`) envia a chave em todo POST autenticado, reaproveita a requisição idêntica em andamento e mantém a chave para o reenvio após uma falha.
+* Testes: `ConcurrencyIntegrationTest` (corridas reais no PostgreSQL embutido), `IdempotencyGuardTest`, `JdbiIdempotencyStoreIntegrationTest`; contra um servidor rodando, `scripts/probe_real_world.py`.
+
 ### Observabilidade
 * Logs em stdout (Logback, `src/main/resources/logback.xml`, `LOG_LEVEL`), uma linha `logger=http` por requisição com `request_id`, rota, status, duração, usuário e motivo do erro (4xx em WARN, 5xx em ERROR com stack trace).
 * Cada requisição tem um ID (`X-Request-Id`), devolvido também como `requestId` nos corpos de erro (`HttpHelper.errorBody`); o app mostra o código nas falhas 5xx.

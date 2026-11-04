@@ -36,7 +36,22 @@ public class DbCompleteServiceOrder implements CompleteServiceOrder {
       throw new InvalidServiceOrderStatusError(serviceOrder.status(), ServiceOrderStatus.WASHING);
     }
 
-    return updateServiceOrderStatusRepository.updateStatus(
-        params.serviceOrderId(), ServiceOrderStatus.READY, serviceOrder.washerId());
+    // Compare-and-set: a concurrent request may have moved the order since it was loaded.
+    return updateServiceOrderStatusRepository
+        .updateStatus(
+            params.serviceOrderId(),
+            ServiceOrderStatus.WASHING,
+            ServiceOrderStatus.READY,
+            serviceOrder.washerId())
+        .orElseThrow(() -> changedConcurrently(params.serviceOrderId()));
+  }
+
+  private InvalidServiceOrderStatusError changedConcurrently(java.util.UUID id) {
+    ServiceOrderStatus current =
+        loadServiceOrderByIdRepository
+            .loadById(id)
+            .map(ServiceOrder::status)
+            .orElse(ServiceOrderStatus.WASHING);
+    return new InvalidServiceOrderStatusError(current, ServiceOrderStatus.WASHING);
   }
 }

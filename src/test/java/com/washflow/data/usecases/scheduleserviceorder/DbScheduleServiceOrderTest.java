@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -88,8 +89,12 @@ class DbScheduleServiceOrderTest {
     when(countServiceOrdersScheduledInRangeRepository.countScheduledBetween(
             Instant.parse("2026-01-05T14:00:00Z"), Instant.parse("2026-01-05T15:00:00Z")))
         .thenReturn(0);
-    when(createServiceOrderRepository.create(any()))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(createServiceOrderRepository.createWithinCapacity(
+            any(),
+            eq(Instant.parse("2026-01-05T14:00:00Z")),
+            eq(Instant.parse("2026-01-05T15:00:00Z")),
+            eq(MAX_VEHICLES_PER_HOUR)))
+        .thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
 
     ServiceOrder serviceOrder = sut.schedule(params);
 
@@ -97,7 +102,8 @@ class DbScheduleServiceOrderTest {
     assertEquals(params.vehicleId(), serviceOrder.vehicleId());
     assertEquals(params.servicePriceId(), serviceOrder.servicePriceId());
     assertEquals(params.scheduledAt(), serviceOrder.scheduledAt());
-    verify(createServiceOrderRepository).create(any());
+    verify(createServiceOrderRepository)
+        .createWithinCapacity(any(), any(), any(), eq(MAX_VEHICLES_PER_HOUR));
   }
 
   @Test
