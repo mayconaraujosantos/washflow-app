@@ -1642,6 +1642,133 @@ select option {
   }
 }
 
+/* ----------------------------------------------- guided scheduling form */
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+}
+
+.step-number {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 0.85rem;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.choice,
+.day-chip,
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.choice {
+  align-items: flex-start;
+  min-height: 64px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.choice strong {
+  color: var(--accent);
+}
+
+.choice[aria-checked='true'],
+.day-chip[aria-checked='true'],
+.slot[aria-checked='true'] {
+  border-color: var(--brand);
+  background: rgba(47, 198, 214, 0.15);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+
+.day-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+}
+
+.day-chip {
+  flex: 0 0 68px;
+  align-items: center;
+  padding: 8px 4px;
+  font-size: 0.8rem;
+  scroll-snap-align: start;
+  text-transform: capitalize;
+}
+
+.day-chip strong {
+  font-size: 0.95rem;
+}
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+.slot {
+  align-items: center;
+  padding: 8px 4px;
+}
+
+.slot span {
+  color: var(--success);
+  font-size: 0.75rem;
+}
+
+.slot:disabled {
+  opacity: 0.45;
+}
+
+.slot:disabled span {
+  color: var(--text-faint);
+}
+
+.submit-summary {
+  flex-direction: column;
+  gap: 2px;
+  min-height: 56px;
+}
+
+.submit-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submit-summary small {
+  font-size: 0.78rem;
+  font-weight: 500;
+  opacity: 0.85;
+  white-space: normal;
+}
+
 /* --------------------------------------------------- role cards (home) */
 
 /*

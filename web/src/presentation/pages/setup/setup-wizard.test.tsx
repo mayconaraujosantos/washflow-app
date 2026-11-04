@@ -30,6 +30,7 @@ const makeEstablishment = (configured = false, setupCodeRequired = true) =>
     setup: vi.fn().mockResolvedValue(session),
     load: vi.fn(),
     update: vi.fn(),
+    availability: vi.fn(),
   }) satisfies Establishment
 
 const renderWizard = (establishment: Establishment) =>

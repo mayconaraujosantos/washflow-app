@@ -17,7 +17,8 @@ public final class AuthorizationMiddleware {
           "/api/services",
           "/api/setup",
           "/api/establishment",
-          "/api/auth/options");
+          "/api/auth/options",
+          "/api/schedule/availability");
   // Login entry points (POST): each one fixes the profile it can sign into.
   private static final Set<String> AUTHENTICATION_PATHS =
       Set.of(
