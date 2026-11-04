@@ -3,6 +3,7 @@ package com.washflow.application;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.application.adapters.SpaFallbackHandler;
+import com.washflow.application.adapters.StaticCachePolicy;
 import com.washflow.application.observability.RequestTracing;
 import com.washflow.application.routes.AccessRoutes;
 import com.washflow.application.routes.EstablishmentRoutes;
@@ -27,6 +28,7 @@ import io.javalin.http.staticfiles.Location;
 import io.javalin.json.JavalinJackson;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin;
+import java.util.Map;
 import org.jdbi.v3.core.Jdbi;
 
 public class Application {
@@ -88,14 +90,14 @@ public class Application {
               // src/main/resources on disk - so this must check the classpath,
               // not the filesystem, and Location.CLASSPATH already no-ops
               // gracefully when nothing is there.
-              config.staticFiles.add(
-                  staticFiles -> {
-                    staticFiles.directory = "/static";
-                    staticFiles.location = Location.CLASSPATH;
-                    // Jetty's default mime table doesn't know .webmanifest;
-                    // without this Chrome refuses to treat it as installable.
-                    staticFiles.mimeTypes.add("application/manifest+json", "webmanifest");
-                  });
+              // Three passes over the same folder, each with its own cache
+              // headers (see StaticCachePolicy): app shell never cached,
+              // hashed bundles cached for a year, everything else revalidated.
+              addStaticFiles(
+                  config, StaticCachePolicy::isAppShell, StaticCachePolicy.APP_SHELL_HEADERS);
+              addStaticFiles(
+                  config, StaticCachePolicy::isHashedAsset, StaticCachePolicy.HASHED_ASSET_HEADERS);
+              addStaticFiles(config, StaticCachePolicy::isOtherStatic, Map.of());
 
               config.routes.apiBuilder(
                   () -> {
@@ -117,5 +119,21 @@ public class Application {
             });
 
     app.start(appConfig.port());
+  }
+
+  private static void addStaticFiles(
+      io.javalin.config.JavalinConfig config,
+      java.util.function.Predicate<String> serves,
+      Map<String, String> headers) {
+    config.staticFiles.add(
+        staticFiles -> {
+          staticFiles.directory = "/static";
+          staticFiles.location = Location.CLASSPATH;
+          staticFiles.headers = headers;
+          staticFiles.skipFileFunction = request -> !serves.test(request.getRequestURI());
+          // Jetty's default mime table doesn't know .webmanifest;
+          // without this Chrome refuses to treat it as installable.
+          staticFiles.mimeTypes.add("application/manifest+json", "webmanifest");
+        });
   }
 }
