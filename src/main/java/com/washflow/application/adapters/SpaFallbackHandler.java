@@ -33,8 +33,13 @@ public final class SpaFallbackHandler {
       return;
     }
 
+    // A client-side route (/gerente, /login/lavador...) is a real page of the SPA: answer 200 and,
+    // like the app shell, never let the browser keep a stale copy.
     try (var input = resource.openStream()) {
-      ctx.contentType("text/html").result(new String(input.readAllBytes(), StandardCharsets.UTF_8));
+      StaticCachePolicy.APP_SHELL_HEADERS.forEach(ctx::header);
+      ctx.status(200)
+          .contentType("text/html")
+          .result(new String(input.readAllBytes(), StandardCharsets.UTF_8));
     }
   }
 }

@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.washflow"
-version = "1.4.0"
+version = "1.4.1"
 
 repositories {
     mavenCentral()
@@ -72,6 +72,14 @@ dependencies {
 
 application {
     mainClass.set("com.washflow.application.Application")
+}
+
+// Gradle 9 builds reproducible archives (every jar entry dated 1980-02-01). Jetty
+// derives static-file ETags from timestamp + size, so a new sw.js or index.html of
+// the same size got the old ETag and a 304 - browsers kept the previous service
+// worker and its stale screens. Real timestamps make each build's ETags unique.
+tasks.withType<AbstractArchiveTask>().configureEach {
+    isPreserveFileTimestamps = true
 }
 
 java {
