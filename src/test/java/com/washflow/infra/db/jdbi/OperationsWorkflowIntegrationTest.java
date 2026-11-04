@@ -18,7 +18,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
-import org.flywaydb.core.Flyway;
 import org.h2.jdbcx.JdbcDataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
@@ -120,11 +119,7 @@ class OperationsWorkflowIntegrationTest {
         "jdbc:h2:mem:"
             + UUID.randomUUID().toString().replace("-", "")
             + ";MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1");
-    Flyway.configure()
-        .dataSource(dataSource)
-        .locations("classpath:db/migration-h2")
-        .load()
-        .migrate();
+    JdbiFactory.migrate(dataSource);
     return TestDatabase.prepare(dataSource);
   }
 }
