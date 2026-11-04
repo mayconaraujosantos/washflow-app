@@ -14,3 +14,18 @@ export type SetupStatusModel = {
   setupCodeRequired: boolean
   establishmentName: string
 }
+
+// GET /api/schedule/availability?date= - bookable hours of one shop-local day.
+export type ScheduleSlotModel = {
+  startsAt: string
+  hour: number
+  booked: number
+  capacity: number
+  available: boolean
+}
+
+export type ScheduleDayModel = {
+  date: string
+  open: boolean
+  slots: ScheduleSlotModel[]
+}

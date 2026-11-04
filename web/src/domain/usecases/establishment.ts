@@ -1,6 +1,7 @@
 import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 import type {
   EstablishmentModel,
+  ScheduleDayModel,
   SetupStatusModel,
 } from '@/domain/models/establishment-model'
 
@@ -27,4 +28,6 @@ export interface Establishment {
   setup: (params: SetupParams) => Promise<AuthenticatedSessionModel>
   load: () => Promise<EstablishmentModel>
   update: (params: EstablishmentParams) => Promise<EstablishmentModel>
+  /** Bookable hours of a 'YYYY-MM-DD' shop-local date, with remaining capacity. */
+  availability: (date: string) => Promise<ScheduleDayModel>
 }

@@ -71,6 +71,7 @@ class AuthorizationMiddlewareTest {
         middleware.authorize(mockContext("POST", "/api/auth/customers/otp/verify", null, null)));
     assertTrue(middleware.authorize(mockContext("POST", "/api/auth/customers/google", null, null)));
     assertTrue(middleware.authorize(mockContext("GET", "/api/auth/options", null, null)));
+    assertTrue(middleware.authorize(mockContext("GET", "/api/schedule/availability", null, null)));
     assertTrue(
         middleware.authorize(mockContext("GET", "/api/tickets/abcDEF123_-xyz789", null, null)));
     assertFalse(middleware.authorize(mockContext("POST", "/api/users/x/badge", null, null)));

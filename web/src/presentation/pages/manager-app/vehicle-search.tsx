@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { VehicleLookupModel } from '@/domain/models/vehicle-lookup-model'
 import { UiIcon } from '@/presentation/components/ui-icon'
-import { errorMessage, formatPhone } from '@/presentation/helpers/format'
+import {
+  errorMessage,
+  formatPhone,
+  normalizePlate,
+} from '@/presentation/helpers/format'
 import { useManager } from './manager-context'
 
 const DEBOUNCE_MS = 300
@@ -9,10 +13,14 @@ const DEBOUNCE_MS = 300
 type Props = Readonly<{
   selected: VehicleLookupModel | null
   onSelect: (vehicle: VehicleLookupModel | null) => void
+  // Offered when the typed text is a plate nobody has yet.
+  onCreate?: (plate: string) => void
 }>
 
 /** "Buscar cliente" box: plate prefix, owner name or phone, picked from a list. */
-export function VehicleSearch({ selected, onSelect }: Props) {
+const PLATE = /^[A-Z]{3}\d[A-Z0-9]\d{2}$/
+
+export function VehicleSearch({ selected, onSelect, onCreate }: Props) {
   const { operations } = useManager()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<VehicleLookupModel[]>([])
@@ -70,6 +78,12 @@ export function VehicleSearch({ selected, onSelect }: Props) {
   }
 
   const showResults = query.trim().length >= 2
+  const normalized = normalizePlate(query)
+  const typedPlate =
+    PLATE.test(normalized) &&
+    !results.some((vehicle) => vehicle.plate === normalized)
+      ? normalized
+      : null
 
   return (
     <div className="form">
@@ -107,10 +121,20 @@ export function VehicleSearch({ selected, onSelect }: Props) {
           ))}
         </div>
       )}
-      {showResults && results.length === 0 && !error && (
+      {showResults && results.length === 0 && !error && !typedPlate && (
         <p className="faint">
           Nenhum cliente encontrado para “{query.trim()}”.
         </p>
+      )}
+      {typedPlate && onCreate && (
+        <button
+          type="button"
+          className="btn btn-brand"
+          onClick={() => onCreate(typedPlate)}
+        >
+          <UiIcon name="plus" size={18} />
+          Cadastrar placa {typedPlate}
+        </button>
       )}
     </div>
   )

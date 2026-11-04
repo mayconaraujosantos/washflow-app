@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { CreateVehicle } from '@/domain/usecases/create-vehicle'
 import { ListServiceOrdersByCustomer } from '@/domain/usecases/list-service-orders-by-customer'
@@ -78,6 +78,14 @@ export function CustomerDashboard({
   const [refreshingOrders, setRefreshingOrders] = useState(false)
   const [statusNotice, setStatusNotice] = useState<string | null>(null)
   const [businessHours, setBusinessHours] = useState<string | undefined>()
+  const [openOnSunday, setOpenOnSunday] = useState(false)
+  const loadDay = useMemo(
+    () =>
+      establishment
+        ? (date: string) => establishment.availability(date)
+        : undefined,
+    [establishment],
+  )
   const previousStatuses = useRef<Map<
     string,
     ServiceOrderModel['status']
@@ -109,7 +117,10 @@ export function CustomerDashboard({
     if (!establishment) return
     establishment
       .load()
-      .then((settings) => setBusinessHours(formatBusinessHours(settings)))
+      .then((settings) => {
+        setBusinessHours(formatBusinessHours(settings))
+        setOpenOnSunday(settings.openOnSunday)
+      })
       .catch(() => {
         // The schedule form keeps its default hint; the API still enforces the rules.
       })
@@ -286,6 +297,8 @@ export function CustomerDashboard({
                 servicePrices={servicePrices}
                 scheduleServiceOrder={scheduleServiceOrder}
                 businessHours={businessHours}
+                loadDay={loadDay}
+                openOnSunday={openOnSunday}
                 onScheduled={(serviceOrder) =>
                   setServiceOrders((current) => [serviceOrder, ...current])
                 }
