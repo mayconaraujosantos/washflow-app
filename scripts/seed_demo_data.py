@@ -22,6 +22,7 @@ Dev data only - never point this at production.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import sys
 import urllib.error
@@ -100,7 +101,7 @@ def step(text):
     print(f"  - {text}")
 
 
-def admin_token(api: Api, email: str, password: str, setup_code: str | None) -> str:
+def admin_session(api: Api, email: str, password: str, setup_code: str | None) -> dict:
     status = api.ok("status da plataforma", "GET", "/api/setup")
     if not status["configured"]:
         session = api.ok(
@@ -115,7 +116,7 @@ def admin_token(api: Api, email: str, password: str, setup_code: str | None) -> 
             },
         )
         step(f"plataforma configurada; administrador {email}")
-        return session["token"]
+        return session
     code, session = api.call("POST", "/api/auth/admins", {"email": email, "password": password})
     if code != 200:
         sys.exit(
@@ -123,7 +124,7 @@ def admin_token(api: Api, email: str, password: str, setup_code: str | None) -> 
             "com --admin-email/--admin-password."
         )
     step(f"administrador {email} já existia; login feito")
-    return session["token"]
+    return session
 
 
 def ensure_shop(api: Api, admin: str, shop: dict) -> tuple[str, bool]:
@@ -198,7 +199,7 @@ def seed_shop(api: Api, shop: dict, slug: str, fresh: bool) -> dict:
             {"phone": phone, "pin": badge["pin"]},
         )
         washers[name] = {"id": user["id"], "token": session["token"]}
-        report["washers"].append((name, phone, badge["pin"]))
+        report["washers"].append((name, phone, badge["pin"], badge["badgeToken"]))
     step(f"{len(washers)} lavador(es) com crachá")
 
     # Customers + cars ------------------------------------------------------------
@@ -237,6 +238,15 @@ def seed_shop(api: Api, shop: dict, slug: str, fresh: bool) -> dict:
 
     if not fresh:
         step("atendimentos, vendas e caixa já foram gerados antes - mantidos")
+        walk_in = shop["walk_ins"][0][0]
+        yard = api.ok("pátio", "GET", "/api/operations/yard", token=mtoken)
+        for order in yard:
+            if order["details"]["vehiclePlate"] == walk_in:
+                ticket = api.ok(
+                    "ticket", "POST", f"/api/service-orders/{order['id']}/ticket", token=mtoken
+                )
+                report["ticket"] = f"/ticket/{ticket['token']}"
+                break
         return report
 
     services = api.ok("catálogo", "GET", "/api/services", shop=slug)
@@ -434,13 +444,15 @@ def main() -> None:
     parser.add_argument("--admin-email", default="admin@washflow.dev")
     parser.add_argument("--admin-password", default="Admin@12345")
     parser.add_argument("--setup-code", default=None, help="SETUP_CODE, if the server requires it")
+    parser.add_argument("--csv", default=None, help="also write every login to this CSV file")
     args = parser.parse_args()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")  # accents on the Windows console
 
     api = Api(args.base)
     print(f"Populando {api.base}")
-    admin = admin_token(api, args.admin_email, args.admin_password, args.setup_code)
+    session = admin_session(api, args.admin_email, args.admin_password, args.setup_code)
+    admin = session["token"]
     reports = []
     for shop in SHOPS:
         print(f"\n{shop['name']}")
@@ -455,12 +467,134 @@ def main() -> None:
     for shop, report in reports:
         print(f"\n{shop['name']}  -  clientes: {api.base}/?lavajato={report['slug']}")
         print(f"  Gerente   {api.base}/login/gerente   {report['manager']} / {STAFF_PASSWORD}")
-        for name, phone, pin in report["washers"]:
+        for name, phone, pin, _badge in report["washers"]:
             print(f"  Lavador   {name:<20} tel {phone}  PIN {pin}  (senha {WASHER_PASSWORD})")
         for name, phone, plates in report["customers"]:
             print(f"  Cliente   {name:<20} tel {phone}  senha {CUSTOMER_PASSWORD}  {', '.join(plates)}")
         if report.get("ticket"):
             print(f"  Ticket    {api.base}{report['ticket']}")
+    if args.csv:
+        write_csv(
+            args.csv,
+            api.base,
+            (session["user"]["name"], args.admin_email, args.admin_password),
+            reports,
+        )
+        print(f"\nCSV: {args.csv}")
+
+
+CSV_COLUMNS = [
+    "lava_jato",
+    "slug",
+    "perfil",
+    "nome",
+    "metodo_login",
+    "url_login",
+    "api_login",
+    "header_x_establishment",
+    "email",
+    "telefone",
+    "senha",
+    "pin",
+    "veiculos",
+    "observacao",
+]
+
+
+def write_csv(path, base, admin, reports):
+    """One row per way of signing in, for test automation (UTF-8, comma separated)."""
+    admin_name, admin_email, admin_password = admin
+    rows = [
+        {
+            "perfil": "ADMIN",
+            "nome": admin_name,
+            "metodo_login": "email_senha",
+            "url_login": f"{base}/login/admin",
+            "api_login": "POST /api/auth/admins {email,password}",
+            "email": admin_email,
+            "senha": admin_password,
+            "observacao": "Administrador da plataforma: cria e suspende lava-jatos em /admin",
+        }
+    ]
+    for shop, report in reports:
+        common = {"lava_jato": shop["name"], "slug": report["slug"]}
+        manager_name, manager_email, manager_phone = shop["manager"]
+        rows.append(
+            {
+                **common,
+                "perfil": "GERENTE",
+                "nome": manager_name,
+                "metodo_login": "email_senha",
+                "url_login": f"{base}/login/gerente",
+                "api_login": "POST /api/auth/managers {email,password}",
+                "email": manager_email,
+                "telefone": manager_phone,
+                "senha": STAFF_PASSWORD,
+            }
+        )
+        for name, phone, pin, badge in report["washers"]:
+            washer = {**common, "perfil": "LAVADOR", "nome": name, "telefone": phone}
+            rows.append(
+                {
+                    **washer,
+                    "metodo_login": "telefone_pin",
+                    "url_login": f"{base}/login/lavador",
+                    "api_login": "POST /api/auth/washers/pin {phone,pin}",
+                    "pin": pin,
+                    "observacao": "PIN muda a cada execução do seed; 5 erros bloqueiam por 15 min",
+                }
+            )
+            rows.append(
+                {
+                    **washer,
+                    "metodo_login": "telefone_senha",
+                    "url_login": f"{base}/login/lavador",
+                    "api_login": "POST /api/auth/washers {phone,password}",
+                    "senha": WASHER_PASSWORD,
+                }
+            )
+            rows.append(
+                {
+                    **washer,
+                    "metodo_login": "qr_cracha",
+                    "url_login": f"{base}/login/lavador?cracha={badge}",
+                    "api_login": "POST /api/auth/washers/badge {badgeToken}",
+                    "observacao": "URL do QR do crachá; muda a cada execução do seed",
+                }
+            )
+        plates_by_customer = {name: plates for name, _phone, plates in report["customers"]}
+        for name, phone, _cars in shop["customers"]:
+            rows.append(
+                {
+                    **common,
+                    "perfil": "CLIENTE",
+                    "nome": name,
+                    "metodo_login": "telefone_senha",
+                    "url_login": f"{base}/?lavajato={report['slug']}",
+                    "api_login": "POST /api/auth/customers {phone,password}",
+                    "header_x_establishment": report["slug"],
+                    "telefone": phone,
+                    "senha": CUSTOMER_PASSWORD,
+                    "veiculos": " ".join(plates_by_customer.get(name, [])),
+                }
+            )
+        if report.get("ticket"):
+            rows.append(
+                {
+                    **common,
+                    "perfil": "PUBLICO",
+                    "nome": "Ticket do atendimento (sem login)",
+                    "metodo_login": "link",
+                    "url_login": f"{base}{report['ticket']}",
+                    "api_login": f"GET /api/tickets/{report['ticket'].rsplit('/', 1)[-1]}",
+                    "veiculos": shop["walk_ins"][0][0],
+                    "observacao": "Mostra veículo, serviço e andamento, sem dados do cliente",
+                }
+            )
+    with open(path, "w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=CSV_COLUMNS, restval="")
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 if __name__ == "__main__":

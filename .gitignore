@@ -55,3 +55,6 @@ Desktop.ini
 *.temp
 *.swp
 *.swo
+
+# Test logins exported by scripts/seed_demo_data.py --csv (PINs change on every run)
+qa-acessos-*.csv
