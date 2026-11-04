@@ -1,6 +1,7 @@
 package com.washflow.infra.db.jdbi;
 
 import com.washflow.application.AppConfig;
+import com.washflow.infra.db.tenancy.TenantBindingCustomizer;
 import com.washflow.infra.observability.Metrics;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -12,6 +13,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.SqlStatements;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +50,10 @@ public final class JdbiFactory {
   public static Jdbi create(AppConfig appConfig) {
     DataSource dataSource = createDataSource(appConfig);
     migrate(dataSource);
-    return Jdbi.create(dataSource).installPlugin(new SqlObjectPlugin());
+    Jdbi jdbi = Jdbi.create(dataSource).installPlugin(new SqlObjectPlugin());
+    // Every ":tenant" gets the request's establishment (multi-lava-jato isolation).
+    jdbi.getConfig(SqlStatements.class).addCustomizer(new TenantBindingCustomizer());
+    return jdbi;
   }
 
   private static void migrate(DataSource dataSource) {

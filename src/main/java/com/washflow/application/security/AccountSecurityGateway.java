@@ -13,6 +13,14 @@ public interface AccountSecurityGateway {
   /** Returns the account access record for the given user id, if the user exists. */
   Optional<AccountAccess> findAccessById(UUID userId);
 
-  /** Record holding the stored profile and active flag of a user account. */
-  record AccountAccess(UserProfile profile, boolean active) {}
+  /**
+   * Active lava-jato with this address ({@code X-Establishment} header of public screens), if any.
+   */
+  Optional<UUID> findActiveEstablishmentBySlug(String slug);
+
+  /**
+   * Stored profile, whether the account (and its lava-jato) is active, and the lava-jato it belongs
+   * to - null for the platform administrator.
+   */
+  record AccountAccess(UserProfile profile, boolean active, UUID establishmentId) {}
 }

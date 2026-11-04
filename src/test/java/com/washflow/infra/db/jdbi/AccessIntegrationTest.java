@@ -99,9 +99,9 @@ class AccessIntegrationTest {
                 .createUpdate(
                     """
                     INSERT INTO atendimentos
-                      (id, veiculo_id, servico_preco_id, status, data_agendamento,
+                      (id, estabelecimento_id, veiculo_id, servico_preco_id, status, data_agendamento,
                        criado_em, atualizado_em)
-                    VALUES (:id, '22222222-2222-2222-2222-222222222222', 1, 'EM_LAVAGEM',
+                    VALUES (:id, :tenant, '22222222-2222-2222-2222-222222222222', 1, 'EM_LAVAGEM',
                             :now, :now, :now)
                     """)
                 .bind("id", orderId)
@@ -116,7 +116,7 @@ class AccessIntegrationTest {
     assertEquals("ABC1D23", view.vehiclePlate());
     assertEquals("Lavagem Completa", view.serviceName());
     assertEquals(ServiceOrderStatus.WASHING, view.status());
-    assertEquals("Meu Lava-Jato", view.establishmentName());
+    assertEquals("Lava Teste", view.establishmentName());
     assertThrows(TicketNotFoundError.class, () -> ticket.view("x".repeat(32)));
     assertThrows(TicketNotFoundError.class, () -> ticket.view("../etc"));
   }
@@ -243,6 +243,6 @@ class AccessIntegrationTest {
         .locations("classpath:db/migration-h2")
         .load()
         .migrate();
-    return Jdbi.create(dataSource);
+    return TestDatabase.prepare(dataSource);
   }
 }

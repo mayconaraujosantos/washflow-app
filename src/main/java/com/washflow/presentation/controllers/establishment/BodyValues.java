@@ -2,16 +2,16 @@ package com.washflow.presentation.controllers.establishment;
 
 import java.util.Map;
 
-final class BodyValues {
+public final class BodyValues {
 
   private BodyValues() {}
 
-  static String text(Map<String, Object> body, String key) {
+  public static String text(Map<String, Object> body, String key) {
     Object value = body.get(key);
     return value == null ? null : value.toString();
   }
 
-  static int integer(Map<String, Object> body, String key) {
+  public static int integer(Map<String, Object> body, String key) {
     if (body.get(key) instanceof Number number) {
       return number.intValue();
     }

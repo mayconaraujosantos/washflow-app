@@ -10,6 +10,7 @@ import com.washflow.application.routes.EstablishmentRoutes;
 import com.washflow.application.routes.FeatureRoutes;
 import com.washflow.application.routes.ObservabilityRoutes;
 import com.washflow.application.routes.OperationsRoutes;
+import com.washflow.application.routes.PlatformRoutes;
 import com.washflow.application.routes.SaleRoutes;
 import com.washflow.application.routes.ScheduleRoutes;
 import com.washflow.application.routes.ServiceOrderRoutes;
@@ -113,6 +114,7 @@ public class Application {
                     AccessRoutes.register(jdbi, appConfig);
                     ScheduleRoutes.register(jdbi, appConfig);
                     ObservabilityRoutes.register(appConfig);
+                    PlatformRoutes.register(jdbi, appConfig);
                   });
 
               config.routes.error(404, SpaFallbackHandler::handle);

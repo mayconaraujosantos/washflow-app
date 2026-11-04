@@ -1,10 +1,8 @@
 package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.User;
-import com.washflow.domain.errors.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.EstablishmentAlreadyConfiguredError;
 import com.washflow.domain.errors.InvalidSetupCodeError;
-import com.washflow.domain.errors.PhoneAlreadyRegisteredError;
 
 /**
  * First-run wizard: names the car wash, sets its hours and yard capacity, and creates the owner
@@ -15,23 +13,9 @@ public interface SetupEstablishment {
 
   Status status();
 
-  User setup(Params params)
-      throws EstablishmentAlreadyConfiguredError,
-          InvalidSetupCodeError,
-          EmailAlreadyRegisteredError,
-          PhoneAlreadyRegisteredError;
+  User setup(Params params) throws EstablishmentAlreadyConfiguredError, InvalidSetupCodeError;
 
   record Status(boolean configured, boolean setupCodeRequired, String establishmentName) {}
 
-  record Params(
-      String setupCode,
-      String establishmentName,
-      int openingHour,
-      int closingHour,
-      boolean openOnSunday,
-      int maxVehiclesPerHour,
-      String ownerName,
-      String ownerEmail,
-      String ownerPhone,
-      String ownerPassword) {}
+  record Params(String setupCode, String ownerName, String ownerEmail, String ownerPassword) {}
 }

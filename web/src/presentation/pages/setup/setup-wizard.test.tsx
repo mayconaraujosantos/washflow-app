@@ -1,114 +1,84 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Establishment } from '@/domain/usecases/establishment'
 import { SetupWizard } from './setup-wizard'
 
-const saveManagerSession = vi.hoisted(() => vi.fn())
-vi.mock('@/main/session/manager-session', () => ({ saveManagerSession }))
-
 const session = {
-  token: 't',
+  token: 'admin-token',
   user: {
-    id: '1',
-    name: 'Dona Maria',
-    phone: '',
-    profile: 'MANAGER' as const,
-    createdAt: '2026-11-03T00:00:00Z',
-    active: true,
+    id: 'a1',
+    name: 'Dono',
+    phone: null,
+    profile: 'ADMIN',
+    createdAt: '2026-11-04T12:00:00Z',
   },
 }
 
-const makeEstablishment = (configured = false, setupCodeRequired = true) =>
+const establishment = (configured = false, setupCodeRequired = true) =>
   ({
     setupStatus: vi.fn().mockResolvedValue({
       configured,
       setupCodeRequired,
-      establishmentName: 'Meu Lava-Jato',
+      establishmentName: null,
     }),
     setup: vi.fn().mockResolvedValue(session),
     load: vi.fn(),
     update: vi.fn(),
     availability: vi.fn(),
-  }) satisfies Establishment
+  }) as unknown as Establishment & { setup: ReturnType<typeof vi.fn> }
 
-const renderWizard = (establishment: Establishment) =>
+const renderWizard = (shop: Establishment) =>
   render(
     <MemoryRouter initialEntries={['/configurar']}>
       <Routes>
         <Route
           path="/configurar"
-          element={<SetupWizard establishment={establishment} />}
+          element={<SetupWizard establishment={shop} />}
         />
-        <Route path="/gerente" element={<p>painel do gerente</p>} />
-        <Route path="/" element={<p>tela inicial</p>} />
+        <Route path="/admin" element={<p>painel admin</p>} />
+        <Route path="/" element={<p>inicio</p>} />
       </Routes>
     </MemoryRouter>,
   )
 
-describe('SetupWizard', () => {
-  it('collects the car wash and the owner account, then opens the panel', async () => {
-    const establishment = makeEstablishment()
-    renderWizard(establishment)
+describe('SetupWizard (platform administrator)', () => {
+  beforeEach(() => localStorage.clear())
 
-    await userEvent.type(
-      await screen.findByLabelText('Nome do lava-jato'),
-      'Lava Rápido Centro',
-    )
-    await userEvent.click(screen.getByLabelText('Abre aos domingos'))
-    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  it('creates the administrator with the setup code and opens the admin panel', async () => {
+    const shop = establishment()
+    renderWizard(shop)
 
-    await userEvent.type(screen.getByLabelText('Seu nome'), 'Dona Maria')
+    await userEvent.type(await screen.findByLabelText('Seu nome'), 'Dono')
     await userEvent.type(
       screen.getByLabelText('E-mail de acesso'),
-      'maria@lava.com',
+      'dono@washflow.com',
     )
     await userEvent.type(
       screen.getByLabelText('Senha (mínimo 8 caracteres)'),
       'senha-forte',
     )
-    await userEvent.type(
-      screen.getByLabelText('Código de configuração'),
-      's3gredo',
-    )
+    await userEvent.type(screen.getByLabelText('Código de configuração'), 'abc')
     await userEvent.click(
-      screen.getByRole('button', { name: 'Concluir e abrir o painel' }),
+      screen.getByRole('button', { name: 'Criar administrador' }),
     )
 
-    expect(establishment.setup).toHaveBeenCalledWith({
-      setupCode: 's3gredo',
-      establishmentName: 'Lava Rápido Centro',
-      openingHour: 8,
-      closingHour: 18,
-      openOnSunday: true,
-      maxVehiclesPerHour: 3,
-      ownerName: 'Dona Maria',
-      ownerEmail: 'maria@lava.com',
-      ownerPhone: undefined,
+    expect(await screen.findByText('painel admin')).toBeInTheDocument()
+    expect(shop.setup).toHaveBeenCalledWith({
+      setupCode: 'abc',
+      ownerName: 'Dono',
+      ownerEmail: 'dono@washflow.com',
       ownerPassword: 'senha-forte',
     })
-    expect(saveManagerSession).toHaveBeenCalledWith(session)
-    expect(await screen.findByText('painel do gerente')).toBeInTheDocument()
-  })
-
-  it('does not ask for the setup code when the server does not require it', async () => {
-    renderWizard(makeEstablishment(false, false))
-
-    await userEvent.type(
-      await screen.findByLabelText('Nome do lava-jato'),
-      'Lava',
+    expect(localStorage.getItem('washflow:admin-session')).toContain(
+      'admin-token',
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-
-    expect(
-      screen.queryByLabelText('Código de configuração'),
-    ).not.toBeInTheDocument()
   })
 
-  it('leaves the wizard when the establishment is already configured', async () => {
-    renderWizard(makeEstablishment(true))
+  it('leaves for the home page when the platform is already configured', async () => {
+    renderWizard(establishment(true))
 
-    expect(await screen.findByText('tela inicial')).toBeInTheDocument()
+    expect(await screen.findByText('inicio')).toBeInTheDocument()
   })
 })

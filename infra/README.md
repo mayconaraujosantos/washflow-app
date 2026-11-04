@@ -96,16 +96,21 @@ select development. `PORT` and `MAX_VEHICLES_PER_HOUR` are also read through
 
 Authentication uses a BCrypt password hash and an HMAC-signed bearer token.
 Production must set `AUTH_TOKEN_SECRET` to a secret of at least 32 characters.
-On a fresh install, open the app and complete the setup wizard (`/configurar`):
-it creates the establishment and the owner manager (e-mail + password). In
-production the wizard requires `SETUP_CODE` - a secret you set on the server and
-type in the wizard - so nobody else can claim a new deployment.
+One installation serves many lava-jatos. On a fresh install, open the app and
+complete the setup wizard (`/configurar`): it creates the **platform
+administrator** (e-mail + password). In production the wizard requires
+`SETUP_CODE` - a secret you set on the server and type in the wizard - so nobody
+else can claim the platform. Then, in `/admin`, create each lava-jato with its
+first manager (e-mail + initial password) and hand the manager those
+credentials plus the customers link `https://<host>/?lavajato=<address>` (shown
+on the admin panel; print it as a QR code for the counter). Suspending a
+lava-jato blocks its staff and customers without deleting data.
 
 Other access settings:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `SETUP_CODE` | empty | Unlocks the setup wizard in production (wizard disabled while empty). |
+| `SETUP_CODE` | empty | Unlocks the one-time platform setup in production (wizard disabled while empty). |
 | `OTP_CHANNEL` | `log` (dev), `none` (prod) | Customer WhatsApp codes. `log` prints the code/magic link to the server log and is refused in production; plug a WhatsApp provider in `AccessFactory.otpSender`. |
 | `GOOGLE_CLIENT_ID` | empty | Google Identity Services client ID; empty hides "Entrar com Google". |
 | `APP_PUBLIC_URL` | empty | Public origin used in WhatsApp magic links (e.g. `https://app.lavajato.com`). |

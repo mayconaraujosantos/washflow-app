@@ -4,7 +4,14 @@ import type { AuthOptionsModel } from '@/domain/models/access-model'
 import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 import type { Access } from '@/domain/usecases/access'
 import type { AuthenticateCustomer } from '@/domain/usecases/authenticate-customer'
+import type { EstablishmentDirectory } from '@/domain/usecases/platform'
 import { saveCustomerSession } from '@/main/session/customer-session'
+import {
+  clearEstablishmentChoice,
+  loadEstablishmentChoice,
+  saveEstablishmentChoice,
+  type EstablishmentChoice,
+} from '@/main/session/establishment-choice'
 import { UiIcon } from '@/presentation/components/ui-icon'
 import { BrandLogo } from '@/presentation/components/ui/app-chrome'
 import {
@@ -15,6 +22,7 @@ import {
 import { Notice } from '@/presentation/components/ui/blocks'
 import { usePwaInstall } from '@/presentation/components/ui/use-pwa-install'
 import { errorMessage } from '@/presentation/helpers/format'
+import { EstablishmentPicker } from './establishment-picker'
 import { GoogleButton, WhatsAppLogin } from './passwordless'
 
 type Mode = 'signup' | 'signin' | 'forgot' | 'whatsapp'
@@ -26,6 +34,9 @@ type Props = Readonly<{
   initialMode?: 'signup' | 'signin'
   // On the home page: links for washers and managers under the card.
   staffLinks?: boolean
+  // Customer accounts belong to one lava-jato: with a directory, the customer
+  // picks it first (or arrives with it from the shop's link).
+  directory?: EstablishmentDirectory
 }>
 
 /**
@@ -39,8 +50,12 @@ export function AccessScreen({
   access,
   initialMode = 'signup',
   staffLinks = false,
+  directory,
 }: Props) {
   const navigate = useNavigate()
+  const [chosen, setChosen] = useState<EstablishmentChoice | null>(() =>
+    directory ? loadEstablishmentChoice() : null,
+  )
   const [mode, setMode] = useState<Mode>(initialMode)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -49,6 +64,44 @@ export function AccessScreen({
   const [loading, setLoading] = useState(false)
   const [welcome, setWelcome] = useState(false)
   const [options, setOptions] = useState<AuthOptionsModel | null>(null)
+
+  // A shop link only carries the address: confirm it and learn the name.
+  const pendingSlug = chosen && !chosen.name ? chosen.slug : null
+  useEffect(() => {
+    if (!directory || !pendingSlug) return
+    let active = true
+    directory
+      .search(pendingSlug)
+      .then((found) => {
+        if (!active) return
+        const match = found.find((item) => item.slug === pendingSlug)
+        if (match) {
+          const confirmed = { slug: match.slug, name: match.name }
+          saveEstablishmentChoice(confirmed)
+          setChosen(confirmed)
+        } else {
+          clearEstablishmentChoice()
+          setChosen(null)
+        }
+      })
+      .catch(() => {
+        // Offline: keep the address; requests will report the problem.
+      })
+    return () => {
+      active = false
+    }
+  }, [directory, pendingSlug])
+
+  const pick = (choice: EstablishmentChoice) => {
+    saveEstablishmentChoice(choice)
+    setChosen(choice)
+    setError(null)
+  }
+
+  const changeEstablishment = () => {
+    clearEstablishmentChoice()
+    setChosen(null)
+  }
 
   useEffect(() => {
     if (!access) return
@@ -117,6 +170,26 @@ export function AccessScreen({
   }[mode]
   const whatsappEnabled = Boolean(access && options?.whatsappCode)
   const googleClientId = access ? options?.googleClientId : null
+  const staff = staffLinks && (
+    <p className="auth-staff">
+      É da equipe? <Link to="/login/lavador">Entrar como lavador</Link>
+      {' · '}
+      <Link to="/login/gerente">Entrar como gerente</Link>
+    </p>
+  )
+
+  if (directory && !chosen) {
+    return (
+      <main className="auth-shell">
+        <h1 className="auth-brand">
+          <BrandLogo size="lg" />
+        </h1>
+        <EstablishmentPicker directory={directory} onPick={pick} />
+        <InstallApp />
+        {staff}
+      </main>
+    )
+  }
 
   return (
     <main className="auth-shell">
@@ -126,6 +199,20 @@ export function AccessScreen({
 
       <section className="auth-card" aria-labelledby="auth-title">
         <h2 id="auth-title">{title}</h2>
+        {chosen && (
+          <p className="auth-establishment">
+            <span>
+              Lava-jato: <strong>{chosen.name || chosen.slug}</strong>
+            </span>
+            <button
+              type="button"
+              className="link-action"
+              onClick={changeEstablishment}
+            >
+              Trocar
+            </button>
+          </p>
+        )}
 
         {mode === 'forgot' ? (
           <>
@@ -231,13 +318,7 @@ export function AccessScreen({
       </section>
 
       <InstallApp />
-      {staffLinks && (
-        <p className="auth-staff">
-          É da equipe? <Link to="/login/lavador">Entrar como lavador</Link>
-          {' · '}
-          <Link to="/login/gerente">Entrar como gerente</Link>
-        </p>
-      )}
+      {staff}
     </main>
   )
 }

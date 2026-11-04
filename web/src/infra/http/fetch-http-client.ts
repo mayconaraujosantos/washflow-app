@@ -4,22 +4,24 @@ import {
   HttpResponse,
 } from '@/data/protocols/http/http-client'
 import { loadAccessToken } from '@/main/session/access-token'
+import { loadEstablishmentChoice } from '@/main/session/establishment-choice'
 
 export class FetchHttpClient<T = unknown> implements HttpClient<T> {
   async request(data: HttpRequest): Promise<HttpResponse<T>> {
     const token = loadAccessToken()
+    // The lava-jato picked on the home screen; signed-in staff ignore it (their
+    // account decides), customers' public screens depend on it.
+    const establishment = loadEstablishmentChoice()?.slug
+    const common = {
+      ...data.headers,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(establishment ? { 'X-Establishment': establishment } : {}),
+    }
     const response = await fetch(data.url, {
       method: data.method.toUpperCase(),
       headers: data.body
-        ? {
-            'Content-Type': 'application/json',
-            ...data.headers,
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          }
-        : {
-            ...data.headers,
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+        ? { 'Content-Type': 'application/json', ...common }
+        : common,
       body: data.body ? JSON.stringify(data.body) : undefined,
     })
 

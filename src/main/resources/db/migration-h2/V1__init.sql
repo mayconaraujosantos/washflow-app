@@ -18,7 +18,8 @@ CREATE TABLE usuarios (
 CREATE TABLE veiculos (
     id UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
     cliente_id UUID REFERENCES usuarios (id),
-    placa VARCHAR(10) NOT NULL UNIQUE,
+    -- Unique per establishment since V18 (in-memory H2 always migrates from scratch).
+    placa VARCHAR(10) NOT NULL,
     modelo VARCHAR(50),
     cor VARCHAR(30)
 );
