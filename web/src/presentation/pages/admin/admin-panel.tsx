@@ -255,7 +255,11 @@ function NewEstablishmentForm({
         autoComplete="new-password"
       />
       <Notice tone="error">{error}</Notice>
-      <button type="submit" className="btn btn-accent btn-block" disabled={saving}>
+      <button
+        type="submit"
+        className="btn btn-accent btn-block"
+        disabled={saving}
+      >
         {saving ? 'Criando...' : 'Criar lava-jato'}
       </button>
       <div className="auth-links">

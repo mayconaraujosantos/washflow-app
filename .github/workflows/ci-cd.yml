@@ -87,21 +87,5 @@ jobs:
           push: false
           tags: washflow-api:${{ github.sha }}
 
-  deploy:
-    name: Deploy to Railway
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [quality, container]
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: bash <(curl -fsSL railway.com/install.sh)
-
-      - name: Deploy service
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-        run: ~/.railway/bin/railway up --ci --service "$RAILWAY_SERVICE_ID" --environment production
+  # Production runs on Render and is deployed by the Argo Workflow
+  # washflow-deploy-render (`make deploy-prod`, see infra/README.md).
