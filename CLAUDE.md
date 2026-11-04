@@ -162,6 +162,12 @@ O cliente mantém o painel aberto com atualização automática a cada 3 segundo
 * **Cliente presencial:** o gerente gera o ticket do atendimento (`POST /api/service-orders/{id}/ticket`), entregue por QR, link ou WhatsApp; `GET /api/tickets/{token}` e a página `/ticket/:token` mostram veículo, serviço e andamento sem login e sem dados do cliente.
 * **Cliente com conta:** telefone + senha, código de 6 dígitos por WhatsApp (`POST /api/auth/customers/otp` e `/otp/verify`; vale 10 minutos, 5 tentativas, reenvio após 60 s; o link `/entrar/whatsapp?telefone=...&codigo=...` funciona como magic link) ou Google (`POST /api/auth/customers/google`). Telefone/conta Google novos viram conta de cliente; contas da equipe nunca entram por esses caminhos. `GET /api/auth/options` informa o que está habilitado (`OTP_CHANNEL`, `GOOGLE_CLIENT_ID`).
 
+### Observabilidade
+* Logs em stdout (Logback, `src/main/resources/logback.xml`, `LOG_LEVEL`), uma linha `logger=http` por requisição com `request_id`, rota, status, duração, usuário e motivo do erro (4xx em WARN, 5xx em ERROR com stack trace).
+* Cada requisição tem um ID (`X-Request-Id`), devolvido também como `requestId` nos corpos de erro (`HttpHelper.errorBody`); o app mostra o código nas falhas 5xx.
+* `GET /api/metrics`: métricas Prometheus (HTTP por rota, pool Hikari, JVM), exige `Authorization: Bearer METRICS_TOKEN`; sem a variável, responde 404.
+* `POST /api/client-errors` (público, limitado a 20 por minuto por IP): erros do navegador enviados pelo `ErrorReporter` e pelo `ErrorBoundary` do PWA.
+
 ### Bootstrap e limites de autenticação
 * Em produção, configure `AUTH_TOKEN_SECRET` (mínimo 32 caracteres).
 * O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido. Em instalações novas, prefira o assistente `/configurar` (com `SETUP_CODE` em produção).

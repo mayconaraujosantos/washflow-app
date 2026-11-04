@@ -110,6 +110,26 @@ Other access settings:
 | `GOOGLE_CLIENT_ID` | empty | Google Identity Services client ID; empty hides "Entrar com Google". |
 | `APP_PUBLIC_URL` | empty | Public origin used in WhatsApp magic links (e.g. `https://app.lavajato.com`). |
 
+## Logs, tracing and metrics
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `LOG_LEVEL` | `INFO` | Root log level (`DEBUG` also prints the `/api/health` and `/api/metrics` polls). |
+| `METRICS_TOKEN` | empty | Bearer token for `GET /api/metrics` (Prometheus format); empty turns the endpoint off (404). |
+
+* **Logs** go to stdout (the Render "Logs" tab) as one `key=value` line per event, in UTC:
+  `2026-11-04T05:20:47.358Z WARN  request_id=suporte-teste-01 logger=http method=POST route=/api/auth/managers status=400 duration_ms=4 user=- ip=... reason="..."`.
+  Every API request gets one `logger=http` line: `INFO` for 2xx/3xx, `WARN` for 4xx (with the
+  reason), `ERROR` for 5xx (with the stack trace on the line before). Browser crashes reported by
+  the PWA appear as `logger=client Browser error ...`.
+* **Tracing:** each request has an id, returned in the `X-Request-Id` header and in error bodies
+  (`{"error": ..., "requestId": ...}`); a sane incoming `X-Request-Id` is reused. 5xx messages in
+  the app show the code to the user. To investigate, search the logs for `request_id=<code>`.
+* **Metrics:** `curl -H "Authorization: Bearer $METRICS_TOKEN" https://<host>/api/metrics` -
+  `http_server_requests_seconds_*` (by method, route template, status, outcome), `hikaricp_*`
+  (pool) and `jvm_*`/`process_*`. Point a Prometheus/Grafana Cloud scrape job at it with the
+  bearer token.
+
 Legacy: set `BOOTSTRAP_MANAGER_PASSWORD` (and, if needed, `BOOTSTRAP_MANAGER_PHONE`)
 for the initial manager account without a password hash; after its first
 successful login the hash is persisted and the bootstrap password can be
