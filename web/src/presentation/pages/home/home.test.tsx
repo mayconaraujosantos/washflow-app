@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
+import type { Establishment } from '@/domain/usecases/establishment'
 import { LoadHealthStatus } from '@/domain/usecases/load-health-status'
 import { Home } from './home'
 
@@ -61,5 +62,74 @@ describe('Home (role cards)', () => {
     renderHome({ load: vi.fn().mockRejectedValue(new Error('down')) })
 
     expect(await screen.findByText('Sistema offline')).toBeInTheDocument()
+  })
+
+  describe('setup check', () => {
+    const establishment = (
+      setupStatus: Establishment['setupStatus'],
+    ): Establishment => ({
+      setupStatus,
+      setup: vi.fn(),
+      load: vi.fn(),
+      update: vi.fn(),
+    })
+
+    const renderWithSetup = (shop: Establishment) =>
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Home loadHealthStatus={healthy()} establishment={shop} />
+              }
+            />
+            <Route path="/configurar" element={<p>assistente</p>} />
+          </Routes>
+        </MemoryRouter>,
+      )
+
+    it('never shows the login cards on a fresh install', async () => {
+      renderWithSetup(
+        establishment(
+          vi.fn().mockResolvedValue({
+            configured: false,
+            setupCodeRequired: true,
+            establishmentName: 'Meu Lava-Jato',
+          }),
+        ),
+      )
+
+      expect(screen.getByText('Conectando ao sistema...')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('link', { name: 'Entrar como Gerente' }),
+      ).toBeNull()
+      expect(await screen.findByText('assistente')).toBeInTheDocument()
+    })
+
+    it('shows the cards and the shop name once configured', async () => {
+      renderWithSetup(
+        establishment(
+          vi.fn().mockResolvedValue({
+            configured: true,
+            setupCodeRequired: true,
+            establishmentName: 'Lava Rápido Centro',
+          }),
+        ),
+      )
+
+      expect(await screen.findByText('Lava Rápido Centro')).toBeInTheDocument()
+      expect(
+        screen.getByRole('link', { name: 'Entrar como Gerente' }),
+      ).toBeInTheDocument()
+    })
+
+    it('falls back to the cards when the setup check fails', async () => {
+      renderWithSetup(establishment(vi.fn().mockRejectedValue(new Error('x'))))
+
+      expect(
+        await screen.findByRole('link', { name: 'Entrar como Cliente' }),
+      ).toBeInTheDocument()
+    })
   })
 })

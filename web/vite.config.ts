@@ -35,7 +35,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // Registered from src/main/config/pwa.ts so a new deploy reloads open
+      // tabs instead of leaving them on the cached previous version.
+      injectRegister: false,
       includeAssets: [
         'favicon.svg',
         'icons/icon.svg',
@@ -71,6 +73,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Activate a new deploy right away and drop the old precache.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         // Without this, the SW's catch-all NavigationRoute treats every
         // full-page navigation (including /swagger, /openapi, /api/*) as an
         // SPA route and serves index.html instead of letting it reach the
