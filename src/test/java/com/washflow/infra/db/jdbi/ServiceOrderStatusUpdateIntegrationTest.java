@@ -36,8 +36,15 @@ class ServiceOrderStatusUpdateIntegrationTest {
     ServiceOrderJdbiRepository repository = new ServiceOrderJdbiRepository(jdbi);
 
     ServiceOrder checkedIn =
-        repository.updateStatus(orderId, ServiceOrderStatus.WAITING_IN_YARD, null);
-    ServiceOrder started = repository.updateStatus(orderId, ServiceOrderStatus.WASHING, washerId);
+        repository
+            .updateStatus(
+                orderId, ServiceOrderStatus.SCHEDULED, ServiceOrderStatus.WAITING_IN_YARD, null)
+            .orElseThrow();
+    ServiceOrder started =
+        repository
+            .updateStatus(
+                orderId, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, washerId)
+            .orElseThrow();
 
     assertEquals(ServiceOrderStatus.WAITING_IN_YARD, checkedIn.status());
     assertNull(checkedIn.washerId());

@@ -48,7 +48,8 @@ class OperationsWorkflowIntegrationTest {
                 .bind("now", now)
                 .execute());
 
-    repository.updateStatus(orderId, ServiceOrderStatus.WASHING, washerId);
+    repository.updateStatus(
+        orderId, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, washerId);
     assertThrows(
         UserHasActiveWashesError.class,
         () -> new UserJdbiRepository(jdbi).updateProfile(washerId, UserProfile.MANAGER));
@@ -66,7 +67,10 @@ class OperationsWorkflowIntegrationTest {
     assertNull(resumed.pauseReason());
     assertFalse(repository.resumeWashing(orderId, washerId));
 
-    ServiceOrder ready = repository.updateStatus(orderId, ServiceOrderStatus.READY, washerId);
+    ServiceOrder ready =
+        repository
+            .updateStatus(orderId, ServiceOrderStatus.WASHING, ServiceOrderStatus.READY, washerId)
+            .orElseThrow();
     repository.finalizeSale(
         ready,
         new ServicePayment(

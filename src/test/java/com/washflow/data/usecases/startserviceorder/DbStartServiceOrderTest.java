@@ -72,15 +72,50 @@ class DbStartServiceOrderTest {
             waitingServiceOrder.createdAt(),
             Instant.now());
     when(updateServiceOrderStatusRepository.updateStatus(
-            params.serviceOrderId(), ServiceOrderStatus.WASHING, params.washerId()))
-        .thenReturn(washingServiceOrder);
+            params.serviceOrderId(),
+            ServiceOrderStatus.WAITING_IN_YARD,
+            ServiceOrderStatus.WASHING,
+            params.washerId()))
+        .thenReturn(Optional.of(washingServiceOrder));
 
     ServiceOrder result = sut.start(params);
 
     assertEquals(ServiceOrderStatus.WASHING, result.status());
     assertEquals(params.washerId(), result.washerId());
     verify(updateServiceOrderStatusRepository)
-        .updateStatus(params.serviceOrderId(), ServiceOrderStatus.WASHING, params.washerId());
+        .updateStatus(
+            params.serviceOrderId(),
+            ServiceOrderStatus.WAITING_IN_YARD,
+            ServiceOrderStatus.WASHING,
+            params.washerId());
+  }
+
+  @Test
+  void returnsConflictWhenAnotherWasherStartedTheOrderFirst() {
+    // Both requests loaded the order as AGUARDANDO_PATIO; the other one's write won.
+    ServiceOrder takenByOther =
+        new ServiceOrder(
+            waitingServiceOrder.id(),
+            waitingServiceOrder.vehicleId(),
+            waitingServiceOrder.servicePriceId(),
+            UUID.randomUUID(),
+            ServiceOrderStatus.WASHING,
+            waitingServiceOrder.scheduledAt(),
+            waitingServiceOrder.createdAt(),
+            waitingServiceOrder.updatedAt());
+    when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
+        .thenReturn(Optional.of(waitingServiceOrder), Optional.of(takenByOther));
+    when(updateServiceOrderStatusRepository.updateStatus(
+            params.serviceOrderId(),
+            ServiceOrderStatus.WAITING_IN_YARD,
+            ServiceOrderStatus.WASHING,
+            params.washerId()))
+        .thenReturn(Optional.empty());
+
+    InvalidServiceOrderStatusError error =
+        assertThrows(InvalidServiceOrderStatusError.class, () -> sut.start(params));
+    assertEquals(
+        "Expected service order status WAITING_IN_YARD but found WASHING", error.getMessage());
   }
 
   @Test

@@ -3,6 +3,7 @@ package com.washflow.domain.usecases;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.errors.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.VehicleAlreadyInYardError;
 import java.util.UUID;
 
 /**
@@ -14,7 +15,7 @@ import java.util.UUID;
 public interface CheckInServiceOrder {
 
   ServiceOrder checkIn(Params params)
-      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError;
+      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError, VehicleAlreadyInYardError;
 
   record Params(UUID serviceOrderId) {}
 }

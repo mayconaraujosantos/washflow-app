@@ -52,19 +52,25 @@ public class DbFinalizeServiceOrder implements FinalizeServiceOrder {
             .orElseThrow(() -> new ServicePriceNotFoundError(serviceOrder.servicePriceId()));
 
     Instant receivedAt = Instant.now();
-    return finalizeServiceOrderRepository.finalizeSale(
-        serviceOrder,
-        new ServicePayment(
-            UUID.randomUUID(),
-            serviceOrder.id(),
-            params.paymentMethod(),
-            servicePrice.price(),
-            receivedAt),
-        new WasherCommission(
-            UUID.randomUUID(),
-            serviceOrder.id(),
-            serviceOrder.washerId(),
-            servicePrice.washerCommission(),
-            receivedAt));
+    return finalizeServiceOrderRepository
+        .finalizeSale(
+            serviceOrder,
+            new ServicePayment(
+                UUID.randomUUID(),
+                serviceOrder.id(),
+                params.paymentMethod(),
+                servicePrice.price(),
+                receivedAt),
+            new WasherCommission(
+                UUID.randomUUID(),
+                serviceOrder.id(),
+                serviceOrder.washerId(),
+                servicePrice.washerCommission(),
+                receivedAt))
+        // Finalized by a concurrent request (double click): one payment only, this one is a 409.
+        .orElseThrow(
+            () ->
+                new InvalidServiceOrderStatusError(
+                    ServiceOrderStatus.DONE, ServiceOrderStatus.READY));
   }
 }
