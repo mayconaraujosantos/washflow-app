@@ -33,11 +33,19 @@ export function YardScreen({ mode }: Props) {
   const navigate = useNavigate()
   const [ticketFor, setTicketFor] = useState<ServiceOrderModel | null>(null)
   // Right after registering an entry the counter hands the customer a ticket.
-  const ticketOrderId = (location.state as { ticketOrderId?: string } | null)
-    ?.ticketOrderId
+  const entryState = location.state as {
+    ticketOrderId?: string
+    checklist?: boolean
+  } | null
+  const ticketOrderId = entryState?.ticketOrderId
   const pendingTicket = ticketOrderId
     ? (yard.find((order) => order.id === ticketOrderId) ?? null)
     : null
+  // "Check-list" ticked on the entry form: entry checklist first, then the ticket.
+  const [entryChecklistDone, setEntryChecklistDone] = useState(false)
+  const entryChecklistOpen = Boolean(
+    pendingTicket && entryState?.checklist && !entryChecklistDone,
+  )
   const [checklist, setChecklist] = useState<{
     orderId: string
     type: ChecklistType
@@ -181,7 +189,7 @@ export function YardScreen({ mode }: Props) {
       )}
 
       <TicketSheet
-        order={ticketFor ?? pendingTicket}
+        order={ticketFor ?? (entryChecklistOpen ? null : pendingTicket)}
         onClose={() => {
           setTicketFor(null)
           if (ticketOrderId) navigate('.', { replace: true, state: null })
@@ -199,6 +207,14 @@ export function YardScreen({ mode }: Props) {
           )
         }}
       />
+      {entryChecklistOpen && pendingTicket && (
+        <ChecklistModal
+          features={features}
+          serviceOrderId={pendingTicket.id}
+          type="ENTRY"
+          onClose={() => setEntryChecklistDone(true)}
+        />
+      )}
       {checklist && (
         <ChecklistModal
           features={features}

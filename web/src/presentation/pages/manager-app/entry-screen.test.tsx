@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
@@ -49,37 +49,62 @@ const makeManager = () => {
   return { data, operations }
 }
 
-describe('EntryScreen (schedule)', () => {
-  it('registers a new plate from the search, a service card and a free slot', async () => {
+const renderEntry = (mode: 'entry' | 'schedule', data: ManagerData) =>
+  render(
+    <ManagerContext.Provider value={data}>
+      <MemoryRouter initialEntries={['/gerente/form']}>
+        <Routes>
+          <Route path="/gerente/form" element={<EntryScreen mode={mode} />} />
+          <Route path="/gerente/agenda" element={<p>agenda</p>} />
+          <Route path="/gerente/patio" element={<p>patio</p>} />
+        </Routes>
+      </MemoryRouter>
+    </ManagerContext.Provider>,
+  )
+
+describe('EntryScreen (reference layout)', () => {
+  it('shows "Nenhum cliente selecionado" with the add-client button first', () => {
+    renderEntry('entry', makeManager().data)
+
+    expect(screen.getByText('Nenhum cliente selecionado')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Adicionar novo cliente' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Nenhum produto selecionado')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Adicionar produto ou serviço' }),
+    ).toBeInTheDocument()
+  })
+
+  it('schedules a new client from the search, a catalog service and a free slot', async () => {
     const { data, operations } = makeManager()
-    render(
-      <ManagerContext.Provider value={data}>
-        <MemoryRouter initialEntries={['/gerente/agendar']}>
-          <Routes>
-            <Route
-              path="/gerente/agendar"
-              element={<EntryScreen mode="schedule" />}
-            />
-            <Route path="/gerente/agenda" element={<p>agenda</p>} />
-          </Routes>
-        </MemoryRouter>
-      </ManagerContext.Provider>,
-    )
+    renderEntry('schedule', data)
 
     await userEvent.type(screen.getByLabelText('Buscar cliente'), 'abc1d23')
     await userEvent.click(
       await screen.findByRole('button', { name: 'Cadastrar placa ABC1D23' }),
     )
-    expect(screen.getByLabelText('Placa *')).toHaveValue('ABC1D23')
-    await userEvent.type(screen.getByLabelText('Nome do cliente'), 'Rui')
-
+    const sheet = screen.getByRole('dialog', { name: 'Novo cliente' })
+    expect(within(sheet).getByLabelText('Placa')).toHaveValue('ABC1D23')
+    await userEvent.type(within(sheet).getByLabelText('Nome'), 'Rui')
     await userEvent.click(
-      screen.getByRole('radio', { name: /Lavagem Completa/ }),
+      within(sheet).getByRole('button', { name: 'Salvar cliente' }),
     )
+
     await userEvent.click(
       await screen.findByRole('radio', { name: '10h, 2 vagas' }),
     )
     expect(screen.getByRole('radio', { name: '11h, Lotado' })).toBeDisabled()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Adicionar produto ou serviço' }),
+    )
+    await userEvent.click(
+      within(
+        screen.getByRole('dialog', { name: 'Selecione o produto ou serviço' }),
+      ).getByRole('button', { name: /Lavagem Completa/ }),
+    )
+    expect(screen.getByText(/^Total R\$\s60,00$/)).toBeInTheDocument()
 
     await userEvent.click(
       screen.getByRole('button', { name: /Confirmar agendamento/ }),
@@ -96,19 +121,18 @@ describe('EntryScreen (schedule)', () => {
     expect(await screen.findByText('agenda')).toBeInTheDocument()
   })
 
-  it('keeps the button disabled until vehicle, service and time are chosen', () => {
-    const { data } = makeManager()
-    render(
-      <ManagerContext.Provider value={data}>
-        <MemoryRouter>
-          <EntryScreen mode="schedule" />
-        </MemoryRouter>
-      </ManagerContext.Provider>,
+  it('explains what is missing instead of submitting', async () => {
+    const { data, operations } = makeManager()
+    renderEntry('entry', data)
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Registrar entrada/ }),
     )
 
     expect(
-      screen.getByRole('button', { name: /Confirmar agendamento/ }),
-    ).toBeDisabled()
+      screen.getByText('Busque o cliente ou adicione um novo cliente.'),
+    ).toBeInTheDocument()
+    expect(operations.registerEntry).not.toHaveBeenCalled()
   })
 })
 
