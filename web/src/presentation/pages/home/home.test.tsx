@@ -11,39 +11,55 @@ const renderHome = (loadHealthStatus: LoadHealthStatus) =>
     </MemoryRouter>,
   )
 
-const makeLoadHealthStatus = (): LoadHealthStatus => ({
+const healthy = (): LoadHealthStatus => ({
   load: vi.fn().mockResolvedValue({ status: 'ok', service: 'washflow' }),
 })
 
-const profiles: Array<[label: string, slug: string]> = [
+const roles: Array<[label: string, slug: string]> = [
   ['Cliente', 'cliente'],
   ['Lavador', 'lavador'],
   ['Gerente', 'gerente'],
 ]
 
-describe('Home', () => {
-  it('renders the Washflow heading', () => {
-    renderHome(makeLoadHealthStatus())
+describe('Home (role cards)', () => {
+  it('renders the brand and the slogan', () => {
+    renderHome(healthy())
 
     expect(
       screen.getByRole('heading', { name: 'Washflow', level: 1 }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByText('Tudo em ordem. Seu veículo, também.'),
+    ).toBeInTheDocument()
   })
 
-  it.each(profiles)(
-    'renders a QR code link and a direct login link for %s',
+  it.each(roles)(
+    'keeps both actions inside the %s card, login first',
     (label, slug) => {
-      renderHome(makeLoadHealthStatus())
+      renderHome(healthy())
 
-      expect(
-        screen.getByRole('heading', { name: label, level: 2 }),
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('link', { name: `Ver QR Code de ${label}` }),
-      ).toHaveAttribute('href', `/qrcodes/${slug}`)
-      expect(
-        screen.getByRole('link', { name: `Entrar como ${label}` }),
-      ).toHaveAttribute('href', `/login/${slug}`)
+      const card = screen
+        .getByRole('heading', { name: label, level: 2 })
+        .closest('li') as HTMLElement
+      const links = card.querySelectorAll('a')
+      expect(links[0]).toHaveAccessibleName(`Entrar como ${label}`)
+      expect(links[0]).toHaveAttribute('href', `/login/${slug}`)
+      expect(links[0]).toHaveClass('role-btn-primary')
+      expect(links[1]).toHaveAccessibleName(`Ver QR Code de ${label}`)
+      expect(links[1]).toHaveAttribute('href', `/qrcodes/${slug}`)
+      expect(links[1]).toHaveClass('role-btn-secondary')
     },
   )
+
+  it('shows the system as online when the health check passes', async () => {
+    renderHome(healthy())
+
+    expect(await screen.findByText('Sistema online')).toBeInTheDocument()
+  })
+
+  it('shows the system as offline when the health check fails', async () => {
+    renderHome({ load: vi.fn().mockRejectedValue(new Error('down')) })
+
+    expect(await screen.findByText('Sistema offline')).toBeInTheDocument()
+  })
 })

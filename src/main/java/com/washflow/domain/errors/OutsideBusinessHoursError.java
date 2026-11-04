@@ -15,9 +15,16 @@ public class OutsideBusinessHoursError extends Exception {
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   public OutsideBusinessHoursError(Instant scheduledAt) {
+    this(scheduledAt, 8, 18, false);
+  }
+
+  public OutsideBusinessHoursError(
+      Instant scheduledAt, int openingHour, int closingHour, boolean openOnSunday) {
     super(
         "Scheduled time "
             + LOCAL_TIME.format(scheduledAt.atZone(STORE_ZONE))
-            + " Manaus time is outside business hours (Monday-Saturday, 08:00-18:00)");
+            + " Manaus time is outside business hours ("
+            + (openOnSunday ? "every day" : "Monday-Saturday")
+            + String.format(", %02d:00-%02d:00)", openingHour, closingHour));
   }
 }

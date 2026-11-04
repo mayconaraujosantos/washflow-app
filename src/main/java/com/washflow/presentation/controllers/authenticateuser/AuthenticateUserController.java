@@ -44,6 +44,9 @@ public class AuthenticateUserController implements Controller {
       String phone = (String) request.body().get("phone");
       String name = (String) request.body().get("name");
       String password = (String) request.body().get("password");
+      // Managers may log in with e-mail instead of phone (see
+      // AuthenticateManagerControllerFactory).
+      String email = profile == UserProfile.MANAGER ? (String) request.body().get("email") : null;
 
       if (password.length() < 8) {
         return HttpHelper.badRequest(
@@ -51,9 +54,11 @@ public class AuthenticateUserController implements Controller {
       }
       var user =
           authenticateUser.authenticate(
-              new AuthenticateUser.Params(phone, name, password, profile));
+              new AuthenticateUser.Params(phone, name, password, profile, email));
 
       return HttpHelper.ok(user);
+    } catch (IllegalArgumentException e) {
+      return HttpHelper.badRequest(e);
     } catch (InvalidCredentialsError e) {
       return HttpHelper.unauthorized(e);
     } catch (UserProfileMismatchError e) {

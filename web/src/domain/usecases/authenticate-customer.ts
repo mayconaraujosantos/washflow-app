@@ -9,7 +9,8 @@ export interface AuthenticateCustomer {
 export namespace AuthenticateCustomer {
   export type Params = {
     phone: string
-    name: string
+    // Only needed to create the account; returning customers sign in without it.
+    name?: string
     password: string
   }
 

@@ -1,0 +1,72 @@
+package com.washflow.data.usecases.scheduleserviceorder;
+
+import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
+import com.washflow.domain.errors.InsufficientLeadTimeError;
+import com.washflow.domain.errors.OutsideBusinessHoursError;
+import com.washflow.domain.errors.SlotFullyBookedError;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.function.Supplier;
+
+/**
+ * The scheduling rules from {@code docs/feature.spec.md} 1.4, shared by customer self-scheduling
+ * ({@link DbScheduleServiceOrder}) and the manager's entry form ({@code DbRegisterVehicleEntry}).
+ * Business hours and slot boundaries follow the shop's local civil time, not the server timezone.
+ */
+public final class SchedulingRules {
+
+  public static final ZoneId STORE_ZONE = ZoneId.of("America/Manaus");
+
+  /** Opening hours and capacity; read on every check so settings changes apply at once. */
+  public record Hours(
+      int openingHour, int closingHour, boolean openOnSunday, int maxVehiclesPerHour) {}
+
+  private final CountServiceOrdersScheduledInRangeRepository countRepository;
+  private final Supplier<Hours> hours;
+
+  /** Fixed Monday-Saturday 08:00-18:00 schedule (tests and the pre-settings default). */
+  public SchedulingRules(
+      CountServiceOrdersScheduledInRangeRepository countRepository, int maxVehiclesPerHour) {
+    this(countRepository, () -> new Hours(8, 18, false, maxVehiclesPerHour));
+  }
+
+  public SchedulingRules(
+      CountServiceOrdersScheduledInRangeRepository countRepository, Supplier<Hours> hours) {
+    this.countRepository = countRepository;
+    this.hours = hours;
+  }
+
+  /** Inside the establishment's opening hours, shop time; Sundays only when it opens. */
+  public void checkBusinessHours(Instant scheduledAt) throws OutsideBusinessHoursError {
+    Hours current = hours.get();
+    ZonedDateTime local = scheduledAt.atZone(STORE_ZONE);
+    int hour = local.getHour();
+    if ((DayOfWeek.SUNDAY.equals(local.getDayOfWeek()) && !current.openOnSunday())
+        || hour < current.openingHour()
+        || hour >= current.closingHour()) {
+      throw new OutsideBusinessHoursError(
+          scheduledAt, current.openingHour(), current.closingHour(), current.openOnSunday());
+    }
+  }
+
+  public void checkLeadTime(Instant scheduledAt, Instant now, Duration minLeadTime)
+      throws InsufficientLeadTimeError {
+    if (scheduledAt.isBefore(now.plus(minLeadTime))) {
+      throw new InsufficientLeadTimeError(scheduledAt, minLeadTime);
+    }
+  }
+
+  /** At most {@code maxVehiclesPerHour} orders scheduled within the same shop-local hour. */
+  public void checkCapacity(Instant scheduledAt) throws SlotFullyBookedError {
+    int maxVehiclesPerHour = hours.get().maxVehiclesPerHour();
+    Instant slotStart = scheduledAt.atZone(STORE_ZONE).truncatedTo(ChronoUnit.HOURS).toInstant();
+    Instant slotEnd = slotStart.plus(1, ChronoUnit.HOURS);
+    if (countRepository.countScheduledBetween(slotStart, slotEnd) >= maxVehiclesPerHour) {
+      throw new SlotFullyBookedError(scheduledAt, maxVehiclesPerHour);
+    }
+  }
+}

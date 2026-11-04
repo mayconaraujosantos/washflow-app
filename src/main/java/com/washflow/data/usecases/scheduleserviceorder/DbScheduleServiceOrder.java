@@ -13,12 +13,8 @@ import com.washflow.domain.errors.SlotFullyBookedError;
 import com.washflow.domain.errors.VehicleNotFoundError;
 import com.washflow.domain.usecases.ScheduleServiceOrder;
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 /**
@@ -26,25 +22,20 @@ import java.util.UUID;
  * concrete. Swapping the persistence library later (Hibernate, jOOQ, whatever) means writing new
  * {@code infra.db.*} implementations of those same ports; this class doesn't change.
  *
- * <p>Enforces the MVP rules from {@code docs/feature.spec.md} 1.4: business hours, minimum lead
- * time, and per-hour capacity. {@code clock} is injected (not {@link Instant#now()} directly) so
- * "now" is deterministic in tests - see {@code DbScheduleServiceOrderTest}.
+ * <p>Enforces the MVP rules from {@code docs/feature.spec.md} 1.4 through {@link SchedulingRules}:
+ * business hours, minimum lead time, and per-hour capacity. {@code clock} is injected (not {@link
+ * Instant#now()} directly) so "now" is deterministic in tests - see {@code
+ * DbScheduleServiceOrderTest}.
  */
 public class DbScheduleServiceOrder implements ScheduleServiceOrder {
 
-  // Business hours and slot boundaries follow the shop's local civil time, not the server timezone.
-  private static final ZoneId STORE_ZONE = ZoneId.of("America/Manaus");
-  private static final int OPENING_HOUR = 8;
-  private static final int CLOSING_HOUR = 18;
   private static final Duration MIN_LEAD_TIME = Duration.ofMinutes(30);
 
   private final LoadVehicleByIdRepository loadVehicleByIdRepository;
   private final LoadServicePriceByIdRepository loadServicePriceByIdRepository;
-  private final CountServiceOrdersScheduledInRangeRepository
-      countServiceOrdersScheduledInRangeRepository;
   private final CreateServiceOrderRepository createServiceOrderRepository;
   private final Clock clock;
-  private final int maxVehiclesPerHour;
+  private final SchedulingRules rules;
 
   public DbScheduleServiceOrder(
       LoadVehicleByIdRepository loadVehicleByIdRepository,
@@ -55,11 +46,25 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
       int maxVehiclesPerHour) {
     this.loadVehicleByIdRepository = loadVehicleByIdRepository;
     this.loadServicePriceByIdRepository = loadServicePriceByIdRepository;
-    this.countServiceOrdersScheduledInRangeRepository =
-        countServiceOrdersScheduledInRangeRepository;
     this.createServiceOrderRepository = createServiceOrderRepository;
     this.clock = clock;
-    this.maxVehiclesPerHour = maxVehiclesPerHour;
+    this.rules =
+        new SchedulingRules(countServiceOrdersScheduledInRangeRepository, maxVehiclesPerHour);
+  }
+
+  /** Hours and capacity from the establishment settings (see SchedulingRules.Hours). */
+  public DbScheduleServiceOrder(
+      LoadVehicleByIdRepository loadVehicleByIdRepository,
+      LoadServicePriceByIdRepository loadServicePriceByIdRepository,
+      CountServiceOrdersScheduledInRangeRepository countServiceOrdersScheduledInRangeRepository,
+      CreateServiceOrderRepository createServiceOrderRepository,
+      Clock clock,
+      java.util.function.Supplier<SchedulingRules.Hours> hours) {
+    this.loadVehicleByIdRepository = loadVehicleByIdRepository;
+    this.loadServicePriceByIdRepository = loadServicePriceByIdRepository;
+    this.createServiceOrderRepository = createServiceOrderRepository;
+    this.clock = clock;
+    this.rules = new SchedulingRules(countServiceOrdersScheduledInRangeRepository, hours);
   }
 
   @Override
@@ -69,9 +74,9 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
           OutsideBusinessHoursError,
           InsufficientLeadTimeError,
           SlotFullyBookedError {
-    ZonedDateTime scheduledLocal = params.scheduledAt().atZone(STORE_ZONE);
-    checkBusinessHours(params.scheduledAt(), scheduledLocal);
-    checkLeadTime(params.scheduledAt());
+    Instant now = Instant.now(clock);
+    rules.checkBusinessHours(params.scheduledAt());
+    rules.checkLeadTime(params.scheduledAt(), now, MIN_LEAD_TIME);
 
     loadVehicleByIdRepository
         .loadById(params.vehicleId())
@@ -81,9 +86,8 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
         .loadById(params.servicePriceId())
         .orElseThrow(() -> new ServicePriceNotFoundError(params.servicePriceId()));
 
-    checkCapacity(params.scheduledAt(), scheduledLocal);
+    rules.checkCapacity(params.scheduledAt());
 
-    Instant now = Instant.now(clock);
     ServiceOrder newServiceOrder =
         new ServiceOrder(
             UUID.randomUUID(),
@@ -96,33 +100,5 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
             now);
 
     return createServiceOrderRepository.create(newServiceOrder);
-  }
-
-  private void checkBusinessHours(Instant scheduledAt, ZonedDateTime scheduledLocal)
-      throws OutsideBusinessHoursError {
-    int hour = scheduledLocal.getHour();
-    if (DayOfWeek.SUNDAY.equals(scheduledLocal.getDayOfWeek())
-        || hour < OPENING_HOUR
-        || hour >= CLOSING_HOUR) {
-      throw new OutsideBusinessHoursError(scheduledAt);
-    }
-  }
-
-  private void checkLeadTime(Instant scheduledAt) throws InsufficientLeadTimeError {
-    if (scheduledAt.isBefore(Instant.now(clock).plus(MIN_LEAD_TIME))) {
-      throw new InsufficientLeadTimeError(scheduledAt, MIN_LEAD_TIME);
-    }
-  }
-
-  private void checkCapacity(Instant scheduledAt, ZonedDateTime scheduledLocal)
-      throws SlotFullyBookedError {
-    Instant slotStart = scheduledLocal.truncatedTo(ChronoUnit.HOURS).toInstant();
-    Instant slotEnd = slotStart.plus(1, ChronoUnit.HOURS);
-
-    int bookedCount =
-        countServiceOrdersScheduledInRangeRepository.countScheduledBetween(slotStart, slotEnd);
-    if (bookedCount >= maxVehiclesPerHour) {
-      throw new SlotFullyBookedError(scheduledAt, maxVehiclesPerHour);
-    }
   }
 }

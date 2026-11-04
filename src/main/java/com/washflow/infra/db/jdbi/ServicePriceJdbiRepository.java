@@ -1,8 +1,10 @@
 package com.washflow.infra.db.jdbi;
 
+import com.washflow.data.protocols.db.CreateServicePriceRepository;
 import com.washflow.data.protocols.db.LoadAllServicePricesRepository;
 import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
 import com.washflow.domain.entities.ServicePrice;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -11,7 +13,9 @@ import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.StatementContext;
 
 public class ServicePriceJdbiRepository
-    implements LoadServicePriceByIdRepository, LoadAllServicePricesRepository {
+    implements LoadServicePriceByIdRepository,
+        LoadAllServicePricesRepository,
+        CreateServicePriceRepository {
 
   private static final String SELECT_SQL =
       "SELECT id, nome, preco, comissao_lavador FROM servicos_preco";
@@ -37,6 +41,25 @@ public class ServicePriceJdbiRepository
   public List<ServicePrice> loadAll() {
     return jdbi.withHandle(
         handle -> handle.createQuery(SELECT_SQL + " ORDER BY nome").map(this::mapRow).list());
+  }
+
+  @Override
+  public ServicePrice create(String name, BigDecimal price, BigDecimal washerCommission) {
+    return jdbi.withHandle(
+        handle -> {
+          int id =
+              handle
+                  .createUpdate(
+                      "INSERT INTO servicos_preco (nome, preco, comissao_lavador)"
+                          + " VALUES (:name, :price, :commission)")
+                  .bind("name", name)
+                  .bind("price", price)
+                  .bind("commission", washerCommission)
+                  .executeAndReturnGeneratedKeys("id")
+                  .mapTo(Integer.class)
+                  .one();
+          return new ServicePrice(id, name, price, washerCommission);
+        });
   }
 
   private ServicePrice mapRow(ResultSet rs, StatementContext ctx) throws SQLException {

@@ -1,8 +1,10 @@
 package com.washflow.application.routes;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
+import com.washflow.application.factories.controllers.CreateServicePriceControllerFactory;
 import com.washflow.application.factories.controllers.ListServicePricesControllerFactory;
 import com.washflow.domain.entities.ServicePrice;
 import io.javalin.openapi.HttpMethod;
@@ -20,6 +22,20 @@ public final class ServicePriceRoutes {
   /** Called from inside {@code config.routes.apiBuilder(...)} in Application. */
   public static void register(Jdbi jdbi) {
     registerList(jdbi);
+    registerCreate(jdbi);
+  }
+
+  @OpenApi(
+      path = BASE_PATH,
+      methods = HttpMethod.POST,
+      summary = "Add a product or service to the catalog (manager)",
+      tags = {"Services"},
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = ServicePrice.class)),
+        @OpenApiResponse(status = "400", description = "Invalid name, price or commission")
+      })
+  private static void registerCreate(Jdbi jdbi) {
+    post(BASE_PATH, JavalinRouteAdapter.adapt(CreateServicePriceControllerFactory.make(jdbi)));
   }
 
   @OpenApi(

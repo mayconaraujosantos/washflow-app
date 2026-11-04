@@ -23,6 +23,9 @@ type Props = Readonly<{
   setBusyUserId: (id: string | null) => void
   setNotice: (msg: string | null) => void
   setError: (msg: string | null) => void
+  onChanged?: () => void
+  // Badge (PIN + QR) for washers; called after creating one, too.
+  onIssueBadge?: (washer: UserModel) => void
 }>
 
 export function TeamManagementSection({
@@ -35,9 +38,13 @@ export function TeamManagementSection({
   setBusyUserId,
   setNotice,
   setError,
+  onChanged,
+  onIssueBadge,
 }: Props) {
   const navigate = useNavigate()
-  const [selectedProfiles, setSelectedProfiles] = useState<Record<string, UserProfile>>({})
+  const [selectedProfiles, setSelectedProfiles] = useState<
+    Record<string, UserProfile>
+  >({})
   const [washerName, setWasherName] = useState('')
   const [washerPhone, setWasherPhone] = useState('')
   const [washerPassword, setWasherPassword] = useState('')
@@ -49,21 +56,26 @@ export function TeamManagementSection({
     setError(null)
     setNotice(null)
     try {
-      await operations.createWasher({
+      const created = await operations.createWasher({
         name: washerName.trim(),
-        phone: washerPhone.trim(),
+        phone: washerPhone.replace(/\D/g, ''),
         password: washerPassword,
       })
-      // Users will be refreshed by the parent component
+      onChanged?.()
+      onIssueBadge?.(created)
       setWasherName('')
       setWasherPhone('')
       setWasherPassword('')
       setNotice(
-        'Conta de lavador criada. Entregue a senha inicial diretamente ao colaborador.',
+        washerPassword
+          ? 'Conta de lavador criada. Entregue a senha e o crachá diretamente ao colaborador.'
+          : 'Conta de lavador criada. Entregue o crachá (PIN e QR) diretamente ao colaborador.',
       )
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Não foi possível cadastrar o lavador',
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível cadastrar o lavador',
       )
     } finally {
       setCreatingWasher(false)
@@ -78,7 +90,7 @@ export function TeamManagementSection({
     setNotice(null)
     try {
       await operations.updateUserProfile(target.id, currentUser.id, newProfile)
-      // Users will be refreshed by the parent component
+      onChanged?.()
       setSelectedProfiles((current) => {
         const next = { ...current }
         delete next[target.id]
@@ -92,10 +104,14 @@ export function TeamManagementSection({
         )
         return
       }
-      setNotice(`Perfil de ${target.name} alterado para ${USER_PROFILE_LABELS[newProfile]}.`)
+      setNotice(
+        `Perfil de ${target.name} alterado para ${USER_PROFILE_LABELS[newProfile]}.`,
+      )
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Não foi possível alterar o perfil',
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível alterar o perfil',
       )
     } finally {
       setBusyUserId(null)
@@ -113,13 +129,17 @@ export function TeamManagementSection({
         navigate('/', { replace: true })
         return
       }
-      // Users will be refreshed by the parent component
+      onChanged?.()
       setNotice(
-        target.active ? `Acesso de ${target.name} desativado.` : `Acesso de ${target.name} reativado.`,
+        target.active
+          ? `Acesso de ${target.name} desativado.`
+          : `Acesso de ${target.name} reativado.`,
       )
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : 'Não foi possível atualizar o acesso',
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível atualizar o acesso',
       )
     } finally {
       setBusyUserId(null)
@@ -143,7 +163,10 @@ export function TeamManagementSection({
         <span className="team-count">{users.length} contas</span>
       </div>
 
-      <form className="washer-create-form" onSubmit={(event) => void createWasher(event)}>
+      <form
+        className="washer-create-form"
+        onSubmit={(event) => void createWasher(event)}
+      >
         <label>
           Nome
           <input
@@ -166,14 +189,13 @@ export function TeamManagementSection({
           />
         </label>
         <label>
-          Senha inicial
+          Senha (opcional — o crachá basta)
           <input
             autoComplete="new-password"
             minLength={8}
             type="password"
             value={washerPassword}
             onChange={(event) => setWasherPassword(event.target.value)}
-            required
           />
         </label>
         <button className="primary-btn" disabled={creatingWasher}>
@@ -194,7 +216,10 @@ export function TeamManagementSection({
       ) : (
         <ul className="team-list">
           {users.map((account) => (
-            <li key={account.id} className={!account.active ? 'account-inactive' : ''}>
+            <li
+              key={account.id}
+              className={!account.active ? 'account-inactive' : ''}
+            >
               <div className="team-user">
                 <span className="team-avatar">
                   <UiIcon
@@ -211,11 +236,40 @@ export function TeamManagementSection({
                 <div>
                   <strong>{account.name}</strong>
                   <span>{account.phone}</span>
+                  {account.email && <span>{account.email}</span>}
                 </div>
               </div>
-              <span className={`account-status ${account.active ? 'is-active' : 'is-inactive'}`}>
+              <span
+                className={`account-status ${account.active ? 'is-active' : 'is-inactive'}`}
+              >
                 {account.active ? 'Ativo' : 'Acesso desativado'}
               </span>
+              {account.profile === 'MANAGER' && (
+                <EmailEditor
+                  account={account}
+                  operations={operations}
+                  onSaved={(saved) => {
+                    setNotice(
+                      saved.email
+                        ? `${saved.name} agora entra com ${saved.email}.`
+                        : `E-mail de ${saved.name} removido.`,
+                    )
+                    onChanged?.()
+                  }}
+                  onError={setError}
+                />
+              )}
+              {account.profile === 'WASHER' &&
+                account.active &&
+                onIssueBadge && (
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => onIssueBadge(account)}
+                  >
+                    Gerar crachá (PIN e QR)
+                  </button>
+                )}
               <div className="team-controls">
                 <label>
                   Perfil
@@ -241,7 +295,8 @@ export function TeamManagementSection({
                   disabled={
                     busyUserId === account.id ||
                     !account.active ||
-                    (selectedProfiles[account.id] ?? account.profile) === account.profile
+                    (selectedProfiles[account.id] ?? account.profile) ===
+                      account.profile
                   }
                   onClick={() => void changeUserProfile(account)}
                 >
@@ -264,5 +319,59 @@ export function TeamManagementSection({
         </ul>
       )}
     </section>
+  )
+}
+
+function EmailEditor({
+  account,
+  operations,
+  onSaved,
+  onError,
+}: Readonly<{
+  account: UserModel
+  operations: Operations
+  onSaved: (account: UserModel) => void
+  onError: (message: string | null) => void
+}>) {
+  const [email, setEmail] = useState(account.email ?? '')
+  const [saving, setSaving] = useState(false)
+  const unchanged = email.trim().toLowerCase() === (account.email ?? '')
+
+  const save = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSaving(true)
+    onError(null)
+    try {
+      onSaved(
+        await operations.updateUserEmail(account.id, email.trim() || null),
+      )
+    } catch (cause) {
+      onError(
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível salvar o e-mail',
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="team-controls" onSubmit={(event) => void save(event)}>
+      <label>
+        E-mail de acesso
+        <input
+          className="input"
+          type="email"
+          aria-label={`E-mail de acesso de ${account.name}`}
+          value={email}
+          maxLength={254}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+      </label>
+      <button className="secondary-btn" disabled={saving || unchanged}>
+        {saving ? 'Salvando...' : 'Salvar e-mail'}
+      </button>
+    </form>
   )
 }

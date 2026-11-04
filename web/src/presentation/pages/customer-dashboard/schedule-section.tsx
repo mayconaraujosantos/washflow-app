@@ -1,16 +1,20 @@
 import { SubmitEvent, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ScheduleServiceOrder } from '@/domain/usecases/schedule-service-order'
 import { ServiceOrderModel } from '@/domain/models/service-order-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { VehicleModel } from '@/domain/models/vehicle-model'
 import { toManausInstant } from '@/main/config/business-time'
 import { UiIcon } from '@/presentation/components/ui-icon'
+import { EmptyState, Notice } from '@/presentation/components/ui/blocks'
+import { errorMessage, formatMoney } from '@/presentation/helpers/format'
 
 type Props = Readonly<{
   vehicles: VehicleModel[]
   servicePrices: ServicePriceModel[]
   scheduleServiceOrder: ScheduleServiceOrder
   onScheduled: (serviceOrder: ServiceOrderModel) => void
+  businessHours?: string
 }>
 
 export function ScheduleSection({
@@ -18,6 +22,7 @@ export function ScheduleSection({
   servicePrices,
   scheduleServiceOrder,
   onScheduled,
+  businessHours = 'seg. a sáb., 08h às 18h',
 }: Props) {
   const [vehicleId, setVehicleId] = useState('')
   const [servicePriceId, setServicePriceId] = useState('')
@@ -31,7 +36,6 @@ export function ScheduleSection({
     setError(null)
     setSuccess(null)
     setLoading(true)
-
     try {
       const serviceOrder = await scheduleServiceOrder.schedule({
         vehicleId,
@@ -41,82 +45,87 @@ export function ScheduleSection({
       onScheduled(serviceOrder)
       setSuccess('Lavagem agendada com sucesso!')
       setScheduledAt('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao agendar')
+    } catch (cause) {
+      setError(errorMessage(cause, 'Erro ao agendar'))
     } finally {
       setLoading(false)
     }
   }
 
+  if (vehicles.length === 0) {
+    return (
+      <EmptyState
+        icon="car"
+        title="Cadastre um veículo antes de agendar."
+        description={
+          <Link to="/cliente/veiculos" className="btn btn-accent">
+            Cadastrar veículo
+          </Link>
+        }
+      />
+    )
+  }
+
   return (
-    <section className="dashboard-section">
-      <h2 className="section-title">
-        <span className="section-icon">
-          <UiIcon name="calendar" />
-        </span>
-        Agendar lavagem
-      </h2>
+    <form className="form" onSubmit={handleSubmit}>
+      <label className="field">
+        <span>Veículo</span>
+        <select
+          value={vehicleId}
+          onChange={(event) => setVehicleId(event.target.value)}
+          required
+        >
+          <option value="" disabled>
+            Selecione...
+          </option>
+          {vehicles.map((vehicle) => (
+            <option key={vehicle.id} value={vehicle.id}>
+              {vehicle.plate}
+              {vehicle.model ? ` · ${vehicle.model}` : ''}
+            </option>
+          ))}
+        </select>
+      </label>
 
-      {vehicles.length === 0 ? (
-        <p className="empty-state">Cadastre um veículo antes de agendar.</p>
-      ) : (
-        <form className="stacked-form" onSubmit={handleSubmit}>
-          <label>
-            <span>Veículo</span>
-            <select
-              value={vehicleId}
-              onChange={(event) => setVehicleId(event.target.value)}
-              required
-            >
-              <option value="" disabled>
-                Selecione...
-              </option>
-              {vehicles.map((vehicle) => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.plate}
-                  {vehicle.model ? ` · ${vehicle.model}` : ''}
-                </option>
-              ))}
-            </select>
-          </label>
+      <label className="field">
+        <span>Serviço</span>
+        <select
+          value={servicePriceId}
+          onChange={(event) => setServicePriceId(event.target.value)}
+          required
+        >
+          <option value="" disabled>
+            Selecione...
+          </option>
+          {servicePrices.map((servicePrice) => (
+            <option key={servicePrice.id} value={servicePrice.id}>
+              {servicePrice.name} · {formatMoney(servicePrice.price)}
+            </option>
+          ))}
+        </select>
+      </label>
 
-          <label>
-            <span>Serviço</span>
-            <select
-              value={servicePriceId}
-              onChange={(event) => setServicePriceId(event.target.value)}
-              required
-            >
-              <option value="" disabled>
-                Selecione...
-              </option>
-              {servicePrices.map((servicePrice) => (
-                <option key={servicePrice.id} value={servicePrice.id}>
-                  {servicePrice.name} · R$ {servicePrice.price.toFixed(2)}
-                </option>
-              ))}
-            </select>
-          </label>
+      <label className="field">
+        <span>Data e horário (Manaus · {businessHours})</span>
+        <input
+          type="datetime-local"
+          value={scheduledAt}
+          onChange={(event) => setScheduledAt(event.target.value)}
+          required
+        />
+      </label>
 
-          <label>
-            <span>Data e horário (Manaus)</span>
-            <input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(event) => setScheduledAt(event.target.value)}
-              required
-            />
-          </label>
+      <Notice tone="error">{error}</Notice>
+      <Notice tone="success">{success}</Notice>
 
-          {error && <p className="error-message">{error}</p>}
-          {success && <p className="success-message">{success}</p>}
-
-          <button type="submit" className="primary-btn" disabled={loading}>
-            <UiIcon name="calendar" size={17} />
-            {loading ? 'Agendando...' : 'Agendar'}
-          </button>
-        </form>
-      )}
-    </section>
+      <button
+        type="submit"
+        className="btn btn-accent btn-block"
+        disabled={loading}
+      >
+        <UiIcon name="calendar" size={18} />
+        {loading ? 'Agendando...' : 'Agendar'}
+      </button>
+    </form>
   )
 }

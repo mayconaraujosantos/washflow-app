@@ -1,6 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react'
 import { getReachableOrigin } from '@/main/config/reachable-origin'
-import './manager-qr-code.css'
 
 // Meant to be displayed on a screen or printed at the shop counter, not
 // something a manager opens on their own phone from a link elsewhere.

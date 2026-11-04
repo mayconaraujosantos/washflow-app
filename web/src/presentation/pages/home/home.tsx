@@ -1,118 +1,138 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import type { Establishment } from '@/domain/usecases/establishment'
 import { LoadHealthStatus } from '@/domain/usecases/load-health-status'
 import { UiIcon, type UiIconName } from '@/presentation/components/ui-icon'
-import './home.css'
+import { BrandLogo } from '@/presentation/components/ui/app-chrome'
 
-type Props = {
+type Props = Readonly<{
   loadHealthStatus: LoadHealthStatus
-}
+  // Optional so the page still renders where setup status is not wired (tests).
+  establishment?: Establishment
+}>
 
-// One QR code and one direct login link per perfil (usuarios.perfil in
-// CLAUDE.md) - a QR code is meant for the shop's own screen/counter, the
-// login link for anyone who already knows the URL (e.g. bookmarked on a
-// staff phone) and doesn't want to scan anything.
-const PROFILES: {
+type Role = {
   slug: string
   label: string
   description: string
   icon: UiIconName
-}[] = [
+}
+
+// One card per perfil (usuarios.perfil in CLAUDE.md). "Entrar" is the main
+// action; the QR code is a shortcut meant for the shop's counter screen.
+const ROLES: Role[] = [
   {
     slug: 'cliente',
     label: 'Cliente',
-    description: 'Agende e acompanhe seu veículo.',
+    description: 'Agende e acompanhe a lavagem do seu veículo.',
     icon: 'car',
   },
   {
     slug: 'lavador',
     label: 'Lavador',
-    description: 'Acesse sua fila e suas lavagens.',
+    description: 'Veja a fila do pátio e conduza suas lavagens.',
     icon: 'washer',
   },
   {
     slug: 'gerente',
     label: 'Gerente',
-    description: 'Gerencie o pátio e os atendimentos.',
+    description: 'Entradas, pátio, agenda, vendas e caixa.',
     icon: 'manager',
   },
-] as const
+]
 
-export function Home({ loadHealthStatus }: Props) {
-  const [status, setStatus] = useState('checking...')
+type Health = 'checking' | 'online' | 'offline'
+
+const HEALTH_LABELS: Record<Health, string> = {
+  checking: 'Verificando',
+  online: 'Online',
+  offline: 'Offline',
+}
+
+/** Profile choice: each role card carries its own actions (single-step access). */
+export function Home({ loadHealthStatus, establishment }: Props) {
+  const navigate = useNavigate()
+  const [health, setHealth] = useState<Health>('checking')
+  const [shopName, setShopName] = useState<string | null>(null)
+
+  // A fresh install has no establishment yet: send the owner to the setup wizard.
+  useEffect(() => {
+    if (!establishment) return
+    let active = true
+    establishment
+      .setupStatus()
+      .then((status) => {
+        if (!active) return
+        if (status.configured) setShopName(status.establishmentName)
+        else navigate('/configurar', { replace: true })
+      })
+      .catch(() => {
+        // Offline/health issues are already shown by the status chip.
+      })
+    return () => {
+      active = false
+    }
+  }, [establishment, navigate])
 
   useEffect(() => {
+    let active = true
     loadHealthStatus
       .load()
-      .then((result) => setStatus(result.status))
-      .catch(() => setStatus('offline'))
+      .then((result) => {
+        if (active) setHealth(result.status === 'ok' ? 'online' : 'offline')
+      })
+      .catch(() => {
+        if (active) setHealth('offline')
+      })
+    return () => {
+      active = false
+    }
   }, [loadHealthStatus])
 
   return (
-    <main className="app-shell">
-      <section className="card">
-        <div className="home-brand">
-          <span className="home-brand-mark">
-            <UiIcon name="sparkles" size={25} />
-          </span>
-          <div>
-            <span className="badge">Gestão inteligente de lavagem</span>
-            <h1>Washflow</h1>
-          </div>
-        </div>
-        <p className="subtitle">Tudo em ordem. Seu veículo, também.</p>
-        <p className="home-instructions">
-          Escolha seu perfil para continuar ou abrir o QR Code de acesso.
-        </p>
+    <main className="role-screen">
+      <header className="role-header">
+        <h1 className="auth-brand">
+          <BrandLogo size="lg" />
+        </h1>
+        {shopName && <p className="role-shop">{shopName}</p>}
+        <p className="role-slogan">Tudo em ordem. Seu veículo, também.</p>
+        <span className={`status-chip is-${health}`} role="status">
+          <span className="status-chip-dot" aria-hidden="true" />
+          Sistema {HEALTH_LABELS[health].toLowerCase()}
+        </span>
+      </header>
 
-        <div className="status-row">
-          <span
-            className={`status-dot${status === 'offline' ? ' status-dot-offline' : ''}`}
-            aria-hidden="true"
-          />
-          <span>
-            {status === 'checking...' ? 'Verificando sistema' : status}
-          </span>
-        </div>
-
-        <div className="profile-grid">
-          {PROFILES.map(({ slug, label, description, icon }) => (
-            <article className="profile-card" key={slug}>
-              <span className="profile-icon">
-                <UiIcon name={icon} size={22} />
-              </span>
+      <ul className="role-list" aria-label="Escolha seu perfil">
+        {ROLES.map(({ slug, label, description, icon }) => (
+          <li key={slug} className="role-card">
+            <span className="role-icon" aria-hidden="true">
+              <UiIcon name={icon} size={26} />
+            </span>
+            <div className="role-text">
               <h2>{label}</h2>
               <p>{description}</p>
-              <div className="profile-actions">
-                <Link
-                  to={`/qrcodes/${slug}`}
-                  className="profile-link-primary"
-                  aria-label={`Ver QR Code de ${label}`}
-                >
-                  <UiIcon name="calendar" size={16} />
-                  QR Code
-                </Link>
-                <Link
-                  to={`/login/${slug}`}
-                  className="profile-link-secondary"
-                  aria-label={`Entrar como ${label}`}
-                >
-                  Entrar
-                  <span aria-hidden="true">→</span>
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <div className="actions">
-          <span className="home-footer-note">Acesso seguro por perfil</span>
-          <div className="home-footer-links">
-            <a href="/api/health">Health check</a>
-            <a href="/api/hello">API hello</a>
-          </div>
-        </div>
-      </section>
+            </div>
+            <div className="role-actions">
+              <Link
+                to={`/login/${slug}`}
+                className="role-btn role-btn-primary"
+                aria-label={`Entrar como ${label}`}
+              >
+                Entrar
+              </Link>
+              <Link
+                to={`/qrcodes/${slug}`}
+                className="role-btn role-btn-secondary"
+                aria-label={`Ver QR Code de ${label}`}
+              >
+                <UiIcon name="qr" size={18} />
+                QR Code
+              </Link>
+            </div>
+          </li>
+        ))}
+      </ul>
     </main>
   )
 }

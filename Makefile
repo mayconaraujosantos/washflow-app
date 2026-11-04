@@ -148,8 +148,11 @@ coverage: test
 	@echo "HTML report: build/reports/jacoco/test/html/index.html"
 
 ## Needs a SonarCloud token: export SONAR_TOKEN=... first (see infra/README.md).
+## Runs both test suites first so the JaCoCo (backend) and lcov (frontend)
+## coverage reports exist when the analysis uploads them.
 sonar:
-	$(GRADLE) sonar -Dsonar.token=$(SONAR_TOKEN) --console=plain
+	cd web && bun run test:coverage
+	$(GRADLE) test sonar -Dsonar.token=$(SONAR_TOKEN) --console=plain
 
 stop:
 ifeq ($(DETECTED_OS),Windows)

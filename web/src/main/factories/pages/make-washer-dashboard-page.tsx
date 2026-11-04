@@ -1,11 +1,6 @@
-import { makeRemoteFeatures } from '@/main/factories/usecases/make-remote-features'
 import { makeRemoteOperations } from '@/main/factories/usecases/make-remote-operations'
-import { OperationsDashboard } from '@/presentation/pages/operations-dashboard/operations-dashboard'
+import { WasherApp } from '@/presentation/pages/washer-app/washer-app'
 
 export const makeWasherDashboardPage = () => (
-  <OperationsDashboard
-    role="washer"
-    operations={makeRemoteOperations()}
-    features={makeRemoteFeatures()}
-  />
+  <WasherApp operations={makeRemoteOperations()} />
 )

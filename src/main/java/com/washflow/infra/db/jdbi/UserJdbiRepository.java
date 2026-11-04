@@ -3,11 +3,13 @@ package com.washflow.infra.db.jdbi;
 import com.washflow.data.protocols.db.CreateUserRepository;
 import com.washflow.data.protocols.db.CreateWasherRepository;
 import com.washflow.data.protocols.db.LoadAllUsersRepository;
+import com.washflow.data.protocols.db.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.LoadUserByIdRepository;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.LoadUserPasswordHashRepository;
 import com.washflow.data.protocols.db.SaveUserPasswordHashRepository;
 import com.washflow.data.protocols.db.UpdateUserActiveRepository;
+import com.washflow.data.protocols.db.UpdateUserEmailRepository;
 import com.washflow.data.protocols.db.UpdateUserProfileRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
@@ -28,7 +30,9 @@ public class UserJdbiRepository
         LoadUserPasswordHashRepository,
         SaveUserPasswordHashRepository,
         UpdateUserActiveRepository,
-        UpdateUserProfileRepository {
+        UpdateUserProfileRepository,
+        LoadUserByEmailRepository,
+        UpdateUserEmailRepository {
 
   // Column name (Portuguese, matches usuarios.perfil) vs. bind parameter name (English, matches
   // this class's other :name/:phone/:createdAt placeholders) - two different strings, unlike
@@ -37,7 +41,7 @@ public class UserJdbiRepository
   private static final String PROFILE_PARAM = "profile";
 
   private static final String SELECT_SQL =
-      "SELECT id, nome, telefone, perfil, criado_em, ativo FROM usuarios";
+      "SELECT id, nome, telefone, email, perfil, criado_em, ativo FROM usuarios";
 
   private static final String UPDATE_PROFILE_SQL =
       "UPDATE usuarios SET perfil = :profile WHERE id = :id";
@@ -59,12 +63,15 @@ public class UserJdbiRepository
             handle
                 .createUpdate(
                     """
-                    INSERT INTO usuarios (id, nome, telefone, senha_hash, perfil, criado_em, ativo)
-                    VALUES (:id, :name, :phone, :passwordHash, :profile, :createdAt, :active)
+                    INSERT INTO usuarios
+                      (id, nome, telefone, email, senha_hash, perfil, criado_em, ativo)
+                    VALUES
+                      (:id, :name, :phone, :email, :passwordHash, :profile, :createdAt, :active)
                     """)
                 .bind("id", user.id())
                 .bind("name", user.name())
                 .bind("phone", user.phone())
+                .bind("email", user.email())
                 .bind("passwordHash", passwordHash)
                 .bind(PROFILE_PARAM, user.profile().dbValue())
                 .bind("createdAt", user.createdAt())
@@ -209,6 +216,35 @@ public class UserJdbiRepository
         rs.getString("telefone"),
         UserProfile.fromDbValue(rs.getString(PROFILE_COLUMN)),
         rs.getTimestamp("criado_em").toInstant(),
-        rs.getBoolean("ativo"));
+        rs.getBoolean("ativo"),
+        rs.getString("email"));
+  }
+
+  @Override
+  public Optional<User> loadByEmail(String email) {
+    return jdbi.withHandle(
+        handle ->
+            handle
+                .createQuery(SELECT_SQL + " WHERE email = :email")
+                .bind("email", email)
+                .map(this::mapRow)
+                .findOne());
+  }
+
+  @Override
+  public User updateEmail(UUID userId, String email) {
+    return jdbi.inTransaction(
+        handle -> {
+          handle
+              .createUpdate("UPDATE usuarios SET email = :email WHERE id = :id")
+              .bind("id", userId)
+              .bind("email", email)
+              .execute();
+          return handle
+              .createQuery(SELECT_SQL + " WHERE id = :id")
+              .bind("id", userId)
+              .map(this::mapRow)
+              .one();
+        });
   }
 }

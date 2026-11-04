@@ -38,7 +38,8 @@ public class DbCreateWasher implements CreateWasher {
     if (name.isBlank() || name.length() > 100 || phone.isBlank() || phone.length() > 20) {
       throw new IllegalArgumentException("Name and phone are required and must be valid");
     }
-    if (password.length() < 8) {
+    // Optional: washers may sign in with a badge (PIN/QR) issued by the manager instead.
+    if (!password.isEmpty() && password.length() < 8) {
       throw new IllegalArgumentException("Password must contain at least eight characters");
     }
 
@@ -47,7 +48,7 @@ public class DbCreateWasher implements CreateWasher {
     }
 
     User washer = new User(UUID.randomUUID(), name, phone, UserProfile.WASHER, Instant.now(), true);
-    String passwordHash = passwordHasher.hash(password);
+    String passwordHash = password.isEmpty() ? null : passwordHasher.hash(password);
 
     return createRepository.createWasher(washer, passwordHash);
   }

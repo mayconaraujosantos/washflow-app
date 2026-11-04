@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.washflow"
-version = "1.0-SNAPSHOT"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -106,9 +106,16 @@ sonar {
         // as one SonarCloud project - it's a single deployable app, and
         // SonarCloud's JS/TS analyzer picks up .ts/.tsx files automatically.
         property("sonar.sources", "src/main/java,web/src")
-        property("sonar.tests", "src/test/java")
-        property("sonar.exclusions", "web/dist/**,web/node_modules/**,web/coverage/**")
+        // Frontend tests live next to the code in web/src, so that folder is in
+        // both lists: excluded from sources and narrowed by test.inclusions.
+        property("sonar.tests", "src/test/java,web/src")
+        property("sonar.test.inclusions", "src/test/java/**,web/src/**/*.test.ts,web/src/**/*.test.tsx,web/src/test/**")
+        property(
+            "sonar.exclusions",
+            "web/dist/**,web/node_modules/**,web/coverage/**,web/src/**/*.test.ts,web/src/**/*.test.tsx,web/src/test/**",
+        )
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.javascript.lcov.reportPaths", "web/coverage/lcov.info")
     }
 }
 

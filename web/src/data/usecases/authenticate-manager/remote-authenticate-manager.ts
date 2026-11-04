@@ -41,7 +41,7 @@ export class RemoteAuthenticateManager implements AuthenticateManager {
       case HttpStatusCode.unauthorized:
         throw new Error(
           (httpResponse.body as ErrorBody)?.error ??
-            'Telefone ou senha inválidos',
+            'E-mail/telefone ou senha inválidos',
         )
       default:
         throw new Error('Erro inesperado ao entrar')

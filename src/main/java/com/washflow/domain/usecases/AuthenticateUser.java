@@ -27,5 +27,12 @@ public interface AuthenticateUser {
           WasherSelfRegistrationNotAllowedError,
           InvalidCredentialsError;
 
-  record Params(String phone, String name, String password, UserProfile expectedProfile) {}
+  /** {@code email} (managers only) replaces {@code phone} as the login when present. */
+  record Params(
+      String phone, String name, String password, UserProfile expectedProfile, String email) {
+
+    public Params(String phone, String name, String password, UserProfile expectedProfile) {
+      this(phone, name, password, expectedProfile, null);
+    }
+  }
 }

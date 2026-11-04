@@ -10,6 +10,8 @@ public final class RoutePermissionMatcher {
   private static final String HTTP_GET = "GET";
   private static final String HTTP_POST = "POST";
   private static final String HTTP_PATCH = "PATCH";
+  private static final String HTTP_DELETE = "DELETE";
+  private static final String CASH_TRANSACTIONS = "/api/cash-transactions";
 
   private RoutePermissionMatcher() {}
 
@@ -48,17 +50,43 @@ public final class RoutePermissionMatcher {
   private static boolean isManagerResource(String method, String path) {
     return switch (method) {
       case HTTP_GET ->
-          path.equals("/api/operations/report")
-              || path.equals("/api/operations/yard")
-              || path.equals("/api/users");
+          path.matches("/api/operations/(report|yard|agenda|vehicles)")
+              || path.equals("/api/users")
+              || path.equals("/api/sales")
+              || isFeatureResource(path)
+              || path.equals(CASH_TRANSACTIONS + "/report");
 
-      case HTTP_POST -> path.equals("/api/users");
+      case HTTP_POST ->
+          path.equals("/api/users")
+              || path.equals("/api/operations/entries")
+              || path.equals("/api/sales")
+              || path.equals("/api/services")
+              || path.matches("/api/users/[^/]+/badge")
+              || path.matches("/api/service-orders/[^/]+/ticket")
+              || isFeatureResource(path);
 
       case HTTP_PATCH ->
-          path.matches("/api/users/[^/]+/(profile|active)")
+          path.matches("/api/users/[^/]+/(profile|active|email)")
               || path.matches("/api/service-orders/[^/]+/(check-in|finalize)");
+
+      case "PUT" -> path.matches(CASH_TRANSACTIONS + "/[^/]+") || path.equals("/api/establishment");
+
+      case HTTP_DELETE ->
+          path.matches(CASH_TRANSACTIONS + "/[^/]+")
+              || path.matches("/api/service-orders/[^/]+/photos/[^/]+");
 
       default -> false;
     };
+  }
+
+  /**
+   * Cash register, expense categories and the service order checklist/photo collections
+   * (FeatureRoutes) are back-office tools; without an entry here the middleware denied them to
+   * everyone.
+   */
+  private static boolean isFeatureResource(String path) {
+    return path.equals(CASH_TRANSACTIONS)
+        || path.equals("/api/expense-categories")
+        || path.matches("/api/service-orders/[^/]+/(checklist|photos)");
   }
 }

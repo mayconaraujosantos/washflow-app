@@ -19,7 +19,11 @@ public record AppConfig(
     int maxVehiclesPerHour,
     String tokenSecret,
     String bootstrapManagerPhone,
-    String bootstrapManagerPassword) {
+    String bootstrapManagerPassword,
+    String setupCode,
+    String otpChannel,
+    String googleClientId,
+    String publicAppUrl) {
 
   private static final int DEFAULT_PORT = 7000;
   private static final int DEFAULT_MAX_VEHICLES_PER_HOUR = 3;
@@ -67,7 +71,18 @@ public record AppConfig(
                 "MAX_VEHICLES_PER_HOUR"),
             tokenSecret,
             value(processEnv, dotenvValues, useDotenv, "BOOTSTRAP_MANAGER_PHONE", "11999993333"),
-            value(processEnv, dotenvValues, useDotenv, "BOOTSTRAP_MANAGER_PASSWORD", ""));
+            value(processEnv, dotenvValues, useDotenv, "BOOTSTRAP_MANAGER_PASSWORD", ""),
+            // Owner-only secret that unlocks the first-run setup wizard in production.
+            value(processEnv, dotenvValues, useDotenv, "SETUP_CODE", ""),
+            // WhatsApp code delivery: "log" (development only) or "none" until a provider exists.
+            value(
+                processEnv,
+                dotenvValues,
+                useDotenv,
+                "OTP_CHANNEL",
+                isProduction(environment) ? "none" : "log"),
+            value(processEnv, dotenvValues, useDotenv, "GOOGLE_CLIENT_ID", ""),
+            value(processEnv, dotenvValues, useDotenv, "APP_PUBLIC_URL", ""));
 
     if (isProduction(environment)
         && config.databaseUrl().isBlank()

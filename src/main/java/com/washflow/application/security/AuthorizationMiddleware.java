@@ -11,7 +11,25 @@ public final class AuthorizationMiddleware {
 
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
   private static final Set<String> PUBLIC_API_PATHS =
-      Set.of("/api/health", "/api/hello", "/api/services");
+      Set.of(
+          "/api/health",
+          "/api/hello",
+          "/api/services",
+          "/api/setup",
+          "/api/establishment",
+          "/api/auth/options");
+  // Login entry points (POST): each one fixes the profile it can sign into.
+  private static final Set<String> AUTHENTICATION_PATHS =
+      Set.of(
+          "/api/auth/customers",
+          "/api/auth/washers",
+          "/api/auth/managers",
+          "/api/setup",
+          "/api/auth/washers/pin",
+          "/api/auth/washers/badge",
+          "/api/auth/customers/otp",
+          "/api/auth/customers/otp/verify",
+          "/api/auth/customers/google");
   public static final String ERROR = "error";
 
   private final AuthTokenService tokenService;
@@ -57,14 +75,19 @@ public final class AuthorizationMiddleware {
 
   private boolean isPublicRoute(Context ctx) {
     String path = ctx.path();
+    // Public API paths are read-only: POST /api/services (catalog) must still be authorized.
     return !path.startsWith("/api/")
-        || PUBLIC_API_PATHS.contains(path)
+        || (PUBLIC_API_PATHS.contains(path) && "GET".equals(ctx.method().name()))
+        // Ticket links are unguessable tokens meant to be opened without logging in.
+        || ("GET".equals(ctx.method().name()) && path.matches("/api/tickets/[^/]+"))
         || isAuthenticationPath(path, ctx.method().name());
   }
 
   private boolean isAuthenticationPath(String path, String method) {
     return method.equals("POST")
-        && Set.of("/api/auth/customers", "/api/auth/washers", "/api/auth/managers").contains(path);
+        // POST /api/setup is open only while the establishment is unconfigured (and, in
+        // production, with the server's SETUP_CODE) - DbSetupEstablishment enforces both.
+        && AUTHENTICATION_PATHS.contains(path);
   }
 
   private String extractToken(Context ctx) {
