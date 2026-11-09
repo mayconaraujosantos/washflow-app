@@ -1,0 +1,34 @@
+# The only manifest applied by hand (after Argo CD itself is installed, see
+# infra/gitops/README.md). It points Argo CD at bootstrap/applications/, so every
+# other piece of the cluster - Argo CD included - is a child Application synced
+# from Git (App-of-Apps).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mayconaraujosantos/washflow-app.git
+    targetRevision: develop
+    path: infra/gitops/bootstrap/applications
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  # Argo CD Image Updater sets the image tag on the washflow-dev Application
+  # (spec.source.kustomize.images); without this, selfHeal would put it back.
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Application
+      name: washflow-dev
+      jsonPointers:
+        - /spec/source/kustomize
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - RespectIgnoreDifferences=true

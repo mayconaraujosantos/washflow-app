@@ -1,0 +1,11 @@
+# In-cluster image registry for the local cluster (plain HTTP, no auth - local only).
+#   - CI (Argo Workflows / kaniko) pushes to registry.registry.svc.cluster.local:5000
+#   - the kind node pulls, and `make image-local` pushes, through NodePort 30500,
+#     which infra/kind/kind-config.yaml publishes on the host as localhost:30500.
+# Images are therefore named localhost:30500/<name>:<tag> everywhere.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml

@@ -1,0 +1,35 @@
+# Prometheus (+ operator CRDs such as ServiceMonitor) and Grafana, with Loki and
+# Tempo pre-wired as Grafana data sources.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 92.13.1
+      helm:
+        releaseName: kps
+        valueFiles:
+          - $values/infra/gitops/infrastructure/kube-prometheus-stack/values.yaml
+    - repoURL: https://github.com/mayconaraujosantos/washflow-app.git
+      targetRevision: develop
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # The operator CRDs are bigger than the client-side apply annotation limit.
+      - ServerSideApply=true

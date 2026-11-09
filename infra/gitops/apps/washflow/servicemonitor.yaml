@@ -1,0 +1,19 @@
+# Prometheus scrapes GET /api/metrics with the METRICS_TOKEN bearer token
+# (the endpoint answers 404 without the token configured, 401 without the header).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: washflow-api
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: washflow-api
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 30s
+      authorization:
+        type: Bearer
+        credentials:
+          name: washflow
+          key: METRICS_TOKEN

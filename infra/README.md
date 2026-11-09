@@ -1,29 +1,29 @@
 # Local CI/CD (kind + Argo)
 
-Replaces GitHub Actions, which is blocked by a billing issue on the account.
-Runs entirely on your machine via Podman Desktop; production runs on **Render**
-and is deployed by an Argo Workflow (`make deploy-prod`).
+All CI/CD runs here, on your machine via Podman - there is no GitHub Actions
+workflow; GitHub only hosts the repository, which Argo polls and clones.
+Production runs on **Render** and is deployed by an Argo Workflow
+(`make deploy-prod`).
 
 | Component      | Role                                                           |
 | --------------- | --------------------------------------------------------------- |
 | kind            | Local Kubernetes cluster, backed by Podman (`infra/kind/`)      |
 | Argo Workflows  | CI: backend tests+coverage, formatting, frontend lint, build check, optional SonarCloud |
-| Argo CD         | GitOps CD: syncs `infra/k8s/local` onto the cluster (staging)   |
+| Argo CD         | GitOps CD: syncs `infra/gitops` (ingress, LGTM observability, SonarQube, the app) - see [gitops/README.md](gitops/README.md) |
 | Render API      | Production deploy, run as an Argo Workflow after the CI checks  |
 
 ## First-time setup
 
 ```
-make cluster-up      # kind cluster + Argo CD + Argo Workflows
-make image-local      # build washflow-api:local and load it into the cluster
-make argocd-port-forward   # UI at https://localhost:8081 (admin / `make argocd-password`)
-make argo-port-forward     # UI at https://localhost:2746
+make cluster-up      # kind cluster + Argo CD + Argo Workflows + GitOps root Application
+make image-local      # build the image and push it to the cluster registry (Image Updater deploys it)
+make argo-port-forward     # Argo Workflows UI at https://localhost:2746
 ```
 
-The app itself is reachable at http://localhost:7000 once Argo CD has synced
-`infra/k8s/local` (NodePort 30080, mapped by `infra/kind/kind-config.yaml`) -
-same port as `make run`, since 8080 is the default lots of other local
-services (Spring Boot, etc.) already grab.
+Argo CD, Grafana, SonarQube and the app are served by ingress-nginx on host
+port 8880 by name (`http://argocd.local:8880`, `grafana.local`,
+`sonarqube.local`, `washflow.local`) once the names are in `/etc/hosts` - see
+[gitops/README.md](gitops/README.md) for the hosts entries and prerequisites.
 
 Windows note: `kind`'s Podman provider is a Go binary that aborts its PATH
 search when it hits a malformed PATH entry (this machine has one, from an
@@ -165,11 +165,14 @@ production.
 
 - **feature/\***: `make ci` before opening a PR — runs the same checks Argo
   CD/production will expect (`infra/argo-workflows/ci-workflowtemplate.yaml`).
-- **develop**: pushes are what Argo CD's `washflow-local` Application tracks
-  (`infra/argocd/application-local.yaml`, `targetRevision: develop`). After
-  pushing, run `make image-local` to rebuild the image the Deployment uses —
-  Argo CD manages the manifests, not the image content, since there's no
-  registry in this local setup.
+- **develop**: pushes are what Argo CD's Applications track
+  (`infra/gitops/bootstrap/`, `targetRevision: develop`). Within ~2 minutes
+  of a push, the `washflow-ci-trigger` CronWorkflow runs the checks, pushes
+  `localhost:30500/washflow-api:develop-<SHA>` to the cluster registry and
+  Argo CD Image Updater rolls it out to the **dev** environment
+  (http://washflow.local:8880). Pushes to `feature/*`, `release/*` and
+  `hotfix/*` get the checks only. See
+  [gitops/README.md](gitops/README.md#git-flow-and-environments).
 - **release/\***: same as develop, run `make ci` against the release branch:
   `argo submit -n argo --from workflowtemplate/washflow-ci -p revision=release/x.y.z --watch`.
 - **main**: push `main` + tag, then `make deploy-prod` - an Argo Workflow
@@ -197,10 +200,10 @@ production.
   the same way - a misformatted file fails the pipeline.
 - `bun run test:coverage` (in `web/`) runs the frontend suite and writes
   `web/coverage/lcov.info`; SonarCloud reads it together with the JaCoCo XML.
-- SonarCloud runs in GitHub Actions (`.github/workflows/ci-cd.yml`) on every
-  push/PR to `main` and `develop` once the `SONAR_TOKEN` repository secret
-  exists; without it the step is skipped. In `make ci` (Argo) it stays
-  **off by default** (`runSonar=false`).
+- SonarCloud runs only through the Argo pipeline (`runSonar=true`, needs the
+  `sonar-credentials` Secret below) or `make sonar`; it stays **off by
+  default**. There is no GitHub Actions workflow: all CI/CD runs locally in
+  Argo, and GitHub only hosts the repository.
 
 ### One-time: SonarCloud
 
@@ -212,9 +215,8 @@ production.
 3. If SonarCloud assigns a different project/organization key than the
    defaults in `build.gradle.kts` (`sonar.projectKey` /
    `sonar.organization`), update them there to match.
-4. Generate a token (My Account → Security) and add it as a GitHub repository
-   secret named `SONAR_TOKEN` (Settings → Secrets and variables → Actions, or
-   `gh secret set SONAR_TOKEN`). For the Argo pipeline, also create:
+4. Generate a token (My Account → Security) and store it in the cluster for
+   the Argo pipeline:
    ```
    kubectl -n argo create secret generic sonar-credentials \
      --from-literal=SONAR_TOKEN=<token>

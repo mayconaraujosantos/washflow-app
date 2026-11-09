@@ -1,0 +1,73 @@
+# The app refuses to start without its database (see infra/README.md, "Database").
+apiVersion: v1
+kind: Service
+metadata:
+  name: washflow-postgres
+  labels:
+    app.kubernetes.io/name: washflow-postgres
+spec:
+  selector:
+    app.kubernetes.io/name: washflow-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: washflow-postgres
+  labels:
+    app.kubernetes.io/name: washflow-postgres
+spec:
+  serviceName: washflow-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: washflow-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: washflow-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: washflow
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: washflow
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: washflow
+                  key: DB_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: standard
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi

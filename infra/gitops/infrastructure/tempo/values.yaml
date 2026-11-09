@@ -1,0 +1,12 @@
+# Tempo (chart 1.24.4), single binary. The washflow pods send OTLP traces to
+#   http://tempo.observability.svc.cluster.local:4318 (HTTP) or :4317 (gRPC);
+# Grafana queries it on :3200.
+tempo:
+  reportingEnabled: false
+  retention: 72h
+  # The chart's defaults already enable the OTLP receivers on 4317/4318.
+
+persistence:
+  enabled: true
+  storageClassName: standard
+  size: 5Gi

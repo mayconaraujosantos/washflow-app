@@ -1,0 +1,227 @@
+# Git flow trigger: every 2 minutes, compares the branch heads on GitHub with
+# the last ones seen (ConfigMap washflow-ci-trigger-state, created by this
+# workflow) and starts a pipeline for each branch that moved:
+#
+#   develop                         -> washflow-ci, pushImage=true  (deploys to the dev env)
+#   feature/* release/* hotfix/*    -> washflow-ci, checks only
+#   bugfix/* support/*
+#   main                            -> washflow-deploy-render (production on Render),
+#                                      only when autoDeployMain=true
+#
+# Polling instead of a GitHub webhook: nothing on this machine has to be
+# reachable from the internet. The first run only records the current heads,
+# so installing it does not start a pipeline for every existing branch.
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: washflow-ci-trigger
+  namespace: argo
+spec:
+  schedules:
+    - "*/2 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  workflowSpec:
+    entrypoint: poll
+    serviceAccountName: washflow-ci-trigger
+    # No artifact/log upload - see artifact-repository.yaml.
+    archiveLogs: false
+    artifactRepositoryRef:
+      configMap: washflow-artifact-repository
+      key: none
+    ttlStrategy:
+      secondsAfterSuccess: 600
+    podGC:
+      strategy: OnPodSuccess
+    arguments:
+      parameters:
+        - name: repo
+          value: https://github.com/mayconaraujosantos/washflow-app.git
+        # Production stays a deliberate `make deploy-prod` unless this is "true".
+        - name: autoDeployMain
+          value: "false"
+    volumes:
+      - name: state
+        configMap:
+          name: washflow-ci-trigger-state
+          optional: true
+    templates:
+      - name: poll
+        steps:
+          - - name: detect
+              template: detect
+          - - name: ci
+              template: submit-ci
+              withParam: "{{steps.detect.outputs.parameters.ci}}"
+              arguments:
+                parameters:
+                  - {name: branch, value: "{{item.branch}}"}
+                  - {name: slug, value: "{{item.slug}}"}
+                  - {name: pushImage, value: "{{item.pushImage}}"}
+            - name: deploy
+              template: submit-deploy
+              withParam: "{{steps.detect.outputs.parameters.deploy}}"
+              arguments:
+                parameters:
+                  - {name: branch, value: "{{item.branch}}"}
+          # Saved last: if a submit fails, the branch is retried on the next poll.
+          - - name: save-state
+              template: save-state
+              arguments:
+                parameters:
+                  - name: state
+                    value: "{{steps.detect.outputs.parameters.state}}"
+
+      - name: detect
+        container:
+          image: alpine/git:2.47.1
+          command: [sh, -c]
+          args:
+            - |
+              set -eu
+              git ls-remote --heads "{{workflow.parameters.repo}}" > /tmp/heads
+              initialized=false
+              [ -f /state/_initialized ] && initialized=true
+              ci=""; deploy=""; state=""
+              while read -r sha ref; do
+                branch=${ref#refs/heads/}
+                case "$branch" in
+                  develop) kind=ci; push=true ;;
+                  main) kind=deploy; push=false ;;
+                  feature/*|release/*|hotfix/*|bugfix/*|support/*) kind=ci; push=false ;;
+                  *) continue ;;
+                esac
+                key=$(printf '%s' "$branch" | tr -c 'A-Za-z0-9._-' '_')
+                state="$state\"$key\":\"$sha\","
+                last=$(cat "/state/$key" 2>/dev/null || true)
+                [ "$initialized" = true ] || continue
+                [ "$sha" != "$last" ] || continue
+                slug=$(printf '%s' "$branch" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9' '-' | cut -c1-30 | sed 's/-*$//')
+                item="{\"branch\":\"$branch\",\"slug\":\"$slug\",\"pushImage\":\"$push\"}"
+                if [ "$kind" = ci ]; then
+                  ci="$ci$item,"
+                elif [ "{{workflow.parameters.autoDeployMain}}" = true ]; then
+                  deploy="$deploy$item,"
+                fi
+                echo "changed: $branch $last -> $sha ($kind)"
+              done < /tmp/heads
+              printf '[%s]' "${ci%,}" > /tmp/ci.json
+              printf '[%s]' "${deploy%,}" > /tmp/deploy.json
+              printf '{%s"_initialized":"true"}' "$state" > /tmp/state.json
+              echo "ci: $(cat /tmp/ci.json)"; echo "deploy: $(cat /tmp/deploy.json)"
+          volumeMounts:
+            - {name: state, mountPath: /state}
+        outputs:
+          parameters:
+            - name: ci
+              valueFrom: {path: /tmp/ci.json}
+            - name: deploy
+              valueFrom: {path: /tmp/deploy.json}
+            - name: state
+              valueFrom: {path: /tmp/state.json}
+
+      - name: submit-ci
+        inputs:
+          parameters:
+            - name: branch
+            - name: slug
+            - name: pushImage
+        resource:
+          action: create
+          manifest: |
+            apiVersion: argoproj.io/v1alpha1
+            kind: Workflow
+            metadata:
+              generateName: washflow-ci-{{inputs.parameters.slug}}-
+              namespace: argo
+              labels:
+                washflow/triggered-by: ci-trigger
+            spec:
+              workflowTemplateRef:
+                name: washflow-ci
+              arguments:
+                parameters:
+                  - name: revision
+                    value: "{{inputs.parameters.branch}}"
+                  - name: pushImage
+                    value: "{{inputs.parameters.pushImage}}"
+
+      - name: submit-deploy
+        inputs:
+          parameters:
+            - name: branch
+        resource:
+          action: create
+          manifest: |
+            apiVersion: argoproj.io/v1alpha1
+            kind: Workflow
+            metadata:
+              generateName: washflow-deploy-render-
+              namespace: argo
+              labels:
+                washflow/triggered-by: ci-trigger
+            spec:
+              workflowTemplateRef:
+                name: washflow-deploy-render
+              arguments:
+                parameters:
+                  - name: revision
+                    value: "{{inputs.parameters.branch}}"
+
+      - name: save-state
+        inputs:
+          parameters:
+            - name: state
+        resource:
+          action: apply
+          manifest: |
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: washflow-ci-trigger-state
+              namespace: argo
+            data: {{inputs.parameters.state}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: washflow-ci-trigger
+  namespace: argo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: washflow-ci-trigger
+  namespace: argo
+rules:
+  # Start the pipelines.
+  - apiGroups: [argoproj.io]
+    resources: [workflows]
+    verbs: [create, get, list, watch]
+  # Report step results (Argo executor).
+  - apiGroups: [argoproj.io]
+    resources: [workflowtaskresults]
+    verbs: [create, patch]
+  # Read/write the last-seen branch heads.
+  - apiGroups: [""]
+    resources: [configmaps]
+    resourceNames: [washflow-ci-trigger-state]
+    verbs: [get, patch, update]
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: washflow-ci-trigger
+  namespace: argo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: washflow-ci-trigger
+subjects:
+  - kind: ServiceAccount
+    name: washflow-ci-trigger
+    namespace: argo

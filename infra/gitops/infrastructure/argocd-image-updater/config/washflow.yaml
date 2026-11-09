@@ -1,0 +1,27 @@
+# dev environment: deploys the newest washflow-api image built from `develop`
+# (develop-<SHA>, pushed by the washflow-ci workflow) or from a working tree
+# (local-<SHA>, `make image-local`). Images of feature/release/hotfix branches
+# are never deployed here, and `latest` only serves the Deployment's first
+# start. Production (main) runs on Render, outside this cluster.
+#
+# Write-back "argocd" sets the Application's spec.source.kustomize.images
+# directly - nothing is committed to Git. bootstrap/root.yaml ignores that
+# field so the root Application does not revert it.
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: washflow-dev
+spec:
+  writeBackConfig:
+    method: argocd
+  applicationRefs:
+    - namePattern: washflow-dev
+      images:
+        - alias: api
+          imageName: localhost:30500/washflow-api
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: "regexp:^(develop|local)-[0-9a-f]{40}$"
+          manifestTargets:
+            kustomize:
+              name: localhost:30500/washflow-api

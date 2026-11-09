@@ -1,0 +1,44 @@
+# SonarQube (chart 2026.5.1003), Community Build, backed by the PostgreSQL in
+# ./postgres (deployed first by the same Argo CD Application).
+community:
+  enabled: true
+
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: jdbc:postgresql://sonarqube-postgres.sonarqube.svc.cluster.local:5432/sonarqube
+  jdbcUsername: sonarqube
+  jdbcSecretName: sonarqube-postgres
+  jdbcSecretPasswordKey: password
+
+# Without a passcode the readiness probe never succeeds.
+monitoringPasscodeSecretName: sonarqube-postgres
+monitoringPasscodeSecretKey: monitoring-passcode
+
+# Elasticsearch needs vm.max_map_count >= 524288. The kind node shares the host
+# kernel and the privileged init container cannot change it from rootless Podman,
+# so set it on the host instead (see infra/gitops/README.md).
+initSysctl:
+  enabled: false
+
+persistence:
+  enabled: true
+  storageClass: standard
+  size: 5Gi
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - name: sonarqube.local
+      path: /
+      pathType: Prefix
+  annotations:
+    # Analysis reports from `gradle sonar` can be large.
+    nginx.ingress.kubernetes.io/proxy-body-size: 64m
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 2Gi
+  limits:
+    memory: 4Gi

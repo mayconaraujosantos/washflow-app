@@ -1,0 +1,17 @@
+# Keeps the Argo Workflows UI/API on https://127.0.0.1:2746 of the machine that
+# runs the cluster, without a terminal open. Other machines reach it through
+# an SSH tunnel (ssh -L 2746:localhost:2746 ...). Bound to localhost only: the
+# quick-start Argo Server has no login, so it must not be reachable on the LAN.
+# Installed by `make argo-ui-service` (systemd user unit; needs
+# `loginctl enable-linger` to run without a login session).
+[Unit]
+Description=washflow - Argo Workflows UI port-forward (127.0.0.1:2746)
+
+[Service]
+ExecStart=/usr/bin/env kubectl --context kind-washflow-local -n argo port-forward --address 127.0.0.1 svc/argo-server 2746:2746
+# kubectl exits when the argo-server pod restarts; come back after it.
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
