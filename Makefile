@@ -85,7 +85,7 @@ help:
 	@echo "  make db-down   Stop it (data survives in the postgres-data volume)."
 	@echo "  make db-logs   Follow the Postgres container logs."
 	@echo ""
-	@echo "Local CI/CD (kind + Argo, replaces GitHub Actions):"
+	@echo "Local CI/CD (kind + Argo - no GitHub Actions):"
 	@echo "  make cluster-up          Create the local kind cluster and install Argo CD + Argo Workflows."
 	@echo "  make cluster-down        Delete the local kind cluster."
 	@echo "  make cluster-status      Show cluster/Argo CD/Argo Workflows health."

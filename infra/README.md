@@ -1,8 +1,9 @@
 # Local CI/CD (kind + Argo)
 
-Replaces GitHub Actions, which is blocked by a billing issue on the account.
-Runs entirely on your machine via Podman Desktop; production runs on **Render**
-and is deployed by an Argo Workflow (`make deploy-prod`).
+All CI/CD runs here, on your machine via Podman - there is no GitHub Actions
+workflow; GitHub only hosts the repository, which Argo polls and clones.
+Production runs on **Render** and is deployed by an Argo Workflow
+(`make deploy-prod`).
 
 | Component      | Role                                                           |
 | --------------- | --------------------------------------------------------------- |
@@ -199,10 +200,10 @@ production.
   the same way - a misformatted file fails the pipeline.
 - `bun run test:coverage` (in `web/`) runs the frontend suite and writes
   `web/coverage/lcov.info`; SonarCloud reads it together with the JaCoCo XML.
-- SonarCloud runs in GitHub Actions (`.github/workflows/ci-cd.yml`) on every
-  push/PR to `main` and `develop` once the `SONAR_TOKEN` repository secret
-  exists; without it the step is skipped. In `make ci` (Argo) it stays
-  **off by default** (`runSonar=false`).
+- SonarCloud runs only through the Argo pipeline (`runSonar=true`, needs the
+  `sonar-credentials` Secret below) or `make sonar`; it stays **off by
+  default**. There is no GitHub Actions workflow: all CI/CD runs locally in
+  Argo, and GitHub only hosts the repository.
 
 ### One-time: SonarCloud
 
@@ -214,9 +215,8 @@ production.
 3. If SonarCloud assigns a different project/organization key than the
    defaults in `build.gradle.kts` (`sonar.projectKey` /
    `sonar.organization`), update them there to match.
-4. Generate a token (My Account → Security) and add it as a GitHub repository
-   secret named `SONAR_TOKEN` (Settings → Secrets and variables → Actions, or
-   `gh secret set SONAR_TOKEN`). For the Argo pipeline, also create:
+4. Generate a token (My Account → Security) and store it in the cluster for
+   the Argo pipeline:
    ```
    kubectl -n argo create secret generic sonar-credentials \
      --from-literal=SONAR_TOKEN=<token>
