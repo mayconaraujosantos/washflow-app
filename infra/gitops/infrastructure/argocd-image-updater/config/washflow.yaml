@@ -1,0 +1,25 @@
+# Deploys the newest washflow-api image whose tag is a full commit SHA (what
+# CI and `make image-local` push). `latest` is ignored: it only serves the
+# Deployment's first start, before any SHA-tagged image exists.
+#
+# Write-back "argocd" sets the Application's spec.source.kustomize.images
+# directly - nothing is committed to Git. bootstrap/root.yaml ignores that
+# field so the root Application does not revert it.
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: washflow
+spec:
+  writeBackConfig:
+    method: argocd
+  applicationRefs:
+    - namePattern: washflow
+      images:
+        - alias: api
+          imageName: localhost:30500/washflow-api
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: "regexp:^[0-9a-f]{40}$"
+          manifestTargets:
+            kustomize:
+              name: localhost:30500/washflow-api

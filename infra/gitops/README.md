@@ -12,7 +12,9 @@ infra/gitops/
 │   └── applications/              # child Applications (one per component)
 │       ├── argocd.yaml            # wave -2  Argo CD manages itself
 │       ├── ingress-nginx.yaml     # wave -1  ingress controller (NodePort 30880/30443)
+│       ├── registry.yaml          # wave -1  image registry (NodePort 30500)
 │       ├── kube-prometheus-stack.yaml  # 0  Prometheus + Grafana (+ ServiceMonitor CRDs)
+│       ├── argocd-image-updater.yaml   # 0  deploys new washflow images
 │       ├── loki.yaml              # wave 1   logs
 │       ├── tempo.yaml             # wave 1   traces
 │       ├── sonarqube.yaml         # wave 1   SonarQube + its PostgreSQL
@@ -25,6 +27,8 @@ infra/gitops/
 │   ├── loki/values.yaml           # single binary, filesystem storage on a PV
 │   ├── tempo/values.yaml          # single binary, OTLP on 4317/4318
 │   ├── alloy/values.yaml          # Alloy config: pod logs -> Loki, logfmt parsing for washflow
+│   ├── registry/                  # Kustomize: registry:3, PVC, NodePort Service
+│   ├── argocd-image-updater/      # values (registry) + config/ (ImageUpdater for washflow)
 │   └── sonarqube/
 │       ├── values.yaml            # Community Build, external DB, ingress
 │       └── postgres/              # Kustomize: Secret, Service, StatefulSet
@@ -44,6 +48,8 @@ from this repo (multi-source `$values/...`), pinned to a chart version.
 | Tempo | `grafana/tempo` 1.24.4 | `observability` | via Grafana |
 | Alloy | `grafana/alloy` 1.14.3 | `observability` | - |
 | SonarQube | `sonarqube/sonarqube` 2026.5.1003 | `sonarqube` | http://sonarqube.local:8880 |
+| Registry | Kustomize (`registry:3.0.0`) | `registry` | `localhost:30500` (host only) |
+| Argo CD Image Updater | `argo/argocd-image-updater` 1.3.2 | `argocd` | - |
 | washflow | Kustomize (`apps/washflow`) | `washflow-local` | http://washflow.local:8880 |
 
 ## How the app is observed
@@ -56,6 +62,41 @@ from this repo (multi-source `$values/...`), pinned to a chart version.
 
 The React PWA is built into the same image and served by Javalin, so there is
 one Deployment, not a separate frontend.
+
+## How a commit gets deployed
+
+```
+git push ──▶ Argo Workflow washflow-ci (pushImage=true)
+               checkout ─▶ backend tests + Spotless │ frontend lint + Prettier
+                        ─▶ gradle installDist (+ optional Sonar)
+                        ─▶ kaniko: runtime image ─▶ registry: washflow-api:<SHA> (+ latest)
+                                                        │
+             Argo CD Image Updater (polls the registry) ◀┘
+               └─▶ sets washflow Application image = localhost:30500/washflow-api:<SHA>
+                     └─▶ Argo CD syncs the Deployment ─▶ http://washflow.local:8880
+```
+
+- The image is named `localhost:30500/washflow-api` everywhere: the registry's
+  NodePort is published on the host at the same port, so the kind node, your
+  machine (`make image-local`) and the manifests all use that address. CI
+  pushes through the in-cluster Service instead, and the Image Updater
+  maps one to the other (`argocd-image-updater/values.yaml`).
+- Only full commit-SHA tags are deployed (`newest-build`); `latest` exists
+  just so the Deployment can start before the first SHA image.
+- The new tag is written on the Application object (write-back `argocd`), not
+  committed to Git; the root Application ignores that field.
+- Kaniko only packages the output of `gradle installDist`
+  (`infra/argo-workflows/runtime.Dockerfile`), because building the root
+  Dockerfile in the cluster hits a kaniko javac bug. Keep the two runtime
+  stages in sync.
+
+Triggering the workflow automatically on every push is the next step (see the
+end of this file); until then:
+
+```
+make ci PUSH_IMAGE=true     # checks + image + deploy for the current branch (from GitHub)
+make image-local            # build + push from your working tree, no checks
+```
 
 ## Prerequisites
 
@@ -78,7 +119,7 @@ one Deployment, not a separate frontend.
 
 ```
 make cluster-up       # kind cluster + Argo CD (Helm) + Argo Workflows + root Application
-make image-local      # build localhost/washflow-api:local and load it into the kind node
+make image-local      # first image: build + push localhost:30500/washflow-api:<SHA>
 ```
 
 `make cluster-up` runs, in order:
@@ -165,6 +206,14 @@ the host and clear the organization (SonarQube Server has none).
   is the last chart). It is fine for a local cluster. If you want a maintained
   controller, Traefik or Gateway API (e.g. Envoy Gateway) only needs
   `ingress-nginx.yaml` and the `ingressClassName`s changed.
+- **Image pulls from `localhost:30500`** rely on two kind defaults: containerd
+  falls back to plain HTTP for `localhost` registries, and the iptables proxy
+  mode (set in `kind-config.yaml`) routes NodePorts on 127.0.0.1. If pods sit
+  in `ErrImagePull` with an HTTPS error, add a containerd `hosts.toml` for
+  `localhost:30500` (kind docs, "Local Registry").
+- **Next steps**: trigger `washflow-ci` on every push (a CronWorkflow polling
+  `git ls-remote`, or Argo Events with a GitHub webhook), point the Sonar step
+  at this SonarQube, and report the result as a GitHub commit status.
 - On minikube or Docker Desktop instead of kind, drop the kind port mappings and
   reach the NodePorts directly (`minikube ip`:30880, or `localhost:30880` on
   Docker Desktop). Use their default StorageClass (`standard` on minikube,

@@ -17,6 +17,8 @@ spec:
         # Alloy's `app` log label (and the Grafana links) key on this name.
         app: washflow-api
     spec:
+      # The app never calls the Kubernetes API.
+      automountServiceAccountToken: false
       initContainers:
         # Copies the OpenTelemetry Java agent into a shared volume; the app's
         # JVM loads it through JAVA_TOOL_OPTIONS - no change to the image.
@@ -35,9 +37,11 @@ spec:
               mountPath: /otel
       containers:
         - name: washflow-api
-          # `make image-local` builds this image with Podman (which prefixes
-          # "localhost/") and loads it into the kind node; it is never pulled.
-          image: localhost/washflow-api:local
+          # Pulled from the in-cluster registry (infra/gitops/infrastructure/registry).
+          # CI and `make image-local` push <commit SHA> tags; Argo CD Image Updater
+          # replaces `latest` with the newest of them on the Application, so the
+          # tag here only matters for the very first start.
+          image: localhost:30500/washflow-api:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -15,7 +15,7 @@ and is deployed by an Argo Workflow (`make deploy-prod`).
 
 ```
 make cluster-up      # kind cluster + Argo CD + Argo Workflows + GitOps root Application
-make image-local      # build washflow-api:local and load it into the cluster
+make image-local      # build the image and push it to the cluster registry (Image Updater deploys it)
 make argo-port-forward     # Argo Workflows UI at https://localhost:2746
 ```
 
@@ -166,9 +166,10 @@ production.
   CD/production will expect (`infra/argo-workflows/ci-workflowtemplate.yaml`).
 - **develop**: pushes are what Argo CD's Applications track
   (`infra/gitops/bootstrap/`, `targetRevision: develop`). After
-  pushing, run `make image-local` to rebuild the image the Deployment uses —
-  Argo CD manages the manifests, not the image content, since there's no
-  registry in this local setup.
+  pushing, `make ci PUSH_IMAGE=true` (on develop) runs the checks, pushes
+  `localhost:30500/washflow-api:<SHA>` to the cluster registry and Argo CD
+  Image Updater rolls it out; `make image-local` does the build+push from
+  your machine without the checks.
 - **release/\***: same as develop, run `make ci` against the release branch:
   `argo submit -n argo --from workflowtemplate/washflow-ci -p revision=release/x.y.z --watch`.
 - **main**: push `main` + tag, then `make deploy-prod` - an Argo Workflow

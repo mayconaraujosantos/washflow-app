@@ -89,8 +89,8 @@ help:
 	@echo "  make cluster-up          Create the local kind cluster and install Argo CD + Argo Workflows."
 	@echo "  make cluster-down        Delete the local kind cluster."
 	@echo "  make cluster-status      Show cluster/Argo CD/Argo Workflows health."
-	@echo "  make image-local         Build the app image and load it into the kind cluster."
-	@echo "  make ci                  Run the CI pipeline (test/lint/build) as an Argo Workflow."
+	@echo "  make image-local         Build the app image and push it to the cluster registry (deploys it)."
+	@echo "  make ci                  Run the CI pipeline (test/lint/build) as an Argo Workflow (PUSH_IMAGE=true deploys)."
 	@echo "  make deploy-prod         Test and deploy 'main' to Render via an Argo Workflow (REVISION=, SKIP_CHECKS=true)."
 	@echo "  make argocd-password     Print the Argo CD admin password."
 	@echo "  make argocd-port-forward Argo CD UI at http://localhost:8081 (if argocd.local isn't mapped)."
@@ -234,22 +234,26 @@ cluster-status:
 	@echo ""
 	kubectl get pods -n washflow-local 2>/dev/null || true
 
-## Build the app image locally and load it straight into the kind node
-## (no registry involved - Argo CD only tracks the Deployment/Service specs).
+## Build the app image on this machine and push it to the cluster's registry
+## (localhost:30500, see infra/gitops/infrastructure/registry) tagged with the
+## current commit SHA; Argo CD Image Updater then rolls it out. Builds the
+## working tree as is - uncommitted changes go into an image named after HEAD.
 ## Uses the auto-detected container runtime (Docker or Podman).
+REGISTRY := localhost:30500
+IMAGE_SHA = $(shell git rev-parse HEAD)
 image-local:
-	$(DOCKER) build -t $(IMAGE) .
-	@mkdir -p build
-	$(DOCKER) save $(IMAGE) -o build/washflow-api-local.tar
-	KIND_EXPERIMENTAL_PROVIDER=podman $(KIND) load image-archive build/washflow-api-local.tar --name $(KIND_CLUSTER)
-	@rm -f build/washflow-api-local.tar
-	@kubectl -n washflow-local rollout restart deployment/washflow-api 2>/dev/null || true
+	$(DOCKER) build -t $(REGISTRY)/washflow-api:$(IMAGE_SHA) -t $(REGISTRY)/washflow-api:latest .
+	$(DOCKER) push $(if $(filter podman,$(DOCKER)),--tls-verify=false) $(REGISTRY)/washflow-api:$(IMAGE_SHA)
+	$(DOCKER) push $(if $(filter podman,$(DOCKER)),--tls-verify=false) $(REGISTRY)/washflow-api:latest
 
-## Run the CI pipeline (backend tests, frontend lint, Dockerfile build check)
-## for the current branch as an Argo Workflow - the local replacement for the
-## "quality" + "container" jobs GitHub Actions used to run.
+## Run the CI pipeline (backend tests, frontend lint, build) for the current
+## branch as an Argo Workflow - the local replacement for the "quality" +
+## "container" jobs GitHub Actions used to run. PUSH_IMAGE=true also builds the
+## image and pushes it to the cluster registry, which deploys it.
+PUSH_IMAGE ?= false
 ci:
-	argo submit -n argo --from workflowtemplate/washflow-ci -p revision=$(GIT_BRANCH) --watch
+	argo submit -n argo --from workflowtemplate/washflow-ci -p revision=$(GIT_BRANCH) \
+		-p pushImage=$(PUSH_IMAGE) --watch
 
 ## Deploy to production on Render through Argo Workflows: runs the CI checks on
 ## REVISION (default main), deploys that exact commit through the Render API,

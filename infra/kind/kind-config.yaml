@@ -1,6 +1,10 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: washflow-local
+networking:
+  # The node pulls images from localhost:30500 (the registry's NodePort); only
+  # the iptables proxy mode routes NodePorts on 127.0.0.1.
+  kubeProxyMode: iptables
 nodes:
   - role: control-plane
     # ingress-nginx NodePorts (infra/gitops/infrastructure/ingress-nginx/values.yaml).
@@ -15,4 +19,11 @@ nodes:
         protocol: TCP
       - containerPort: 30443
         hostPort: 8443
+        protocol: TCP
+      # In-cluster image registry (infra/gitops/infrastructure/registry): same
+      # address on the host and on the node, so images are localhost:30500/...
+      # everywhere. Bound to 127.0.0.1 - plain HTTP, no auth.
+      - containerPort: 30500
+        hostPort: 30500
+        listenAddress: "127.0.0.1"
         protocol: TCP
