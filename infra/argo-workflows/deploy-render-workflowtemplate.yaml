@@ -13,6 +13,11 @@ spec:
   # Turn Render's own "Auto-Deploy" off so this pipeline is the only way
   # production changes (otherwise every push to main deploys before the checks).
   entrypoint: deploy
+  # No artifact/log upload - see artifact-repository.yaml.
+  archiveLogs: false
+  artifactRepositoryRef:
+    configMap: washflow-artifact-repository
+    key: none
   arguments:
     parameters:
       - name: repo

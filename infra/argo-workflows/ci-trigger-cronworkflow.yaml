@@ -25,6 +25,11 @@ spec:
   workflowSpec:
     entrypoint: poll
     serviceAccountName: washflow-ci-trigger
+    # No artifact/log upload - see artifact-repository.yaml.
+    archiveLogs: false
+    artifactRepositoryRef:
+      configMap: washflow-artifact-repository
+      key: none
     ttlStrategy:
       secondsAfterSuccess: 600
     podGC:
