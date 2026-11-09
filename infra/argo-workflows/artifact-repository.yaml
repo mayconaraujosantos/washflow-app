@@ -1,0 +1,15 @@
+# "No artifact repository" for the washflow pipelines. They only pass
+# parameters between steps and keep logs in the pods, so they do not need one.
+#
+# The Argo Workflows quick-start (installed by `make cluster-up`) sets a MinIO
+# repository with archiveLogs: true as the namespace default, and that wins over
+# a workflow's own `archiveLogs: false`; its MinIO image is no longer pullable,
+# so every step would fail while uploading its log. Each workflow points at
+# this empty entry instead (spec.artifactRepositoryRef).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: washflow-artifact-repository
+  namespace: argo
+data:
+  none: ""
