@@ -1,0 +1,22 @@
+# ingress-nginx (chart 4.15.1). On kind the controller is exposed through fixed
+# NodePorts that infra/kind/kind-config.yaml maps to the host:
+#   host :8880 -> node :30880 (HTTP)    host :8443 -> node :30443 (HTTPS)
+# Rootless Podman cannot bind host ports below 1024, hence 8880 instead of 80.
+controller:
+  ingressClassResource:
+    name: nginx
+    default: true
+  service:
+    type: NodePort
+    nodePorts:
+      http: 30880
+      https: 30443
+  # Lets Prometheus (kube-prometheus-stack) scrape the controller.
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 90Mi

@@ -1,14 +1,21 @@
+# The washflow app (Javalin API serving the React PWA) and its PostgreSQL.
+# Last wave: it needs the ServiceMonitor CRD (kube-prometheus-stack), the
+# ingress class (ingress-nginx) and Tempo to send traces to.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: washflow-local
+  name: washflow
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://github.com/mayconaraujosantos/washflow-app.git
     targetRevision: develop
-    path: infra/k8s/local
+    path: infra/gitops/apps/washflow
   destination:
     server: https://kubernetes.default.svc
     namespace: washflow-local

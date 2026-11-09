@@ -1,0 +1,19 @@
+# washflow on the local cluster: the Javalin API (which also serves the React
+# PWA built into the same image - one Deployment), its PostgreSQL, and the
+# observability wiring:
+#   logs    -> stdout, shipped to Loki by the Alloy DaemonSet (no sidecar needed)
+#   traces  -> OpenTelemetry Java agent injected by an init container -> Tempo
+#   metrics -> GET /api/metrics scraped by Prometheus via the ServiceMonitor
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: washflow-local
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: washflow
+resources:
+  - secret.yaml
+  - postgres.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - servicemonitor.yaml

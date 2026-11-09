@@ -1,0 +1,27 @@
+# Argo CD (chart argo/argo-cd 10.11.1). Used twice: by the one-time `helm install`
+# in the README and by bootstrap/applications/argocd.yaml, which then keeps it in sync.
+global:
+  domain: argocd.local
+
+configs:
+  params:
+    # TLS ends at the ingress (plain HTTP locally); the UI is served over HTTP.
+    server.insecure: true
+
+dex:
+  enabled: false
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+
+# Single replicas, no HA - a laptop cluster.
+redis-ha:
+  enabled: false
+controller:
+  replicas: 1
+repoServer:
+  replicas: 1
+applicationSet:
+  replicas: 1

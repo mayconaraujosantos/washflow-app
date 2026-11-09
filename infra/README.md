@@ -8,22 +8,21 @@ and is deployed by an Argo Workflow (`make deploy-prod`).
 | --------------- | --------------------------------------------------------------- |
 | kind            | Local Kubernetes cluster, backed by Podman (`infra/kind/`)      |
 | Argo Workflows  | CI: backend tests+coverage, formatting, frontend lint, build check, optional SonarCloud |
-| Argo CD         | GitOps CD: syncs `infra/k8s/local` onto the cluster (staging)   |
+| Argo CD         | GitOps CD: syncs `infra/gitops` (ingress, LGTM observability, SonarQube, the app) - see [gitops/README.md](gitops/README.md) |
 | Render API      | Production deploy, run as an Argo Workflow after the CI checks  |
 
 ## First-time setup
 
 ```
-make cluster-up      # kind cluster + Argo CD + Argo Workflows
+make cluster-up      # kind cluster + Argo CD + Argo Workflows + GitOps root Application
 make image-local      # build washflow-api:local and load it into the cluster
-make argocd-port-forward   # UI at https://localhost:8081 (admin / `make argocd-password`)
-make argo-port-forward     # UI at https://localhost:2746
+make argo-port-forward     # Argo Workflows UI at https://localhost:2746
 ```
 
-The app itself is reachable at http://localhost:7000 once Argo CD has synced
-`infra/k8s/local` (NodePort 30080, mapped by `infra/kind/kind-config.yaml`) -
-same port as `make run`, since 8080 is the default lots of other local
-services (Spring Boot, etc.) already grab.
+Argo CD, Grafana, SonarQube and the app are served by ingress-nginx on host
+port 8880 by name (`http://argocd.local:8880`, `grafana.local`,
+`sonarqube.local`, `washflow.local`) once the names are in `/etc/hosts` - see
+[gitops/README.md](gitops/README.md) for the hosts entries and prerequisites.
 
 Windows note: `kind`'s Podman provider is a Go binary that aborts its PATH
 search when it hits a malformed PATH entry (this machine has one, from an
@@ -165,8 +164,8 @@ production.
 
 - **feature/\***: `make ci` before opening a PR — runs the same checks Argo
   CD/production will expect (`infra/argo-workflows/ci-workflowtemplate.yaml`).
-- **develop**: pushes are what Argo CD's `washflow-local` Application tracks
-  (`infra/argocd/application-local.yaml`, `targetRevision: develop`). After
+- **develop**: pushes are what Argo CD's Applications track
+  (`infra/gitops/bootstrap/`, `targetRevision: develop`). After
   pushing, run `make image-local` to rebuild the image the Deployment uses —
   Argo CD manages the manifests, not the image content, since there's no
   registry in this local setup.

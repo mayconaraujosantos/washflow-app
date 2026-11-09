@@ -1,0 +1,31 @@
+# Argo CD manages itself: same chart, version and values used by the one-time
+# `helm install` in the README, so the first sync adopts that release.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  project: default
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: 10.11.1
+      helm:
+        releaseName: argocd
+        valueFiles:
+          - $values/infra/gitops/infrastructure/argocd/values.yaml
+    - repoURL: https://github.com/mayconaraujosantos/washflow-app.git
+      targetRevision: develop
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

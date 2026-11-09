@@ -93,7 +93,7 @@ help:
 	@echo "  make ci                  Run the CI pipeline (test/lint/build) as an Argo Workflow."
 	@echo "  make deploy-prod         Test and deploy 'main' to Render via an Argo Workflow (REVISION=, SKIP_CHECKS=true)."
 	@echo "  make argocd-password     Print the Argo CD admin password."
-	@echo "  make argocd-port-forward Open the Argo CD UI at https://localhost:8081."
+	@echo "  make argocd-port-forward Argo CD UI at http://localhost:8081 (if argocd.local isn't mapped)."
 	@echo "  make argo-port-forward   Open the Argo Workflows UI at https://localhost:2746."
 
 install:
@@ -195,28 +195,30 @@ db-logs:
 
 ## Local CI/CD: kind (via Podman) + Argo CD (GitOps) + Argo Workflows (pipelines).
 ## Production deploys to Render through Argo Workflows (`make deploy-prod`); Argo
-## CD only manages the local/staging copy of the app in the kind cluster.
+## CD manages the local cluster - ingress, observability (LGTM), SonarQube and
+## the app - from infra/gitops (App-of-Apps, see infra/gitops/README.md).
+ARGOCD_CHART_VERSION := 10.11.1
 cluster-up:
 	@echo "==> kind cluster ($(KIND_CLUSTER))"
 	@KIND_EXPERIMENTAL_PROVIDER=podman $(KIND) get clusters 2>/dev/null | grep -qx "$(KIND_CLUSTER)" \
 		|| KIND_EXPERIMENTAL_PROVIDER=podman $(KIND) create cluster --name $(KIND_CLUSTER) --config $(KIND_CONFIG)
-	@echo "==> Argo CD"
-	@kubectl get ns argocd >/dev/null 2>&1 || kubectl create namespace argocd
-	kubectl apply -n argocd --server-side --force-conflicts \
-		-f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	@echo "==> Argo CD (Helm; afterwards it manages itself from infra/gitops)"
+	helm upgrade --install argocd argo-cd --repo https://argoproj.github.io/argo-helm \
+		--version $(ARGOCD_CHART_VERSION) --namespace argocd --create-namespace \
+		-f infra/gitops/infrastructure/argocd/values.yaml --wait --timeout 5m
 	@echo "==> Argo Workflows"
 	@kubectl get ns argo >/dev/null 2>&1 || kubectl create namespace argo
 	kubectl apply -n argo --server-side --force-conflicts \
 		-f https://github.com/argoproj/argo-workflows/releases/download/v3.7.2/quick-start-minimal.yaml
-	kubectl -n argocd rollout status deploy/argocd-server --timeout=180s
 	kubectl -n argo rollout status deploy/workflow-controller --timeout=180s
 	kubectl -n argo rollout status deploy/argo-server --timeout=180s
-	@echo "==> washflow Argo CD Application + Workflow templates"
-	kubectl apply -f infra/argocd/application-local.yaml
+	@echo "==> GitOps root Application + Workflow templates"
+	kubectl apply -f infra/gitops/bootstrap/root.yaml
 	kubectl apply -n argo -f infra/argo-workflows/
 	@echo ""
-	@echo "Cluster ready. Next: 'make image-local' to build+load the app image,"
-	@echo "then 'make argocd-port-forward' / 'make argo-port-forward' for the UIs."
+	@echo "Cluster ready; Argo CD is now syncing infra/gitops (a few minutes)."
+	@echo "Next: 'make image-local' to build+load the app image, then open"
+	@echo "http://argocd.local:8880 (admin / 'make argocd-password') - see infra/gitops/README.md."
 
 cluster-down:
 	KIND_EXPERIMENTAL_PROVIDER=podman $(KIND) delete cluster --name $(KIND_CLUSTER)
@@ -267,9 +269,10 @@ argocd-password:
 	kubectl -n argocd get secret argocd-initial-admin-secret -o go-template='{{.data.password | base64decode}}'
 	@echo ""
 
+## Fallback when argocd.local is not mapped in /etc/hosts.
 argocd-port-forward:
-	@echo "Argo CD UI: https://localhost:8081  (user: admin, password: make argocd-password)"
-	kubectl -n argocd port-forward svc/argocd-server 8081:443
+	@echo "Argo CD UI: http://localhost:8081  (user: admin, password: make argocd-password)"
+	kubectl -n argocd port-forward svc/argocd-server 8081:80
 
 argo-port-forward:
 	@echo "Argo Workflows UI: https://localhost:2746"
