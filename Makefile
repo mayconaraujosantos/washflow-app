@@ -51,7 +51,7 @@ endif
 	coverage sonar stop ip clean db-up db-down db-logs \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
-	argocd-port-forward argo-install argo-port-forward ci deploy-dev deploy-prod
+	argocd-port-forward argo-install argo-port-forward argo-ui-service ci deploy-dev deploy-prod
 
 help:
 	@echo "Washflow - local commands"
@@ -295,3 +295,13 @@ argocd-port-forward:
 argo-port-forward:
 	@echo "Argo Workflows UI: https://localhost:2746"
 	kubectl -n argo port-forward svc/argo-server 2746:2746
+
+## Same as argo-port-forward, but as a systemd user service that starts on
+## boot and restarts on its own (infra/systemd/washflow-argo-ui.service) - for
+## the machine that acts as the server. Linux only.
+argo-ui-service:
+	install -D -m 644 infra/systemd/washflow-argo-ui.service $(HOME)/.config/systemd/user/washflow-argo-ui.service
+	loginctl enable-linger $(USER)
+	systemctl --user daemon-reload
+	systemctl --user enable --now washflow-argo-ui.service
+	@echo "Argo Workflows UI: https://localhost:2746 (from another machine: ssh -L 2746:localhost:2746 ...)"

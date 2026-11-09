@@ -136,6 +136,10 @@ make deploy-prod            # main -> Render
 ## Working from another machine (e.g. a Mac)
 
 Develop on any machine and push to GitHub; the trigger picks the push up.
+On the machine that runs the cluster, `make argo-ui-service` (once) keeps the
+Argo Workflows UI on `127.0.0.1:2746` as a systemd user service - started on
+boot, restarted when it drops, no terminal to keep open.
+
 To reach the cluster, open an SSH tunnel to the machine that runs it (VS Code
 Remote-SSH forwards ports from its "Ports" tab instead):
 
