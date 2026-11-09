@@ -51,7 +51,7 @@ endif
 	coverage sonar stop ip clean db-up db-down db-logs \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
-	argocd-port-forward argo-install argo-port-forward ci deploy-prod
+	argocd-port-forward argo-install argo-port-forward ci deploy-dev deploy-prod
 
 help:
 	@echo "Washflow - local commands"
@@ -257,6 +257,17 @@ PUSH_IMAGE ?= false
 ci:
 	argo submit -n argo --from workflowtemplate/washflow-ci -p revision=$(GIT_BRANCH) \
 		-p pushImage=$(PUSH_IMAGE) --watch
+
+## Deploy a branch to the dev environment (washflow.local) through Argo
+## Workflows: runs the CI checks on BRANCH (default: the current one, as pushed
+## to GitHub), pushes the image as local-<SHA> and Argo CD Image Updater rolls
+## it out. The next develop build replaces it. Works from another machine (e.g.
+## the Mac) through the Argo Server - see "Working from another machine" in
+## infra/gitops/README.md.
+BRANCH ?= $(GIT_BRANCH)
+deploy-dev:
+	argo submit -n argo --from workflowtemplate/washflow-ci -p revision=$(BRANCH) \
+		-p pushImage=true -p tagPrefix=local --watch
 
 ## Deploy to production on Render through Argo Workflows: runs the CI checks on
 ## REVISION (default main), deploys that exact commit through the Render API,
