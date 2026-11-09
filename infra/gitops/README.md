@@ -150,6 +150,7 @@ Argo Server takes the `make` targets that submit pipelines:
 
 ```
 export ARGO_SERVER=localhost:2746 ARGO_SECURE=true ARGO_INSECURE_SKIP_VERIFY=true ARGO_NAMESPACE=argo
+export ARGO_TOKEN=none        # the CLI requires one; the server runs without auth (see below)
 make deploy-dev             # or make ci / make deploy-prod
 ```
 
