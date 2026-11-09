@@ -12,12 +12,15 @@ else
   DETECTED_OS := $(shell uname -s)
 endif
 
-# Detect container runtime: Docker first, then Podman as default fallback
+# Detect container runtime: Docker first, then Podman as default fallback.
+# A `docker` binary can exist with no daemon behind it (e.g. this machine's
+# rootless Podman setup), so check that the daemon actually answers rather
+# than just that the binary is on PATH.
 ifeq ($(OS),Windows_NT)
   HAS_DOCKER := $(shell where docker 2>$null)
   HAS_PODMAN := $(shell where podman 2>$null)
 else
-  HAS_DOCKER := $(shell command -v docker 2>/dev/null)
+  HAS_DOCKER := $(shell docker info >/dev/null 2>&1 && echo yes)
   HAS_PODMAN := $(shell command -v podman 2>/dev/null)
 endif
 
