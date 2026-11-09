@@ -1,0 +1,85 @@
+# Grafana Alloy (chart 1.14.3) as the log shipper DaemonSet.
+# Each Alloy pod tails, through the Kubernetes API, the logs of the pods on its
+# own node (no hostPath mounts - works on a kind node running on rootless Podman)
+# and pushes them to Loki.
+controller:
+  type: daemonset
+
+alloy:
+  configMap:
+    # K8S_NODE_NAME is set by the chart on every Alloy pod (spec.nodeName).
+    content: |
+      discovery.kubernetes "pods" {
+        role = "pod"
+        selectors {
+          role  = "pod"
+          field = "spec.nodeName=" + sys.env("K8S_NODE_NAME")
+        }
+      }
+
+      discovery.relabel "pods" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name", "__meta_kubernetes_pod_label_app"]
+          regex         = "^;*([^;]+)(;.*)?$"
+          target_label  = "app"
+        }
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pods.output
+        forward_to = [loki.process.pods.receiver]
+      }
+
+      loki.process "pods" {
+        // washflow logs one `key=value` line per event (see infra/README.md,
+        // "Logs, tracing and metrics"): promote the low-cardinality keys to
+        // labels and keep request_id as structured metadata.
+        stage.match {
+          selector = "{app=\"washflow-api\"}"
+
+          stage.logfmt {
+            mapping = {
+              "logger"     = "",
+              "request_id" = "",
+              "status"     = "",
+            }
+          }
+          stage.regex {
+            expression = "^\\S+\\s+(?P<level>[A-Z]+)\\s"
+          }
+          stage.labels {
+            values = {
+              level  = "",
+              logger = "",
+            }
+          }
+          stage.structured_metadata {
+            values = {
+              request_id = "",
+              status     = "",
+            }
+          }
+        }
+
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki.observability.svc.cluster.local:3100/loki/api/v1/push"
+        }
+      }

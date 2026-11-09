@@ -1,0 +1,35 @@
+# SonarQube Community Build plus its own PostgreSQL. The chart no longer bundles
+# a database, so the Kustomize source (wave 1) deploys it before the chart
+# (same Application, ordered by the resources' own sync-wave annotations).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sonarqube
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://SonarSource.github.io/helm-chart-sonarqube
+      chart: sonarqube
+      targetRevision: 2026.5.1003
+      helm:
+        releaseName: sonarqube
+        valueFiles:
+          - $values/infra/gitops/infrastructure/sonarqube/values.yaml
+    - repoURL: https://github.com/mayconaraujosantos/washflow-app.git
+      targetRevision: develop
+      ref: values
+      path: infra/gitops/infrastructure/sonarqube/postgres
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sonarqube
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

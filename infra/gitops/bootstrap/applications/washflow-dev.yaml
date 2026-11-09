@@ -1,0 +1,34 @@
+# dev environment (git flow `develop`): the washflow app (Javalin API serving
+# the React PWA) and its PostgreSQL. Production is not here - `main` deploys
+# to Render through the washflow-deploy-render workflow.
+#
+# Manifests follow `develop`; the image follows the newest develop-<SHA>
+# (or local-<SHA>, from `make image-local`) pushed to the local registry,
+# set on this Application by Argo CD Image Updater.
+#
+# Last wave: it needs the ServiceMonitor CRD (kube-prometheus-stack), the
+# ingress class (ingress-nginx), the registry and Tempo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: washflow-dev
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mayconaraujosantos/washflow-app.git
+    targetRevision: develop
+    path: infra/gitops/apps/washflow
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: washflow-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

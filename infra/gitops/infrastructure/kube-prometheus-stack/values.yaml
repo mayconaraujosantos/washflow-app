@@ -1,0 +1,100 @@
+# kube-prometheus-stack (chart 92.13.1): Prometheus + operator + Grafana.
+# Loki and Tempo are added to Grafana as data sources below.
+
+# kind runs etcd, the scheduler, the controller-manager and kube-proxy bound to
+# localhost inside the node container - scraping them only produces "down" targets.
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+# node-exporter needs the host's PID/network namespaces, which a kind node on
+# rootless Podman does not expose.
+nodeExporter:
+  enabled: false
+prometheus-node-exporter:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    # Pick up ServiceMonitors/PodMonitors from every namespace, not only the
+    # ones labelled with this Helm release (e.g. apps/washflow's ServiceMonitor).
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: standard
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+
+grafana:
+  # Local-only credentials. Change them (or use admin.existingSecret) anywhere else.
+  adminUser: admin
+  adminPassword: admin
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - grafana.local
+  persistence:
+    enabled: true
+    storageClassName: standard
+    size: 2Gi
+  sidecar:
+    datasources:
+      # Alertmanager is disabled above; don't provision a dangling data source.
+      alertmanager:
+        enabled: false
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: http://loki.observability.svc.cluster.local:3100
+      jsonData:
+        # The app logs `request_id=...` on every line (Alloy keeps it as
+        # structured metadata); jump from a log line to the rest of its request.
+        # `$$` escapes `$` from Grafana's env-var expansion in provisioning.
+        derivedFields:
+          - name: request_id
+            matcherRegex: "request_id=(\\S+)"
+            url: '{app="washflow-api"} | request_id="$${__value.raw}"'
+            datasourceUid: loki
+            urlDisplayLabel: "Lines of this request"
+    - name: Tempo
+      uid: tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.observability.svc.cluster.local:3200
+      jsonData:
+        # From a span to the logs of the same service around that time:
+        # the OTel resource attribute service.name (OTEL_SERVICE_NAME) equals
+        # the `app` label Alloy puts on the pod's log lines.
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: "-5m"
+          spanEndTimeShift: "5m"
+          filterByTraceID: false
+          tags:
+            - key: service.name
+              value: app
+        nodeGraph:
+          enabled: true
+        lokiSearch:
+          datasourceUid: loki

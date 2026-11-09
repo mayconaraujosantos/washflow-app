@@ -16,6 +16,16 @@ spec:
       # everyday feature work before that's set up.
       - name: runSonar
         value: "false"
+      # Build the runtime image and push it to the in-cluster registry as
+      # localhost:30500/washflow-api:<branch>-<commit SHA> (+ latest). Argo CD
+      # Image Updater deploys only develop-* tags (dev environment). The
+      # ci-trigger CronWorkflow sets it for develop; off for plain checks.
+      - name: pushImage
+        value: "false"
+  # One pipeline at a time: two Gradle builds side by side starve a laptop.
+  synchronization:
+    mutexes:
+      - name: washflow-ci
   volumeClaimTemplates:
     - metadata:
         name: workspace
@@ -38,15 +48,32 @@ spec:
             when: "{{workflow.parameters.runSonar}} == true"
           - name: build-check
             template: build-check
+        - - name: image
+            template: image
+            when: "{{workflow.parameters.pushImage}} == true"
+            arguments:
+              parameters:
+                - name: tag
+                  value: "{{steps.checkout.outputs.parameters.tag}}"
 
     - name: checkout
       container:
         image: alpine/git:2.47.1
         command: [sh, -c]
         args:
-          - git clone --depth 1 --branch "{{workflow.parameters.revision}}" "{{workflow.parameters.repo}}" /workspace/src
+          - |
+            set -eu
+            git clone --depth 1 --branch "{{workflow.parameters.revision}}" "{{workflow.parameters.repo}}" /workspace/src
+            # Image tag: <branch slug>-<commit SHA>, e.g. develop-8ae81bb...
+            slug=$(printf '%s' "{{workflow.parameters.revision}}" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9.' '-' | cut -c1-60)
+            printf '%s-%s' "$slug" "$(git -C /workspace/src rev-parse HEAD)" > /workspace/tag
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
+      outputs:
+        parameters:
+          - name: tag
+            valueFrom:
+              path: /workspace/tag
 
     # Mirrors the "quality" job's backend step from the old GitHub Actions
     # workflow. `gradle test` depends on the bunInstall/bunBuild tasks (the
@@ -94,13 +121,12 @@ spec:
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
 
-    # Mirrors the "container" job's intent (validate the app packages
-    # cleanly) without an in-cluster image build: kaniko v1.23.2 hits a
-    # reproducible "duplicate class" javac error on this Dockerfile's
-    # multi-stage COPY that plain `podman build`/`docker build` does not
-    # (confirmed against an isolated fresh clone) - a kaniko snapshotting
-    # quirk, not a project bug. `make image-local` (plain podman, on your
-    # machine) is what actually builds and loads the deployable image.
+    # Packages the app (`gradle installDist`, frontend bundled in) and lays out
+    # the image build context in /workspace/image: the installed app plus
+    # runtime.Dockerfile. The root Dockerfile is not built in the cluster:
+    # kaniko v1.23.2 hits a reproducible "duplicate class" javac error on its
+    # multi-stage build that plain `podman build` does not - so compilation
+    # happens here, with Gradle, and kaniko only packages the result.
     - name: build-check
       container:
         image: gradle:9.7.1-jdk21
@@ -113,5 +139,27 @@ spec:
             curl -fsSL https://bun.sh/install | bash >/dev/null
             ln -s /root/.bun/bin/bun /usr/local/bin/bun
             gradle installDist --no-daemon --console=plain
+            rm -rf /workspace/image && mkdir -p /workspace/image
+            cp -r build/install/washflow-api /workspace/image/app
+            cp infra/argo-workflows/runtime.Dockerfile /workspace/image/Dockerfile
+        volumeMounts:
+          - {name: workspace, mountPath: /workspace}
+
+    # Builds the runtime image from /workspace/image and pushes it to the
+    # in-cluster registry over plain HTTP (local only).
+    - name: image
+      inputs:
+        parameters:
+          - name: tag
+      container:
+        image: gcr.io/kaniko-project/executor:v1.23.2
+        args:
+          - --context=dir:///workspace/image
+          - --dockerfile=/workspace/image/Dockerfile
+          - --destination=registry.registry.svc.cluster.local:5000/washflow-api:{{inputs.parameters.tag}}
+          - --destination=registry.registry.svc.cluster.local:5000/washflow-api:latest
+          - --insecure
+          - --skip-tls-verify
+          - --cache=false
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
