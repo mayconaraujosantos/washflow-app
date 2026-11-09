@@ -1,9 +1,33 @@
 # Local cluster via Argo CD (GitOps)
 
-Everything on the local kind cluster - ingress, observability (LGTM), SonarQube
-and the washflow app - is declared here and synced by Argo CD (App-of-Apps).
-Argo Workflows (CI and the Render deploy) is still installed by
-`make cluster-up` and is described in [../README.md](../README.md).
+Everything on the local kind cluster - ingress, observability (LGTM), SonarQube,
+the CI pipelines and the washflow **dev** environment - is declared here and
+synced by Argo CD (App-of-Apps). Argo Workflows itself (controller, CRDs) is
+installed by `make cluster-up`; production runs on Render (see
+[../README.md](../README.md)).
+
+## Git flow and environments
+
+| Branch | Pipeline (started by the `washflow-ci-trigger` CronWorkflow) | Environment |
+| --- | --- | --- |
+| `feature/*`, `bugfix/*` | `washflow-ci`: tests, Spotless, lint, Prettier, build | - |
+| `develop` | `washflow-ci` + image `develop-<SHA>` | **dev**: this cluster, http://washflow.local:8880 (Image Updater deploys it) |
+| `release/*`, `hotfix/*`, `support/*` | `washflow-ci` | - |
+| `main` | `washflow-deploy-render` (checks + Render deploy + smoke test), only if `autoDeployMain=true`; otherwise `make deploy-prod` | **prod**: Render |
+
+- The trigger polls GitHub (`git ls-remote`) every 2 minutes, so nothing on
+  this machine has to be reachable from the internet. Its first run only
+  records the current branch heads.
+- Production stays a deliberate `make deploy-prod` by default. To deploy every
+  push to `main`, set `autoDeployMain` to `"true"` in
+  `infra/argo-workflows/ci-trigger-cronworkflow.yaml`, and turn Render's own
+  Auto-Deploy off.
+- Manifests and pipelines (`infra/gitops`, `infra/argo-workflows`) follow
+  `develop` too: infrastructure changes go feature -> PR -> develop like code.
+- `washflow-ci` runs one at a time (mutex): a burst of pushes queues up
+  instead of running several Gradle builds side by side.
+- `make image-local` pushes `local-<SHA>` from any branch, so you can try a
+  feature on dev before merging; the next `develop` build replaces it.
 
 ```
 infra/gitops/
@@ -15,11 +39,12 @@ infra/gitops/
 │       ├── registry.yaml          # wave -1  image registry (NodePort 30500)
 │       ├── kube-prometheus-stack.yaml  # 0  Prometheus + Grafana (+ ServiceMonitor CRDs)
 │       ├── argocd-image-updater.yaml   # 0  deploys new washflow images
+│       ├── ci-pipelines.yaml      # wave 0   infra/argo-workflows (CI, Render deploy, git flow trigger)
 │       ├── loki.yaml              # wave 1   logs
 │       ├── tempo.yaml             # wave 1   traces
 │       ├── sonarqube.yaml         # wave 1   SonarQube + its PostgreSQL
 │       ├── alloy.yaml             # wave 2   log shipper DaemonSet -> Loki
-│       └── washflow.yaml          # wave 3   the app
+│       └── washflow-dev.yaml      # wave 3   the app, dev environment (develop)
 ├── infrastructure/                # Helm values (and Kustomize where a chart is not enough)
 │   ├── argocd/values.yaml
 │   ├── ingress-nginx/values.yaml
@@ -50,7 +75,8 @@ from this repo (multi-source `$values/...`), pinned to a chart version.
 | SonarQube | `sonarqube/sonarqube` 2026.5.1003 | `sonarqube` | http://sonarqube.local:8880 |
 | Registry | Kustomize (`registry:3.0.0`) | `registry` | `localhost:30500` (host only) |
 | Argo CD Image Updater | `argo/argocd-image-updater` 1.3.2 | `argocd` | - |
-| washflow | Kustomize (`apps/washflow`) | `washflow-local` | http://washflow.local:8880 |
+| CI pipelines | Directory (`infra/argo-workflows`) | `argo` | Argo Workflows UI (`make argo-port-forward`) |
+| washflow (dev) | Kustomize (`apps/washflow`) | `washflow-dev` | http://washflow.local:8880 |
 
 ## How the app is observed
 
@@ -66,14 +92,16 @@ one Deployment, not a separate frontend.
 ## How a commit gets deployed
 
 ```
-git push ──▶ Argo Workflow washflow-ci (pushImage=true)
-               checkout ─▶ backend tests + Spotless │ frontend lint + Prettier
-                        ─▶ gradle installDist (+ optional Sonar)
-                        ─▶ kaniko: runtime image ─▶ registry: washflow-api:<SHA> (+ latest)
-                                                        │
-             Argo CD Image Updater (polls the registry) ◀┘
-               └─▶ sets washflow Application image = localhost:30500/washflow-api:<SHA>
-                     └─▶ Argo CD syncs the Deployment ─▶ http://washflow.local:8880
+git push develop
+  └─▶ washflow-ci-trigger (CronWorkflow, polls GitHub every 2 min)
+        └─▶ washflow-ci (pushImage=true)
+              checkout ─▶ backend tests + Spotless │ frontend lint + Prettier
+                       ─▶ gradle installDist (+ optional Sonar)
+                       ─▶ kaniko: runtime image ─▶ registry: washflow-api:develop-<SHA> (+ latest)
+                                                          │
+        Argo CD Image Updater (polls the registry) ◀──────┘
+          └─▶ sets washflow-dev image = localhost:30500/washflow-api:develop-<SHA>
+                └─▶ Argo CD syncs the Deployment ─▶ http://washflow.local:8880
 ```
 
 - The image is named `localhost:30500/washflow-api` everywhere: the registry's
@@ -81,8 +109,10 @@ git push ──▶ Argo Workflow washflow-ci (pushImage=true)
   machine (`make image-local`) and the manifests all use that address. CI
   pushes through the in-cluster Service instead, and the Image Updater
   maps one to the other (`argocd-image-updater/values.yaml`).
-- Only full commit-SHA tags are deployed (`newest-build`); `latest` exists
-  just so the Deployment can start before the first SHA image.
+- Only `develop-<SHA>` and `local-<SHA>` tags are deployed (`newest-build`);
+  CI images of other branches (`feature-x-<SHA>`, with `PUSH_IMAGE=true`) stay
+  in the registry, and `latest` exists just so the Deployment can start
+  before the first SHA image.
 - The new tag is written on the Application object (write-back `argocd`), not
   committed to Git; the root Application ignores that field.
 - Kaniko only packages the output of `gradle installDist`
@@ -90,12 +120,13 @@ git push ──▶ Argo Workflow washflow-ci (pushImage=true)
   Dockerfile in the cluster hits a kaniko javac bug. Keep the two runtime
   stages in sync.
 
-Triggering the workflow automatically on every push is the next step (see the
-end of this file); until then:
+Manual runs, besides the trigger:
 
 ```
-make ci PUSH_IMAGE=true     # checks + image + deploy for the current branch (from GitHub)
-make image-local            # build + push from your working tree, no checks
+make ci                     # checks for the current branch (as pushed to GitHub)
+make ci PUSH_IMAGE=true     # + image <branch>-<SHA> (deployed to dev only on develop)
+make image-local            # build + push local-<SHA> from your working tree, no checks
+make deploy-prod            # main -> Render
 ```
 
 ## Prerequisites
@@ -119,7 +150,7 @@ make image-local            # build + push from your working tree, no checks
 
 ```
 make cluster-up       # kind cluster + Argo CD (Helm) + Argo Workflows + root Application
-make image-local      # first image: build + push localhost:30500/washflow-api:<SHA>
+make image-local      # first image: build + push localhost:30500/washflow-api:local-<SHA>
 ```
 
 `make cluster-up` runs, in order:
@@ -144,8 +175,8 @@ make argocd-password   # admin password for the UI
 Port mappings in `infra/kind/kind-config.yaml` are fixed when the cluster is
 created. On a cluster created before this layout, run
 `make cluster-down && make cluster-up`. The old Argo CD install from plain
-manifests and the `washflow-local` Application are replaced by the Helm release
-and the root Application.
+manifests and the old `washflow-local` Application are replaced by the Helm
+release and the root Application (the app now lives in namespace `washflow-dev`).
 
 ## Host names (/etc/hosts)
 
@@ -211,9 +242,9 @@ the host and clear the organization (SonarQube Server has none).
   mode (set in `kind-config.yaml`) routes NodePorts on 127.0.0.1. If pods sit
   in `ErrImagePull` with an HTTPS error, add a containerd `hosts.toml` for
   `localhost:30500` (kind docs, "Local Registry").
-- **Next steps**: trigger `washflow-ci` on every push (a CronWorkflow polling
-  `git ls-remote`, or Argo Events with a GitHub webhook), point the Sonar step
-  at this SonarQube, and report the result as a GitHub commit status.
+- **Next steps**: point the Sonar step at this SonarQube, report pipeline
+  results as GitHub commit statuses, and - if the 2-minute polling delay
+  bothers you - swap the trigger for Argo Events with a GitHub webhook.
 - On minikube or Docker Desktop instead of kind, drop the kind port mappings and
   reach the NodePorts directly (`minikube ip`:30880, or `localhost:30880` on
   Docker Desktop). Use their default StorageClass (`standard` on minikube,

@@ -1,6 +1,8 @@
-# Deploys the newest washflow-api image whose tag is a full commit SHA (what
-# CI and `make image-local` push). `latest` is ignored: it only serves the
-# Deployment's first start, before any SHA-tagged image exists.
+# dev environment: deploys the newest washflow-api image built from `develop`
+# (develop-<SHA>, pushed by the washflow-ci workflow) or from a working tree
+# (local-<SHA>, `make image-local`). Images of feature/release/hotfix branches
+# are never deployed here, and `latest` only serves the Deployment's first
+# start. Production (main) runs on Render, outside this cluster.
 #
 # Write-back "argocd" sets the Application's spec.source.kustomize.images
 # directly - nothing is committed to Git. bootstrap/root.yaml ignores that
@@ -8,18 +10,18 @@
 apiVersion: argocd-image-updater.argoproj.io/v1alpha1
 kind: ImageUpdater
 metadata:
-  name: washflow
+  name: washflow-dev
 spec:
   writeBackConfig:
     method: argocd
   applicationRefs:
-    - namePattern: washflow
+    - namePattern: washflow-dev
       images:
         - alias: api
           imageName: localhost:30500/washflow-api
           commonUpdateSettings:
             updateStrategy: newest-build
-            allowTags: "regexp:^[0-9a-f]{40}$"
+            allowTags: "regexp:^(develop|local)-[0-9a-f]{40}$"
           manifestTargets:
             kustomize:
               name: localhost:30500/washflow-api

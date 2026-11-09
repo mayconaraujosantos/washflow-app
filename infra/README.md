@@ -165,11 +165,13 @@ production.
 - **feature/\***: `make ci` before opening a PR — runs the same checks Argo
   CD/production will expect (`infra/argo-workflows/ci-workflowtemplate.yaml`).
 - **develop**: pushes are what Argo CD's Applications track
-  (`infra/gitops/bootstrap/`, `targetRevision: develop`). After
-  pushing, `make ci PUSH_IMAGE=true` (on develop) runs the checks, pushes
-  `localhost:30500/washflow-api:<SHA>` to the cluster registry and Argo CD
-  Image Updater rolls it out; `make image-local` does the build+push from
-  your machine without the checks.
+  (`infra/gitops/bootstrap/`, `targetRevision: develop`). Within ~2 minutes
+  of a push, the `washflow-ci-trigger` CronWorkflow runs the checks, pushes
+  `localhost:30500/washflow-api:develop-<SHA>` to the cluster registry and
+  Argo CD Image Updater rolls it out to the **dev** environment
+  (http://washflow.local:8880). Pushes to `feature/*`, `release/*` and
+  `hotfix/*` get the checks only. See
+  [gitops/README.md](gitops/README.md#git-flow-and-environments).
 - **release/\***: same as develop, run `make ci` against the release branch:
   `argo submit -n argo --from workflowtemplate/washflow-ci -p revision=release/x.y.z --watch`.
 - **main**: push `main` + tag, then `make deploy-prod` - an Argo Workflow

@@ -1,0 +1,28 @@
+# The Argo Workflows pipelines (infra/argo-workflows): washflow-ci, the Render
+# deploy and the git flow trigger CronWorkflow. Changing a pipeline follows git
+# flow like everything else: feature branch -> PR -> develop -> synced here.
+# Argo Workflows itself (CRDs, controller) is installed by `make cluster-up`.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ci-pipelines
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mayconaraujosantos/washflow-app.git
+    targetRevision: develop
+    path: infra/argo-workflows
+    directory:
+      include: "*.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

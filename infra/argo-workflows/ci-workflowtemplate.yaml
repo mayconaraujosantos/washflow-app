@@ -17,10 +17,15 @@ spec:
       - name: runSonar
         value: "false"
       # Build the runtime image and push it to the in-cluster registry as
-      # localhost:30500/washflow-api:<commit SHA> (+ latest); Argo CD Image
-      # Updater then deploys it (infra/gitops). Off for plain checks.
+      # localhost:30500/washflow-api:<branch>-<commit SHA> (+ latest). Argo CD
+      # Image Updater deploys only develop-* tags (dev environment). The
+      # ci-trigger CronWorkflow sets it for develop; off for plain checks.
       - name: pushImage
         value: "false"
+  # One pipeline at a time: two Gradle builds side by side starve a laptop.
+  synchronization:
+    mutexes:
+      - name: washflow-ci
   volumeClaimTemplates:
     - metadata:
         name: workspace
@@ -48,8 +53,8 @@ spec:
             when: "{{workflow.parameters.pushImage}} == true"
             arguments:
               parameters:
-                - name: sha
-                  value: "{{steps.checkout.outputs.parameters.sha}}"
+                - name: tag
+                  value: "{{steps.checkout.outputs.parameters.tag}}"
 
     - name: checkout
       container:
@@ -59,14 +64,16 @@ spec:
           - |
             set -eu
             git clone --depth 1 --branch "{{workflow.parameters.revision}}" "{{workflow.parameters.repo}}" /workspace/src
-            git -C /workspace/src rev-parse HEAD > /workspace/sha
+            # Image tag: <branch slug>-<commit SHA>, e.g. develop-8ae81bb...
+            slug=$(printf '%s' "{{workflow.parameters.revision}}" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9.' '-' | cut -c1-60)
+            printf '%s-%s' "$slug" "$(git -C /workspace/src rev-parse HEAD)" > /workspace/tag
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
       outputs:
         parameters:
-          - name: sha
+          - name: tag
             valueFrom:
-              path: /workspace/sha
+              path: /workspace/tag
 
     # Mirrors the "quality" job's backend step from the old GitHub Actions
     # workflow. `gradle test` depends on the bunInstall/bunBuild tasks (the
@@ -143,13 +150,13 @@ spec:
     - name: image
       inputs:
         parameters:
-          - name: sha
+          - name: tag
       container:
         image: gcr.io/kaniko-project/executor:v1.23.2
         args:
           - --context=dir:///workspace/image
           - --dockerfile=/workspace/image/Dockerfile
-          - --destination=registry.registry.svc.cluster.local:5000/washflow-api:{{inputs.parameters.sha}}
+          - --destination=registry.registry.svc.cluster.local:5000/washflow-api:{{inputs.parameters.tag}}
           - --destination=registry.registry.svc.cluster.local:5000/washflow-api:latest
           - --insecure
           - --skip-tls-verify

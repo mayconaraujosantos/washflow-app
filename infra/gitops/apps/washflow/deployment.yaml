@@ -38,9 +38,10 @@ spec:
       containers:
         - name: washflow-api
           # Pulled from the in-cluster registry (infra/gitops/infrastructure/registry).
-          # CI and `make image-local` push <commit SHA> tags; Argo CD Image Updater
-          # replaces `latest` with the newest of them on the Application, so the
-          # tag here only matters for the very first start.
+          # CI on develop pushes develop-<SHA>, `make image-local` pushes
+          # local-<SHA>; Argo CD Image Updater replaces `latest` with the newest
+          # of them on the Application, so the tag here only matters for the
+          # very first start.
           image: localhost:30500/washflow-api:latest
           imagePullPolicy: IfNotPresent
           ports:
@@ -85,7 +86,7 @@ spec:
             - name: OTEL_LOGS_EXPORTER
               value: none
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: deployment.environment=local,k8s.namespace.name=$(POD_NAMESPACE),k8s.pod.name=$(POD_NAME)
+              value: deployment.environment=dev,k8s.namespace.name=$(POD_NAMESPACE),k8s.pod.name=$(POD_NAME)
           readinessProbe:
             httpGet:
               path: /api/health

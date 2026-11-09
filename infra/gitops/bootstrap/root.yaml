@@ -18,12 +18,12 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
-  # Argo CD Image Updater sets the image tag on the washflow Application
+  # Argo CD Image Updater sets the image tag on the washflow-dev Application
   # (spec.source.kustomize.images); without this, selfHeal would put it back.
   ignoreDifferences:
     - group: argoproj.io
       kind: Application
-      name: washflow
+      name: washflow-dev
       jsonPointers:
         - /spec/source/kustomize
   syncPolicy:

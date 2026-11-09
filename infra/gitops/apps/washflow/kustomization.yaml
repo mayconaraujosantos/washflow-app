@@ -6,7 +6,7 @@
 #   metrics -> GET /api/metrics scraped by Prometheus via the ServiceMonitor
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: washflow-local
+namespace: washflow-dev
 labels:
   - pairs:
       app.kubernetes.io/part-of: washflow

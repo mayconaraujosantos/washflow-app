@@ -232,24 +232,27 @@ cluster-status:
 	@echo ""
 	kubectl get application -n argocd
 	@echo ""
-	kubectl get pods -n washflow-local 2>/dev/null || true
+	kubectl get pods -n washflow-dev 2>/dev/null || true
 
 ## Build the app image on this machine and push it to the cluster's registry
-## (localhost:30500, see infra/gitops/infrastructure/registry) tagged with the
-## current commit SHA; Argo CD Image Updater then rolls it out. Builds the
-## working tree as is - uncommitted changes go into an image named after HEAD.
+## (localhost:30500, see infra/gitops/infrastructure/registry) as
+## local-<HEAD SHA>; Argo CD Image Updater rolls it out to the dev environment
+## (until the next develop build, which is newer). Builds the working tree as
+## is, from any branch - handy to try a feature on dev before merging.
 ## Uses the auto-detected container runtime (Docker or Podman).
 REGISTRY := localhost:30500
-IMAGE_SHA = $(shell git rev-parse HEAD)
+IMAGE_TAG = local-$(shell git rev-parse HEAD)
 image-local:
-	$(DOCKER) build -t $(REGISTRY)/washflow-api:$(IMAGE_SHA) -t $(REGISTRY)/washflow-api:latest .
-	$(DOCKER) push $(if $(filter podman,$(DOCKER)),--tls-verify=false) $(REGISTRY)/washflow-api:$(IMAGE_SHA)
+	$(DOCKER) build -t $(REGISTRY)/washflow-api:$(IMAGE_TAG) -t $(REGISTRY)/washflow-api:latest .
+	$(DOCKER) push $(if $(filter podman,$(DOCKER)),--tls-verify=false) $(REGISTRY)/washflow-api:$(IMAGE_TAG)
 	$(DOCKER) push $(if $(filter podman,$(DOCKER)),--tls-verify=false) $(REGISTRY)/washflow-api:latest
 
 ## Run the CI pipeline (backend tests, frontend lint, build) for the current
 ## branch as an Argo Workflow - the local replacement for the "quality" +
-## "container" jobs GitHub Actions used to run. PUSH_IMAGE=true also builds the
-## image and pushes it to the cluster registry, which deploys it.
+## "container" jobs GitHub Actions used to run. Pushes are picked up on their
+## own by the washflow-ci-trigger CronWorkflow (git flow); this is the manual
+## way. PUSH_IMAGE=true also pushes <branch>-<SHA> to the cluster registry
+## (deployed to dev only for develop).
 PUSH_IMAGE ?= false
 ci:
 	argo submit -n argo --from workflowtemplate/washflow-ci -p revision=$(GIT_BRANCH) \
