@@ -26,8 +26,10 @@ installed by `make cluster-up`; production runs on Render (see
   `develop` too: infrastructure changes go feature -> PR -> develop like code.
 - `washflow-ci` runs one at a time (mutex): a burst of pushes queues up
   instead of running several Gradle builds side by side.
-- `make image-local` pushes `local-<SHA>` from any branch, so you can try a
-  feature on dev before merging; the next `develop` build replaces it.
+- To try a feature on dev before merging: `make deploy-dev` (checks + image
+  `local-<SHA>` built in the cluster from the branch as pushed to GitHub) or
+  `make image-local` (builds your working tree on this machine, no checks).
+  The next `develop` build replaces it.
 
 ```
 infra/gitops/
@@ -125,9 +127,34 @@ Manual runs, besides the trigger:
 ```
 make ci                     # checks for the current branch (as pushed to GitHub)
 make ci PUSH_IMAGE=true     # + image <branch>-<SHA> (deployed to dev only on develop)
+make deploy-dev             # checks + image local-<SHA> for the current branch -> dev
+make deploy-dev BRANCH=feature/x   # same, for another pushed branch
 make image-local            # build + push local-<SHA> from your working tree, no checks
 make deploy-prod            # main -> Render
 ```
+
+## Working from another machine (e.g. a Mac)
+
+Develop on any machine and push to GitHub; the trigger picks the push up.
+To reach the cluster, open an SSH tunnel to the machine that runs it (VS Code
+Remote-SSH forwards ports from its "Ports" tab instead):
+
+```
+ssh -N -L 8880:localhost:8880 -L 2746:localhost:2746 user@cluster-host
+```
+
+Add the `/etc/hosts` entries below on that machine too, then open
+`http://washflow.local:8880` (dev) and `https://localhost:2746` (Argo
+Workflows). With the `argo` CLI installed there (`brew install argo`), the
+Argo Server takes the `make` targets that submit pipelines:
+
+```
+export ARGO_SERVER=localhost:2746 ARGO_SECURE=true ARGO_INSECURE_SKIP_VERIFY=true ARGO_NAMESPACE=argo
+make deploy-dev             # or make ci / make deploy-prod
+```
+
+The quick-start Argo Server runs with `--auth-mode server`: anyone who reaches
+port 2746 can submit workflows, so keep it on localhost and the SSH tunnel.
 
 ## Prerequisites
 

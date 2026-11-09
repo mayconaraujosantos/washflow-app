@@ -22,6 +22,10 @@ spec:
       # ci-trigger CronWorkflow sets it for develop; off for plain checks.
       - name: pushImage
         value: "false"
+      # Image tag prefix; empty = the branch slug. `make deploy-dev` sets
+      # "local" so a feature branch's image (local-<SHA>) is deployed to dev.
+      - name: tagPrefix
+        value: ""
   # No artifact/log upload - see artifact-repository.yaml.
   archiveLogs: false
   artifactRepositoryRef:
@@ -69,8 +73,9 @@ spec:
           - |
             set -eu
             git clone --depth 1 --branch "{{workflow.parameters.revision}}" "{{workflow.parameters.repo}}" /workspace/src
-            # Image tag: <branch slug>-<commit SHA>, e.g. develop-8ae81bb...
-            slug=$(printf '%s' "{{workflow.parameters.revision}}" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9.' '-' | cut -c1-60)
+            # Image tag: <prefix or branch slug>-<commit SHA>, e.g. develop-8ae81bb...
+            slug="{{workflow.parameters.tagPrefix}}"
+            [ -n "$slug" ] || slug=$(printf '%s' "{{workflow.parameters.revision}}" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9.' '-' | cut -c1-60)
             printf '%s-%s' "$slug" "$(git -C /workspace/src rev-parse HEAD)" > /workspace/tag
         volumeMounts:
           - {name: workspace, mountPath: /workspace}
