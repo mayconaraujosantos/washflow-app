@@ -22,6 +22,7 @@ import com.washflow.application.routes.VehicleRoutes;
 import com.washflow.application.security.AccountSecurityGateway;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthorizationMiddleware;
+import com.washflow.application.security.LoginThrottle;
 import com.washflow.infra.db.jdbi.JdbiAccountSecurityGateway;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import com.washflow.infra.db.jdbi.JdbiIdempotencyStore;
@@ -47,6 +48,7 @@ public class Application {
     RequestTracing tracing = new RequestTracing(Metrics.registry());
     IdempotencyGuard idempotency =
         new IdempotencyGuard(new JdbiIdempotencyStore(jdbi), Clock.systemUTC());
+    LoginThrottle loginThrottle = new LoginThrottle(Clock.systemUTC());
 
     Javalin app =
         Javalin.create(
@@ -61,15 +63,21 @@ public class Application {
                               endpoint.method.name(),
                               endpoint.path,
                               ctx,
-                              () -> {
-                                if (authorizationMiddleware.authorize(ctx)) {
-                                  // Idempotency-Key: a resent POST replays its first success.
-                                  idempotency.handle(
+                              () ->
+                                  // Sign-in routes: lock an account or IP after repeated 401s.
+                                  loginThrottle.handle(
                                       endpoint.method.name(),
                                       ctx,
-                                      () -> endpoint.handler.handle(ctx));
-                                }
-                              }));
+                                      () -> {
+                                        if (authorizationMiddleware.authorize(ctx)) {
+                                          // Idempotency-Key: a resent POST replays its first
+                                          // success.
+                                          idempotency.handle(
+                                              endpoint.method.name(),
+                                              ctx,
+                                              () -> endpoint.handler.handle(ctx));
+                                        }
+                                      })));
               // Without JavaTimeModule, java.time.Instant fields (e.g.
               // ServiceOrder's) blow up serialization with an
               // InvalidDefinitionException; without disabling
