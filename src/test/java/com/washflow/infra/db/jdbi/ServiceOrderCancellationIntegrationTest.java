@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -74,12 +77,16 @@ class ServiceOrderCancellationIntegrationTest {
   @Test
   void cancelledOrdersFreeTheirSlotAndLeaveTheYard() {
     UUID id = order("AGENDADO");
-    assertEquals(1, repository.countScheduledBetween(SLOT, SLOT.plusSeconds(3600)));
+    assertEquals(
+        1, new AgendaJdbiRepository(jdbi).countScheduledBetween(SLOT, SLOT.plusSeconds(3600)));
 
     repository.cancel(id, MANAGER_ID, "NO_SHOW", null);
 
-    assertEquals(0, repository.countScheduledBetween(SLOT, SLOT.plusSeconds(3600)));
-    assertTrue(repository.loadYardOverview().stream().map(ServiceOrder::id).noneMatch(id::equals));
+    assertEquals(
+        0, new AgendaJdbiRepository(jdbi).countScheduledBetween(SLOT, SLOT.plusSeconds(3600)));
+    assertTrue(
+        new YardJdbiRepository(jdbi)
+            .loadYardOverview().stream().map(ServiceOrder::id).noneMatch(id::equals));
   }
 
   private UUID order(String status) {

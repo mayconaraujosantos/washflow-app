@@ -1,0 +1,16 @@
+package com.washflow.application.factories.usecases.finance;
+
+import com.washflow.data.usecases.finance.DbDeleteCashTransaction;
+import com.washflow.domain.usecases.finance.DeleteCashTransaction;
+import com.washflow.infra.db.jdbi.finance.CashTransactionJdbiRepository;
+import org.jdbi.v3.core.Jdbi;
+
+public final class DeleteCashTransactionFactory {
+
+  private DeleteCashTransactionFactory() {}
+
+  public static DeleteCashTransaction make(Jdbi jdbi) {
+    CashTransactionJdbiRepository repository = new CashTransactionJdbiRepository(jdbi);
+    return new DbDeleteCashTransaction(repository);
+  }
+}

@@ -1,0 +1,15 @@
+package com.washflow.application.factories.controllers.serviceorder;
+
+import com.washflow.application.factories.usecases.serviceorder.DeleteServiceOrderPhotoFactory;
+import com.washflow.presentation.controllers.serviceorder.DeletePhotoController;
+import com.washflow.presentation.protocols.Controller;
+import org.jdbi.v3.core.Jdbi;
+
+public final class DeletePhotoControllerFactory {
+
+  private DeletePhotoControllerFactory() {}
+
+  public static Controller make(Jdbi jdbi) {
+    return new DeletePhotoController(DeleteServiceOrderPhotoFactory.make(jdbi));
+  }
+}

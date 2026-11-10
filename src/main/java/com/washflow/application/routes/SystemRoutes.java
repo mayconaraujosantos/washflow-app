@@ -3,8 +3,8 @@ package com.washflow.application.routes;
 import static io.javalin.apibuilder.ApiBuilder.get;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.HealthControllerFactory;
-import com.washflow.application.factories.controllers.HelloControllerFactory;
+import com.washflow.application.factories.controllers.system.HealthControllerFactory;
+import com.washflow.application.factories.controllers.system.HelloControllerFactory;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiResponse;

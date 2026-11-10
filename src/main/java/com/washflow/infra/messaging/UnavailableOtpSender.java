@@ -1,7 +1,7 @@
 package com.washflow.infra.messaging;
 
 import com.washflow.data.protocols.messaging.OtpSender;
-import com.washflow.domain.errors.OtpUnavailableError;
+import com.washflow.domain.errors.auth.OtpUnavailableError;
 
 /** No WhatsApp provider configured: the option is hidden and requests are refused. */
 public class UnavailableOtpSender implements OtpSender {

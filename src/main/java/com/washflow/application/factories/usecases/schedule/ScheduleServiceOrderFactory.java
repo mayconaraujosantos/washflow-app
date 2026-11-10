@@ -1,0 +1,33 @@
+package com.washflow.application.factories.usecases.schedule;
+
+import com.washflow.application.AppConfig;
+import com.washflow.application.factories.usecases.establishment.EstablishmentHours;
+import com.washflow.data.usecases.schedule.DbScheduleServiceOrder;
+import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
+import java.time.Clock;
+import org.jdbi.v3.core.Jdbi;
+
+/**
+ * Swapping JDBI for Hibernate later means changing only the three {@code new *JdbiRepository(...)}
+ * calls here - {@code DbScheduleServiceOrder} depends on the {@code data.protocols.db} interfaces,
+ * not on these concrete classes.
+ */
+public final class ScheduleServiceOrderFactory {
+
+  private ScheduleServiceOrderFactory() {}
+
+  public static ScheduleServiceOrder make(Jdbi jdbi, AppConfig appConfig) {
+    ServiceOrderJdbiRepository serviceOrderRepository = new ServiceOrderJdbiRepository(jdbi);
+    return new DbScheduleServiceOrder(
+        new VehicleJdbiRepository(jdbi),
+        new ServicePriceJdbiRepository(jdbi),
+        new AgendaJdbiRepository(jdbi),
+        serviceOrderRepository,
+        Clock.systemUTC(),
+        EstablishmentHours.supplier(jdbi, appConfig));
+  }
+}

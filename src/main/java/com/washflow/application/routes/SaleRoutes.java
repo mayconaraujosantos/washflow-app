@@ -4,12 +4,12 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.CreateSaleControllerFactory;
-import com.washflow.application.factories.controllers.ListSaleRefundsControllerFactory;
-import com.washflow.application.factories.controllers.ListSalesControllerFactory;
-import com.washflow.application.factories.controllers.RefundSaleControllerFactory;
-import com.washflow.domain.entities.Sale;
-import com.washflow.domain.entities.SaleRefund;
+import com.washflow.application.factories.controllers.sale.CreateSaleControllerFactory;
+import com.washflow.application.factories.controllers.sale.ListSaleRefundsControllerFactory;
+import com.washflow.application.factories.controllers.sale.ListSalesControllerFactory;
+import com.washflow.application.factories.controllers.sale.RefundSaleControllerFactory;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleRefund;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

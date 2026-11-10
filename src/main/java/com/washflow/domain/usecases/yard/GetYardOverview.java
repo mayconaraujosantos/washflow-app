@@ -1,0 +1,13 @@
+package com.washflow.domain.usecases.yard;
+
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import java.util.List;
+
+/**
+ * Returns the yard overview of service orders. Implemented by {@code DbGetYardOverview} in the data
+ * layer.
+ */
+public interface GetYardOverview {
+
+  List<ServiceOrder> get();
+}

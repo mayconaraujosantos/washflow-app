@@ -1,0 +1,28 @@
+package com.washflow.application.factories.controllers.schedule;
+
+import com.washflow.application.AppConfig;
+import com.washflow.application.factories.usecases.schedule.ScheduleServiceOrderFactory;
+import com.washflow.presentation.controllers.schedule.ScheduleServiceOrderController;
+import com.washflow.presentation.protocols.Controller;
+import com.washflow.validation.protocols.Validation;
+import com.washflow.validation.validators.RequiredFieldValidation;
+import com.washflow.validation.validators.ValidationComposite;
+import java.util.List;
+import org.jdbi.v3.core.Jdbi;
+
+public final class ScheduleServiceOrderControllerFactory {
+
+  private ScheduleServiceOrderControllerFactory() {}
+
+  public static Controller make(Jdbi jdbi, AppConfig appConfig) {
+    Validation validation =
+        new ValidationComposite(
+            List.of(
+                new RequiredFieldValidation("vehicleId"),
+                new RequiredFieldValidation("servicePriceId"),
+                new RequiredFieldValidation("scheduledAt")));
+
+    return new ScheduleServiceOrderController(
+        ScheduleServiceOrderFactory.make(jdbi, appConfig), validation);
+  }
+}

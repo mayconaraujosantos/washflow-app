@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.ServiceOrderRefund;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.finance.OperationsReport;
+import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.shared.PaymentMethod;
+import com.washflow.infra.db.jdbi.finance.OperationsReportJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -92,12 +95,14 @@ class ServiceOrderRefundIntegrationTest {
 
     repository.refund(oldOrder, MANAGER_ID, "CUSTOMER_COMPLAINT", null, null, true);
 
-    OperationsReport past = repository.loadOperationsReport(lastWeek, lastWeek);
+    OperationsReport past =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(lastWeek, lastWeek);
     assertEquals(new BigDecimal("60.00"), past.revenue());
     assertEquals(0, past.refundedOrders());
     assertEquals(new BigDecimal("60.00"), past.netRevenue());
 
-    OperationsReport now = repository.loadOperationsReport(today, today);
+    OperationsReport now =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(today, today);
     assertEquals(new BigDecimal("60.00"), now.revenue());
     assertEquals(1, now.refundedOrders());
     assertEquals(new BigDecimal("60.00"), now.refunds());

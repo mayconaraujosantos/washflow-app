@@ -1,6 +1,6 @@
 package com.washflow.data.tenancy;
 
-import com.washflow.domain.errors.TenantRequiredError;
+import com.washflow.domain.errors.common.TenantRequiredError;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;

@@ -2,14 +2,18 @@ package com.washflow.infra.db.jdbi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.Sale;
-import com.washflow.domain.entities.SaleItem;
-import com.washflow.domain.entities.SalePayment;
-import com.washflow.domain.entities.SaleRefund;
-import com.washflow.domain.entities.SaleType;
-import com.washflow.infra.db.jdbi.OperationsReport.ReasonCount;
-import com.washflow.infra.db.jdbi.OperationsReport.RefundBreakdown;
+import com.washflow.domain.entities.finance.OperationsReport;
+import com.washflow.domain.entities.finance.OperationsReport.ReasonCount;
+import com.washflow.domain.entities.finance.OperationsReport.RefundBreakdown;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleItem;
+import com.washflow.domain.entities.sale.SalePayment;
+import com.washflow.domain.entities.sale.SaleRefund;
+import com.washflow.domain.entities.sale.SaleType;
+import com.washflow.domain.entities.shared.PaymentMethod;
+import com.washflow.infra.db.jdbi.finance.OperationsReportJdbiRepository;
+import com.washflow.infra.db.jdbi.sale.SaleJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -46,9 +50,11 @@ class ReportReasonsIntegrationTest {
     orders.cancel(order(), MANAGER_ID, "NO_SHOW", null);
     orders.cancel(order(), MANAGER_ID, "CUSTOMER_GAVE_UP", null);
 
-    OperationsReport report = orders.loadOperationsReport(today, today);
+    OperationsReport report =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(today, today);
     OperationsReport yesterday =
-        orders.loadOperationsReport(today.minusDays(1), today.minusDays(1));
+        new OperationsReportJdbiRepository(jdbi)
+            .loadOperationsReport(today.minusDays(1), today.minusDays(1));
 
     assertEquals(3, report.cancelledOrders());
     assertEquals(
@@ -65,8 +71,11 @@ class ReportReasonsIntegrationTest {
     sales.refund(oldSale, refund(oldSale, "30.00", "CUSTOMER_COMPLAINT"));
     sales.refund(newSale, refund(newSale, "10.00", "WRONG_CHARGE"));
 
-    OperationsReport report = orders.loadOperationsReport(today, today);
-    OperationsReport past = orders.loadOperationsReport(today.minusDays(7), today.minusDays(7));
+    OperationsReport report =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(today, today);
+    OperationsReport past =
+        new OperationsReportJdbiRepository(jdbi)
+            .loadOperationsReport(today.minusDays(7), today.minusDays(7));
 
     assertEquals(new BigDecimal("50.00"), report.salesReceived());
     assertEquals(new BigDecimal("40.00"), report.saleRefunds());

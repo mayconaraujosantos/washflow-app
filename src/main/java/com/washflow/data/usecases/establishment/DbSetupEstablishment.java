@@ -1,13 +1,13 @@
 package com.washflow.data.usecases.establishment;
 
 import com.washflow.data.protocols.PasswordHasher;
-import com.washflow.data.protocols.db.PlatformRepository;
-import com.washflow.data.usecases.shared.ContactRules;
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.EstablishmentAlreadyConfiguredError;
-import com.washflow.domain.errors.InvalidSetupCodeError;
-import com.washflow.domain.usecases.SetupEstablishment;
+import com.washflow.data.protocols.db.establishment.PlatformRepository;
+import com.washflow.domain.entities.shared.ContactRules;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
+import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
+import com.washflow.domain.errors.establishment.InvalidSetupCodeError;
+import com.washflow.domain.usecases.establishment.SetupEstablishment;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Clock;

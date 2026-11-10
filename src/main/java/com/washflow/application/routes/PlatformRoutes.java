@@ -6,12 +6,12 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.usecases.EstablishmentFactory;
+import com.washflow.application.factories.usecases.establishment.EstablishmentFactory;
 import com.washflow.application.security.AuthTokenService;
-import com.washflow.domain.entities.EstablishmentListing;
-import com.washflow.domain.entities.EstablishmentSummary;
-import com.washflow.domain.usecases.ManagePlatform;
-import com.washflow.presentation.controllers.platform.PlatformController;
+import com.washflow.domain.entities.establishment.EstablishmentListing;
+import com.washflow.domain.entities.establishment.EstablishmentSummary;
+import com.washflow.domain.usecases.establishment.ManagePlatform;
+import com.washflow.presentation.controllers.establishment.PlatformController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

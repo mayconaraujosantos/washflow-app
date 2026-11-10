@@ -1,0 +1,27 @@
+package com.washflow.application.factories.controllers.user;
+
+import com.washflow.application.AppConfig;
+import com.washflow.application.factories.usecases.user.AuthenticateUserFactory;
+import com.washflow.domain.entities.user.UserProfile;
+import com.washflow.presentation.controllers.user.AuthenticateUserController;
+import com.washflow.presentation.protocols.Controller;
+import com.washflow.validation.protocols.Validation;
+import com.washflow.validation.validators.RequiredFieldValidation;
+import com.washflow.validation.validators.ValidationComposite;
+import java.util.List;
+import org.jdbi.v3.core.Jdbi;
+
+/** Backs the LAVADOR QR code - {@link UserProfile#WASHER} is fixed here, never client-supplied. */
+public final class AuthenticateWasherControllerFactory {
+
+  private AuthenticateWasherControllerFactory() {}
+
+  public static Controller make(Jdbi jdbi, AppConfig appConfig) {
+    Validation validation =
+        new ValidationComposite(
+            List.of(new RequiredFieldValidation("phone"), new RequiredFieldValidation("password")));
+
+    return new AuthenticateUserController(
+        AuthenticateUserFactory.make(jdbi, appConfig), validation, UserProfile.WASHER);
+  }
+}

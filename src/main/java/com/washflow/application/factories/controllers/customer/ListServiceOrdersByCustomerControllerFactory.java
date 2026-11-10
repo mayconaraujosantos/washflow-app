@@ -1,0 +1,15 @@
+package com.washflow.application.factories.controllers.customer;
+
+import com.washflow.application.factories.usecases.customer.ListServiceOrdersByCustomerFactory;
+import com.washflow.presentation.controllers.customer.ListServiceOrdersByCustomerController;
+import com.washflow.presentation.protocols.Controller;
+import org.jdbi.v3.core.Jdbi;
+
+public final class ListServiceOrdersByCustomerControllerFactory {
+
+  private ListServiceOrdersByCustomerControllerFactory() {}
+
+  public static Controller make(Jdbi jdbi) {
+    return new ListServiceOrdersByCustomerController(ListServiceOrdersByCustomerFactory.make(jdbi));
+  }
+}

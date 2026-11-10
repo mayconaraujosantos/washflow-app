@@ -3,8 +3,10 @@ package com.washflow.infra.db.jdbi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +28,7 @@ class ServiceOrderDetailsIntegrationTest {
     ServiceOrderJdbiRepository repository = new ServiceOrderJdbiRepository(jdbi);
     UUID orderId = insertOrder(jdbi, "AGUARDANDO_PATIO");
 
-    List<ServiceOrder> queue = repository.loadWaitingQueue();
+    List<ServiceOrder> queue = new YardJdbiRepository(jdbi).loadWaitingQueue();
 
     assertEquals(1, queue.size());
     ServiceOrder.Details details = queue.get(0).details();
@@ -40,9 +42,16 @@ class ServiceOrderDetailsIntegrationTest {
     repository.updateStatus(
         orderId, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, DEMO_WASHER_ID);
 
-    assertEquals("Lavador Demo", repository.loadYardOverview().get(0).details().washerName());
     assertEquals(
-        "ABC1D23", repository.loadWashingByWasher(DEMO_WASHER_ID).get(0).details().vehiclePlate());
+        "Lavador Demo",
+        new YardJdbiRepository(jdbi).loadYardOverview().get(0).details().washerName());
+    assertEquals(
+        "ABC1D23",
+        new YardJdbiRepository(jdbi)
+            .loadWashingByWasher(DEMO_WASHER_ID)
+            .get(0)
+            .details()
+            .vehiclePlate());
     assertEquals("ABC1D23", repository.loadById(orderId).orElseThrow().details().vehiclePlate());
   }
 

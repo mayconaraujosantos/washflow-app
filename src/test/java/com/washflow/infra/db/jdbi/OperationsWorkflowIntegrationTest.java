@@ -6,13 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.entities.ServicePayment;
-import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.entities.WasherCommission;
-import com.washflow.domain.errors.UserHasActiveWashesError;
+import com.washflow.domain.entities.finance.OperationsReport;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServicePayment;
+import com.washflow.domain.entities.serviceorder.WasherCommission;
+import com.washflow.domain.entities.shared.PaymentMethod;
+import com.washflow.domain.entities.user.UserProfile;
+import com.washflow.domain.errors.user.UserHasActiveWashesError;
+import com.washflow.infra.db.jdbi.finance.OperationsReportJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -104,7 +108,8 @@ class OperationsWorkflowIntegrationTest {
         });
 
     LocalDate reportDate = LocalDate.now(ZoneId.of("America/Manaus"));
-    OperationsReport report = repository.loadOperationsReport(reportDate, reportDate);
+    OperationsReport report =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(reportDate, reportDate);
 
     assertEquals(1, report.finalizedOrders());
     assertEquals(new BigDecimal("60.00"), report.revenue());
