@@ -36,7 +36,7 @@ class VehicleEntryIntegrationTest {
             vehicles,
             new UserJdbiRepository(jdbi),
             new ServicePriceJdbiRepository(jdbi),
-            orders,
+            new AgendaJdbiRepository(jdbi),
             orders,
             orders,
             Clock.fixed(NOW, ZoneOffset.UTC),
@@ -62,7 +62,7 @@ class VehicleEntryIntegrationTest {
     assertEquals("Lavagem Completa", order.details().serviceName());
     assertEquals(NOW.plusSeconds(3600), order.expectedDeliveryAt());
     assertEquals("Cliente aguarda na loja", order.notes());
-    assertEquals(order.id(), orders.loadWaitingQueue().get(0).id());
+    assertEquals(order.id(), new YardJdbiRepository(jdbi).loadWaitingQueue().get(0).id());
 
     DbSearchVehicles search = new DbSearchVehicles(vehicles);
     assertPlates(List.of("XYZ9A87"), search.search("xyz9"));
@@ -72,7 +72,7 @@ class VehicleEntryIntegrationTest {
     assertTrue(search.search("50%x").isEmpty(), "LIKE wildcards must match literally");
 
     List<ServiceOrder> agenda =
-        new DbListAgenda(orders)
+        new DbListAgenda(new AgendaJdbiRepository(jdbi))
             .list(new ListAgenda.Params(LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3)));
     assertEquals(List.of(order.id()), agenda.stream().map(ServiceOrder::id).toList());
   }
@@ -88,7 +88,7 @@ class VehicleEntryIntegrationTest {
             vehicles,
             new UserJdbiRepository(jdbi),
             new ServicePriceJdbiRepository(jdbi),
-            orders,
+            new AgendaJdbiRepository(jdbi),
             orders,
             orders,
             Clock.fixed(NOW, ZoneOffset.UTC),

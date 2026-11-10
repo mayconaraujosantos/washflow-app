@@ -2,7 +2,7 @@ package com.washflow.application.factories.usecases.yard;
 
 import com.washflow.data.usecases.yard.DbGetWashingByWasher;
 import com.washflow.domain.usecases.yard.GetWashingByWasher;
-import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.YardJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 
 public final class GetWashingByWasherFactory {
@@ -10,7 +10,7 @@ public final class GetWashingByWasherFactory {
   private GetWashingByWasherFactory() {}
 
   public static GetWashingByWasher make(Jdbi jdbi) {
-    ServiceOrderJdbiRepository repository = new ServiceOrderJdbiRepository(jdbi);
+    YardJdbiRepository repository = new YardJdbiRepository(jdbi);
     return new DbGetWashingByWasher(repository);
   }
 }

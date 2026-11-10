@@ -5,6 +5,7 @@ import com.washflow.application.factories.usecases.establishment.EstablishmentHo
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
+import com.washflow.infra.db.jdbi.AgendaJdbiRepository;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
 import com.washflow.infra.db.jdbi.UserJdbiRepository;
@@ -24,7 +25,8 @@ public final class RegisterVehicleEntryFactory {
         vehicleRepository,
         new UserJdbiRepository(jdbi),
         new ServicePriceJdbiRepository(jdbi),
-        new SchedulingRules(serviceOrderRepository, EstablishmentHours.supplier(jdbi, appConfig)),
+        new SchedulingRules(
+            new AgendaJdbiRepository(jdbi), EstablishmentHours.supplier(jdbi, appConfig)),
         serviceOrderRepository,
         serviceOrderRepository,
         Clock.systemUTC());

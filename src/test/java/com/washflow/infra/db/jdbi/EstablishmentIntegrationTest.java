@@ -106,14 +106,14 @@ class EstablishmentIntegrationTest {
             now,
             now,
             null));
-    assertEquals(1, orders.loadYardOverview().size());
+    assertEquals(1, new YardJdbiRepository(jdbi).loadYardOverview().size());
 
     TenantContext.set(bairro.id());
     // The same plate can exist in another lava-jato; nothing of "Centro" is visible here.
     vehicles.create(new Vehicle(UUID.randomUUID(), null, "ABC1D23", "Gol", "Preto", "Bia", null));
     assertTrue(vehicles.loadById(centroVehicle).isEmpty());
     assertTrue(orders.loadById(centroOrder).isEmpty());
-    assertTrue(orders.loadYardOverview().isEmpty());
+    assertTrue(new YardJdbiRepository(jdbi).loadYardOverview().isEmpty());
     assertTrue(services.loadById(centroService).isEmpty());
     assertEquals(1, vehicles.search("ABC", "", "", 10).size());
 
@@ -188,7 +188,7 @@ class EstablishmentIntegrationTest {
     assertEquals(22, saved.closingHour());
     SchedulingRules rules =
         new SchedulingRules(
-            new ServiceOrderJdbiRepository(jdbi),
+            new AgendaJdbiRepository(jdbi),
             () -> {
               Establishment e = establishments.load();
               return new SchedulingRules.Hours(

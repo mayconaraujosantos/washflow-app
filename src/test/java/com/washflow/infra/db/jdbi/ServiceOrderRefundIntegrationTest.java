@@ -93,12 +93,14 @@ class ServiceOrderRefundIntegrationTest {
 
     repository.refund(oldOrder, MANAGER_ID, "CUSTOMER_COMPLAINT", null, null, true);
 
-    OperationsReport past = repository.loadOperationsReport(lastWeek, lastWeek);
+    OperationsReport past =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(lastWeek, lastWeek);
     assertEquals(new BigDecimal("60.00"), past.revenue());
     assertEquals(0, past.refundedOrders());
     assertEquals(new BigDecimal("60.00"), past.netRevenue());
 
-    OperationsReport now = repository.loadOperationsReport(today, today);
+    OperationsReport now =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(today, today);
     assertEquals(new BigDecimal("60.00"), now.revenue());
     assertEquals(1, now.refundedOrders());
     assertEquals(new BigDecimal("60.00"), now.refunds());

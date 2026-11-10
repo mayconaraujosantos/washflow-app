@@ -105,7 +105,8 @@ class OperationsWorkflowIntegrationTest {
         });
 
     LocalDate reportDate = LocalDate.now(ZoneId.of("America/Manaus"));
-    OperationsReport report = repository.loadOperationsReport(reportDate, reportDate);
+    OperationsReport report =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(reportDate, reportDate);
 
     assertEquals(1, report.finalizedOrders());
     assertEquals(new BigDecimal("60.00"), report.revenue());

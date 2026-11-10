@@ -26,7 +26,7 @@ class ServiceOrderDetailsIntegrationTest {
     ServiceOrderJdbiRepository repository = new ServiceOrderJdbiRepository(jdbi);
     UUID orderId = insertOrder(jdbi, "AGUARDANDO_PATIO");
 
-    List<ServiceOrder> queue = repository.loadWaitingQueue();
+    List<ServiceOrder> queue = new YardJdbiRepository(jdbi).loadWaitingQueue();
 
     assertEquals(1, queue.size());
     ServiceOrder.Details details = queue.get(0).details();
@@ -40,9 +40,16 @@ class ServiceOrderDetailsIntegrationTest {
     repository.updateStatus(
         orderId, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, DEMO_WASHER_ID);
 
-    assertEquals("Lavador Demo", repository.loadYardOverview().get(0).details().washerName());
     assertEquals(
-        "ABC1D23", repository.loadWashingByWasher(DEMO_WASHER_ID).get(0).details().vehiclePlate());
+        "Lavador Demo",
+        new YardJdbiRepository(jdbi).loadYardOverview().get(0).details().washerName());
+    assertEquals(
+        "ABC1D23",
+        new YardJdbiRepository(jdbi)
+            .loadWashingByWasher(DEMO_WASHER_ID)
+            .get(0)
+            .details()
+            .vehiclePlate());
     assertEquals("ABC1D23", repository.loadById(orderId).orElseThrow().details().vehiclePlate());
   }
 

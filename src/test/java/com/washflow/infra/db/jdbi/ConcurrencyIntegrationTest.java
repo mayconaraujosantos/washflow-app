@@ -99,8 +99,7 @@ class ConcurrencyIntegrationTest {
     assertEquals(3, booked, "capacity is 3: " + results);
     assertEquals(plates.length - 3, refused, "the rest get 'slot full' (409): " + results);
     assertEquals(
-        3,
-        new ServiceOrderJdbiRepository(jdbi).countScheduledBetween(slot, slot.plusSeconds(3600)));
+        3, new AgendaJdbiRepository(jdbi).countScheduledBetween(slot, slot.plusSeconds(3600)));
   }
 
   @Test
@@ -119,7 +118,7 @@ class ConcurrencyIntegrationTest {
         1,
         results.stream().filter(VehicleAlreadyInYardError.class::isInstance).count(),
         "" + results);
-    assertEquals(1, new ServiceOrderJdbiRepository(jdbi).loadYardOverview().size());
+    assertEquals(1, new YardJdbiRepository(jdbi).loadYardOverview().size());
   }
 
   @Test
@@ -253,7 +252,7 @@ class ConcurrencyIntegrationTest {
         vehicles,
         new UserJdbiRepository(jdbi),
         new ServicePriceJdbiRepository(jdbi),
-        new SchedulingRules(orders, 3),
+        new SchedulingRules(new AgendaJdbiRepository(jdbi), 3),
         orders,
         orders,
         Clock.fixed(NOW, ZoneOffset.UTC));

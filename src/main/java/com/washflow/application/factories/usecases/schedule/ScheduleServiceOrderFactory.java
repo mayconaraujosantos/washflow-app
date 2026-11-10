@@ -4,6 +4,7 @@ import com.washflow.application.AppConfig;
 import com.washflow.application.factories.usecases.establishment.EstablishmentHours;
 import com.washflow.data.usecases.schedule.DbScheduleServiceOrder;
 import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
+import com.washflow.infra.db.jdbi.AgendaJdbiRepository;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
 import com.washflow.infra.db.jdbi.VehicleJdbiRepository;
@@ -24,7 +25,7 @@ public final class ScheduleServiceOrderFactory {
     return new DbScheduleServiceOrder(
         new VehicleJdbiRepository(jdbi),
         new ServicePriceJdbiRepository(jdbi),
-        serviceOrderRepository,
+        new AgendaJdbiRepository(jdbi),
         serviceOrderRepository,
         Clock.systemUTC(),
         EstablishmentHours.supplier(jdbi, appConfig));

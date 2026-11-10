@@ -7,7 +7,7 @@ import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.factories.usecases.establishment.EstablishmentHours;
 import com.washflow.data.usecases.schedule.DbScheduleAvailability;
 import com.washflow.domain.usecases.schedule.ScheduleAvailability;
-import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.AgendaJdbiRepository;
 import com.washflow.presentation.controllers.schedule.ScheduleAvailabilityController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
@@ -44,7 +44,7 @@ public final class ScheduleRoutes {
             new ScheduleAvailabilityController(
                 new DbScheduleAvailability(
                     EstablishmentHours.supplier(jdbi, appConfig),
-                    new ServiceOrderJdbiRepository(jdbi),
+                    new AgendaJdbiRepository(jdbi),
                     Clock.systemUTC()))));
   }
 }

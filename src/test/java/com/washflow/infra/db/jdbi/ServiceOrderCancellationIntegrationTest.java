@@ -74,12 +74,16 @@ class ServiceOrderCancellationIntegrationTest {
   @Test
   void cancelledOrdersFreeTheirSlotAndLeaveTheYard() {
     UUID id = order("AGENDADO");
-    assertEquals(1, repository.countScheduledBetween(SLOT, SLOT.plusSeconds(3600)));
+    assertEquals(
+        1, new AgendaJdbiRepository(jdbi).countScheduledBetween(SLOT, SLOT.plusSeconds(3600)));
 
     repository.cancel(id, MANAGER_ID, "NO_SHOW", null);
 
-    assertEquals(0, repository.countScheduledBetween(SLOT, SLOT.plusSeconds(3600)));
-    assertTrue(repository.loadYardOverview().stream().map(ServiceOrder::id).noneMatch(id::equals));
+    assertEquals(
+        0, new AgendaJdbiRepository(jdbi).countScheduledBetween(SLOT, SLOT.plusSeconds(3600)));
+    assertTrue(
+        new YardJdbiRepository(jdbi)
+            .loadYardOverview().stream().map(ServiceOrder::id).noneMatch(id::equals));
   }
 
   private UUID order(String status) {

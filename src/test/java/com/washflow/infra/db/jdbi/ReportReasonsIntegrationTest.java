@@ -47,9 +47,11 @@ class ReportReasonsIntegrationTest {
     orders.cancel(order(), MANAGER_ID, "NO_SHOW", null);
     orders.cancel(order(), MANAGER_ID, "CUSTOMER_GAVE_UP", null);
 
-    OperationsReport report = orders.loadOperationsReport(today, today);
+    OperationsReport report =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(today, today);
     OperationsReport yesterday =
-        orders.loadOperationsReport(today.minusDays(1), today.minusDays(1));
+        new OperationsReportJdbiRepository(jdbi)
+            .loadOperationsReport(today.minusDays(1), today.minusDays(1));
 
     assertEquals(3, report.cancelledOrders());
     assertEquals(
@@ -66,8 +68,11 @@ class ReportReasonsIntegrationTest {
     sales.refund(oldSale, refund(oldSale, "30.00", "CUSTOMER_COMPLAINT"));
     sales.refund(newSale, refund(newSale, "10.00", "WRONG_CHARGE"));
 
-    OperationsReport report = orders.loadOperationsReport(today, today);
-    OperationsReport past = orders.loadOperationsReport(today.minusDays(7), today.minusDays(7));
+    OperationsReport report =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(today, today);
+    OperationsReport past =
+        new OperationsReportJdbiRepository(jdbi)
+            .loadOperationsReport(today.minusDays(7), today.minusDays(7));
 
     assertEquals(new BigDecimal("50.00"), report.salesReceived());
     assertEquals(new BigDecimal("40.00"), report.saleRefunds());

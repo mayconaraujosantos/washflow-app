@@ -1,8 +1,5 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.finance.LoadOperationsReportRepository;
-import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRangeRepository;
-import com.washflow.data.protocols.db.schedule.LoadServiceOrdersScheduledBetweenRepository;
 import com.washflow.data.protocols.db.serviceorder.CancelServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.CreateServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.FinalizeServiceOrderRepository;
@@ -12,15 +9,6 @@ import com.washflow.data.protocols.db.serviceorder.PauseServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.RefundServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.ResumeServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.UpdateServiceOrderStatusRepository;
-import com.washflow.data.protocols.db.yard.LoadWaitingQueueRepository;
-import com.washflow.data.protocols.db.yard.LoadWashingByWasherRepository;
-import com.washflow.data.protocols.db.yard.LoadYardOverviewRepository;
-import com.washflow.domain.entities.OperationsReport;
-import com.washflow.domain.entities.OperationsReport.PauseBreakdown;
-import com.washflow.domain.entities.OperationsReport.PaymentBreakdown;
-import com.washflow.domain.entities.OperationsReport.ReasonCount;
-import com.washflow.domain.entities.OperationsReport.RefundBreakdown;
-import com.washflow.domain.entities.OperationsReport.ServiceBreakdown;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderRefund;
@@ -28,38 +16,28 @@ import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.ServicePayment;
 import com.washflow.domain.entities.WasherCommission;
 import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.statement.StatementContext;
 
+/**
+ * The service order lifecycle: creation (with the hourly capacity lock), lookups and the
+ * compare-and-set status transitions - start, complete, pause, resume, cancel, refund and finalize.
+ */
 public class ServiceOrderJdbiRepository
     implements CreateServiceOrderRepository,
         LoadServiceOrderByIdRepository,
         LoadServiceOrdersByCustomerIdRepository,
         UpdateServiceOrderStatusRepository,
-        CountServiceOrdersScheduledInRangeRepository,
         FinalizeServiceOrderRepository,
         PauseServiceOrderRepository,
         ResumeServiceOrderRepository,
         CancelServiceOrderRepository,
-        RefundServiceOrderRepository,
-        LoadWaitingQueueRepository,
-        LoadYardOverviewRepository,
-        LoadWashingByWasherRepository,
-        LoadOperationsReportRepository,
-        LoadServiceOrdersScheduledBetweenRepository {
+        RefundServiceOrderRepository {
 
   private static final String STATUS = "status";
 
@@ -73,28 +51,9 @@ public class ServiceOrderJdbiRepository
          :updatedAt, :expectedDeliveryAt, :notes)
       """;
 
-  // Every read joins the display data (plate, customer, service, washer) the yard and queue
-  // screens show on each card - see ServiceOrder.Details.
-  private static final String SELECT_WITH_DETAILS =
-      """
-      SELECT a.id, a.veiculo_id, a.servico_preco_id, a.lavador_id, a.status,
-             a.data_agendamento, a.criado_em, a.atualizado_em,
-             (SELECT p.motivo FROM pausas_atendimento p
-              WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason,
-             a.previsao_entrega, a.observacoes,
-             v.placa AS vehicle_plate, v.modelo AS vehicle_model, v.cor AS vehicle_color,
-             COALESCE(c.nome, v.contato_nome) AS customer_name,
-             COALESCE(c.telefone, v.contato_telefone) AS customer_phone,
-             s.nome AS service_name, l.nome AS washer_name
-      FROM atendimentos a
-      LEFT JOIN veiculos v ON v.id = a.veiculo_id
-      LEFT JOIN usuarios c ON c.id = v.cliente_id
-      LEFT JOIN servicos_preco s ON s.id = a.servico_preco_id
-      LEFT JOIN usuarios l ON l.id = a.lavador_id
-      """;
-
   private static final String SELECT_SQL =
-      SELECT_WITH_DETAILS + """
+      ServiceOrderRows.SELECT_WITH_DETAILS
+          + """
       WHERE a.id = :id AND a.estabelecimento_id = :tenant
       """;
 
@@ -120,61 +79,16 @@ public class ServiceOrderJdbiRepository
       """;
 
   private static final String SELECT_BY_CUSTOMER_ID_SQL =
-      SELECT_WITH_DETAILS
+      ServiceOrderRows.SELECT_WITH_DETAILS
           + """
       WHERE v.cliente_id = :customerId AND a.estabelecimento_id = :tenant
       ORDER BY a.atualizado_em DESC
       """;
 
-  private static final String COUNT_SCHEDULED_BETWEEN_SQL =
-      "SELECT COUNT(*) FROM atendimentos WHERE estabelecimento_id = :tenant"
-          + " AND data_agendamento >= :start AND data_agendamento < :end"
-          + " AND status <> 'CANCELADO'";
-
   // Transaction-scoped advisory lock keyed by lava-jato + slot start (see createWithinCapacity).
   private static final String SLOT_LOCK_SQL =
       "SELECT 1 FROM (SELECT pg_advisory_xact_lock(hashtextextended("
           + "CAST(:tenant AS TEXT) || '|' || :slotKey, 0))) AS slot_lock";
-
-  private static final String WAITING_QUEUE_SQL =
-      SELECT_WITH_DETAILS
-          + """
-      WHERE a.status = 'AGUARDANDO_PATIO' AND a.estabelecimento_id = :tenant
-      ORDER BY a.atualizado_em ASC
-      """;
-
-  private static final String YARD_OVERVIEW_SQL =
-      SELECT_WITH_DETAILS
-          + """
-      WHERE a.status NOT IN ('FINALIZADO', 'CANCELADO') AND a.estabelecimento_id = :tenant
-      ORDER BY
-        CASE a.status
-          WHEN 'EM_LAVAGEM' THEN 0
-          WHEN 'PAUSADA' THEN 0
-          WHEN 'AGUARDANDO_PATIO' THEN 1
-          WHEN 'PRONTO' THEN 2
-          WHEN 'AGENDADO' THEN 3
-          ELSE 4
-        END,
-        a.atualizado_em ASC
-      """;
-
-  private static final String SCHEDULED_BETWEEN_SQL =
-      SELECT_WITH_DETAILS
-          + """
-      WHERE a.data_agendamento >= :start AND a.data_agendamento < :end AND a.estabelecimento_id = :tenant
-      ORDER BY a.data_agendamento ASC
-      """;
-
-  private static final String WASHER_ACTIVE_SQL =
-      SELECT_WITH_DETAILS
-          + """
-      WHERE a.status IN ('EM_LAVAGEM', 'PAUSADA') AND a.lavador_id = :washerId
-        AND a.estabelecimento_id = :tenant
-      ORDER BY a.atualizado_em ASC
-      """;
-
-  private static final ZoneId STORE_ZONE = ZoneId.of("America/Manaus");
 
   private final Jdbi jdbi;
 
@@ -204,7 +118,7 @@ public class ServiceOrderJdbiRepository
                       .one();
                   int booked =
                       handle
-                          .createQuery(COUNT_SCHEDULED_BETWEEN_SQL)
+                          .createQuery(ServiceOrderRows.COUNT_SCHEDULED_BETWEEN_SQL)
                           .bind("start", slotStart)
                           .bind("end", slotEnd)
                           .mapTo(Integer.class)
@@ -235,7 +149,8 @@ public class ServiceOrderJdbiRepository
   @Override
   public Optional<ServiceOrder> loadById(UUID id) {
     return jdbi.withHandle(
-        handle -> handle.createQuery(SELECT_SQL).bind("id", id).map(this::mapRow).findOne());
+        handle ->
+            handle.createQuery(SELECT_SQL).bind("id", id).map(ServiceOrderRows::map).findOne());
   }
 
   @Override
@@ -245,46 +160,7 @@ public class ServiceOrderJdbiRepository
             handle
                 .createQuery(SELECT_BY_CUSTOMER_ID_SQL)
                 .bind("customerId", customerId)
-                .map(this::mapRow)
-                .list());
-  }
-
-  @Override
-  public List<ServiceOrder> loadWaitingQueue() {
-    return jdbi.withHandle(
-        handle -> handle.createQuery(WAITING_QUEUE_SQL).map(this::mapRow).list());
-  }
-
-  @Override
-  public List<ServiceOrder> loadScheduledBetween(Instant start, Instant end) {
-    return jdbi.withHandle(
-        handle ->
-            handle
-                .createQuery(SCHEDULED_BETWEEN_SQL)
-                .bind("start", start)
-                .bind("end", end)
-                .map(this::mapRow)
-                .list());
-  }
-
-  @Override
-  public List<ServiceOrder> loadYardOverview() {
-    return jdbi.withHandle(
-        handle -> handle.createQuery(YARD_OVERVIEW_SQL).map(this::mapRow).list());
-  }
-
-  @Override
-  public List<ServiceOrder> loadByWasherId(UUID washerId) {
-    return loadWashingByWasher(washerId);
-  }
-
-  public List<ServiceOrder> loadWashingByWasher(UUID washerId) {
-    return jdbi.withHandle(
-        handle ->
-            handle
-                .createQuery(WASHER_ACTIVE_SQL)
-                .bind("washerId", washerId)
-                .map(this::mapRow)
+                .map(ServiceOrderRows::map)
                 .list());
   }
 
@@ -308,7 +184,11 @@ public class ServiceOrderJdbiRepository
                     return Optional.<ServiceOrder>empty();
                   }
                   return Optional.of(
-                      handle.createQuery(SELECT_SQL).bind("id", id).map(this::mapRow).one());
+                      handle
+                          .createQuery(SELECT_SQL)
+                          .bind("id", id)
+                          .map(ServiceOrderRows::map)
+                          .one());
                 }));
   }
 
@@ -502,259 +382,6 @@ public class ServiceOrderJdbiRepository
   }
 
   @Override
-  public OperationsReport load(LocalDate from, LocalDate to) {
-    return loadOperationsReport(from, to);
-  }
-
-  public OperationsReport loadOperationsReport(LocalDate from, LocalDate to) {
-    Instant start = from.atStartOfDay(STORE_ZONE).toInstant();
-    Instant end = to.plusDays(1).atStartOfDay(STORE_ZONE).toInstant();
-    return jdbi.withHandle(
-        handle -> {
-          List<ReportOrder> orders =
-              handle
-                  .createQuery(
-                      """
-                      SELECT a.id, s.nome AS service_name, p.forma_pagamento, p.valor,
-                             c.valor AS commission, a.lavagem_iniciada_em,
-                             a.lavagem_concluida_em
-                      FROM pagamentos p
-                      JOIN atendimentos a ON a.id = p.atendimento_id
-                      JOIN servicos_preco s ON s.id = a.servico_preco_id
-                      LEFT JOIN comissoes_lavador c ON c.atendimento_id = a.id
-                      WHERE p.recebido_em >= :start AND p.recebido_em < :end
-                        AND a.estabelecimento_id = :tenant
-                      ORDER BY p.recebido_em ASC
-                      """)
-                  .bind("start", start)
-                  .bind("end", end)
-                  .map(
-                      (rs, ctx) ->
-                          new ReportOrder(
-                              rs.getObject("id", UUID.class),
-                              rs.getString("service_name"),
-                              rs.getString("forma_pagamento"),
-                              rs.getBigDecimal("valor"),
-                              rs.getBigDecimal("commission"),
-                              timestamp(rs, "lavagem_iniciada_em"),
-                              timestamp(rs, "lavagem_concluida_em")))
-                  .list();
-
-          Map<UUID, Duration> pauseDurations = new LinkedHashMap<>();
-          Map<String, Integer> pauseCounts = new LinkedHashMap<>();
-          if (!orders.isEmpty()) {
-            List<UUID> orderIds = orders.stream().map(ReportOrder::id).toList();
-            handle
-                .createQuery(
-                    """
-                    SELECT atendimento_id, motivo, iniciada_em, retomada_em
-                    FROM pausas_atendimento
-                    WHERE atendimento_id IN (<orderIds>)
-                    """)
-                .bindList("orderIds", orderIds)
-                .map(
-                    (rs, ctx) -> {
-                      UUID orderId = rs.getObject("atendimento_id", UUID.class);
-                      Instant startedAt = rs.getTimestamp("iniciada_em").toInstant();
-                      java.sql.Timestamp resumed = rs.getTimestamp("retomada_em");
-                      Instant endedAt = resumed == null ? Instant.now() : resumed.toInstant();
-                      pauseDurations.merge(
-                          orderId, Duration.between(startedAt, endedAt), Duration::plus);
-                      pauseCounts.merge(rs.getString("motivo"), 1, Integer::sum);
-                      return orderId;
-                    })
-                .list();
-          }
-
-          BigDecimal revenue = BigDecimal.ZERO;
-          BigDecimal commissions = BigDecimal.ZERO;
-          long totalWashingMinutes = 0;
-          int timedOrders = 0;
-          Map<String, ServiceSummary> services = new LinkedHashMap<>();
-          Map<String, PaymentSummary> payments = new LinkedHashMap<>();
-          for (ReportOrder order : orders) {
-            revenue = revenue.add(order.amount());
-            if (order.commission() != null) {
-              commissions = commissions.add(order.commission());
-            }
-            services
-                .computeIfAbsent(order.serviceName(), ignored -> new ServiceSummary())
-                .add(order.amount(), order.commission());
-            payments
-                .computeIfAbsent(order.paymentMethod(), ignored -> new PaymentSummary())
-                .add(order.amount());
-            if (order.washStartedAt() != null && order.washCompletedAt() != null) {
-              Duration elapsed = Duration.between(order.washStartedAt(), order.washCompletedAt());
-              Duration paused = pauseDurations.getOrDefault(order.id(), Duration.ZERO);
-              totalWashingMinutes += Math.max(0, elapsed.minus(paused).toMinutes());
-              timedOrders++;
-            }
-          }
-
-          List<ServiceBreakdown> serviceBreakdowns = new ArrayList<>();
-          services.forEach(
-              (name, summary) ->
-                  serviceBreakdowns.add(
-                      new ServiceBreakdown(
-                          name, summary.orders, summary.revenue, summary.commission)));
-          List<PaymentBreakdown> paymentBreakdowns = new ArrayList<>();
-          payments.forEach(
-              (method, summary) ->
-                  paymentBreakdowns.add(
-                      new PaymentBreakdown(method, summary.orders, summary.amount)));
-          List<PauseBreakdown> pauseBreakdowns = new ArrayList<>();
-          pauseCounts.forEach(
-              (reason, count) -> pauseBreakdowns.add(new PauseBreakdown(reason, count)));
-          List<RefundBreakdown> refundReasons =
-              refundReasons(handle, "estornos_atendimento", start, end);
-          List<RefundBreakdown> saleRefundReasons =
-              refundReasons(handle, "venda_estornos", start, end);
-          List<ReasonCount> cancellationReasons =
-              handle
-                  .createQuery(
-                      """
-                      SELECT motivo_cancelamento, COUNT(*) AS cancelled
-                      FROM atendimentos
-                      WHERE status = 'CANCELADO'
-                        AND cancelado_em >= :start AND cancelado_em < :end
-                        AND estabelecimento_id = :tenant
-                      GROUP BY motivo_cancelamento
-                      ORDER BY COUNT(*) DESC, motivo_cancelamento
-                      """)
-                  .bind("start", start)
-                  .bind("end", end)
-                  .map(
-                      (rs, ctx) ->
-                          new ReasonCount(
-                              rs.getString("motivo_cancelamento"), rs.getInt("cancelled")))
-                  .list();
-          BigDecimal salesReceived =
-              handle
-                  .createQuery(
-                      """
-                      SELECT COALESCE(SUM(p.valor), 0)
-                      FROM venda_pagamentos p
-                      JOIN vendas v ON v.id = p.venda_id
-                      WHERE p.recebido_em >= :start AND p.recebido_em < :end
-                        AND v.estabelecimento_id = :tenant
-                      """)
-                  .bind("start", start)
-                  .bind("end", end)
-                  .mapTo(BigDecimal.class)
-                  .one();
-          BigDecimal reversedCommissions =
-              handle
-                  .createQuery(
-                      """
-                      SELECT COALESCE(SUM(comissao_estornada), 0) FROM estornos_atendimento
-                      WHERE criado_em >= :start AND criado_em < :end
-                        AND estabelecimento_id = :tenant
-                      """)
-                  .bind("start", start)
-                  .bind("end", end)
-                  .mapTo(BigDecimal.class)
-                  .one();
-          BigDecimal refunds = sum(refundReasons);
-          BigDecimal saleRefunds = sum(saleRefundReasons);
-          return new OperationsReport(
-              from,
-              to,
-              orders.size(),
-              revenue,
-              commissions,
-              timedOrders == 0 ? null : totalWashingMinutes / timedOrders,
-              serviceBreakdowns,
-              paymentBreakdowns,
-              pauseBreakdowns,
-              refundReasons.stream().mapToInt(RefundBreakdown::count).sum(),
-              refunds,
-              reversedCommissions,
-              revenue.subtract(refunds),
-              commissions.subtract(reversedCommissions),
-              refundReasons,
-              cancellationReasons.stream().mapToInt(ReasonCount::count).sum(),
-              cancellationReasons,
-              salesReceived,
-              saleRefunds,
-              salesReceived.subtract(saleRefunds),
-              saleRefundReasons);
-        });
-  }
-
-  // Refunds by reason in the period (refund date): orders' or quick sales' refund table.
-  private static List<RefundBreakdown> refundReasons(
-      Handle handle, String table, Instant start, Instant end) {
-    return handle
-        .createQuery(
-            "SELECT motivo, COUNT(*) AS refunds, SUM(valor) AS amount FROM "
-                + table
-                + " WHERE criado_em >= :start AND criado_em < :end"
-                + " AND estabelecimento_id = :tenant"
-                + " GROUP BY motivo ORDER BY COUNT(*) DESC, motivo")
-        .bind("start", start)
-        .bind("end", end)
-        .map(
-            (rs, ctx) ->
-                new RefundBreakdown(
-                    rs.getString("motivo"), rs.getInt("refunds"), rs.getBigDecimal("amount")))
-        .list();
-  }
-
-  private static BigDecimal sum(List<RefundBreakdown> reasons) {
-    return reasons.stream().map(RefundBreakdown::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
-  }
-
-  private static Instant timestamp(ResultSet rs, String column) throws SQLException {
-    java.sql.Timestamp value = rs.getTimestamp(column);
-    return value == null ? null : value.toInstant();
-  }
-
-  private record ReportOrder(
-      UUID id,
-      String serviceName,
-      String paymentMethod,
-      BigDecimal amount,
-      BigDecimal commission,
-      Instant washStartedAt,
-      Instant washCompletedAt) {}
-
-  private static final class ServiceSummary {
-    private int orders;
-    private BigDecimal revenue = BigDecimal.ZERO;
-    private BigDecimal commission = BigDecimal.ZERO;
-
-    private void add(BigDecimal amount, BigDecimal commissionAmount) {
-      orders++;
-      revenue = revenue.add(amount);
-      if (commissionAmount != null) {
-        commission = commission.add(commissionAmount);
-      }
-    }
-  }
-
-  private static final class PaymentSummary {
-    private int orders;
-    private BigDecimal amount = BigDecimal.ZERO;
-
-    private void add(BigDecimal value) {
-      orders++;
-      amount = amount.add(value);
-    }
-  }
-
-  @Override
-  public int countScheduledBetween(Instant start, Instant end) {
-    return jdbi.withHandle(
-        handle ->
-            handle
-                .createQuery(COUNT_SCHEDULED_BETWEEN_SQL)
-                .bind("start", start)
-                .bind("end", end)
-                .mapTo(Integer.class)
-                .one());
-  }
-
-  @Override
   public Optional<ServiceOrder> finalizeSale(
       ServiceOrder serviceOrder, ServicePayment payment, WasherCommission commission) {
     return jdbi.inTransaction(
@@ -798,30 +425,11 @@ public class ServiceOrderJdbiRepository
               .bind("creditedAt", commission.creditedAt())
               .execute();
           return Optional.of(
-              handle.createQuery(SELECT_SQL).bind("id", serviceOrder.id()).map(this::mapRow).one());
+              handle
+                  .createQuery(SELECT_SQL)
+                  .bind("id", serviceOrder.id())
+                  .map(ServiceOrderRows::map)
+                  .one());
         });
-  }
-
-  private ServiceOrder mapRow(ResultSet rs, StatementContext ctx) throws SQLException {
-    return new ServiceOrder(
-        (UUID) rs.getObject("id"),
-        (UUID) rs.getObject("veiculo_id"),
-        rs.getInt("servico_preco_id"),
-        (UUID) rs.getObject("lavador_id"),
-        ServiceOrderStatus.fromDbValue(rs.getString(STATUS)),
-        rs.getTimestamp("data_agendamento").toInstant(),
-        rs.getTimestamp("criado_em").toInstant(),
-        rs.getTimestamp("atualizado_em").toInstant(),
-        rs.getString("pause_reason"),
-        timestamp(rs, "previsao_entrega"),
-        rs.getString("observacoes"),
-        new ServiceOrder.Details(
-            rs.getString("vehicle_plate"),
-            rs.getString("vehicle_model"),
-            rs.getString("vehicle_color"),
-            rs.getString("customer_name"),
-            rs.getString("customer_phone"),
-            rs.getString("service_name"),
-            rs.getString("washer_name")));
   }
 }
