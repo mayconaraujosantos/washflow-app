@@ -28,6 +28,15 @@ import org.jdbi.v3.core.statement.StatementContext;
 public class SaleJdbiRepository
     implements SaveSaleRepository, LoadSalesRepository, RefundSaleRepository {
 
+  private static final String TOTAL = "total";
+  private static final String METHOD = "method";
+  private static final String CRIADO_POR = "criado_por";
+  private static final String CRIADO_EM = "criado_em";
+  private static final String VENDA_ID = "venda_id";
+  private static final String VALOR = "valor";
+  private static final String DESCRICAO = "descricao";
+  private static final String SALE_IDS = "saleIds";
+
   private static final String SALE_ID = "saleId";
   private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
   private static final Map<PaymentMethod, String> METHOD_LABELS =
@@ -74,7 +83,7 @@ public class SaleJdbiRepository
               .bind("customerPhone", sale.customerPhone())
               .bind("subtotal", sale.subtotal())
               .bind("discount", sale.discount())
-              .bind("total", sale.total())
+              .bind(TOTAL, sale.total())
               .bind("notes", sale.notes())
               .bind("createdBy", sale.createdBy())
               .bind("createdAt", sale.createdAt())
@@ -95,7 +104,7 @@ public class SaleJdbiRepository
                 .bind("description", item.description())
                 .bind("quantity", item.quantity())
                 .bind("unitPrice", item.unitPrice())
-                .bind("total", item.total())
+                .bind(TOTAL, item.total())
                 .execute();
           }
           for (SalePayment payment : sale.payments()) {
@@ -107,7 +116,7 @@ public class SaleJdbiRepository
                     """)
                 .bind("id", payment.id())
                 .bind(SALE_ID, sale.id())
-                .bind("method", payment.method().name())
+                .bind(METHOD, payment.method().name())
                 .bind("amount", payment.amount())
                 .bind("receivedAt", payment.receivedAt())
                 .execute();
@@ -170,7 +179,7 @@ public class SaleJdbiRepository
                              WHERE venda_id = :id AND forma_devolucao = :method)
                         """)
                     .bind("id", saleId)
-                    .bind("method", refund.method().name())
+                    .bind(METHOD, refund.method().name())
                     .mapTo(BigDecimal.class)
                     .one();
             if (refund.amount().compareTo(available) > 0) {
@@ -193,7 +202,7 @@ public class SaleJdbiRepository
                     """)
                 .bind("id", refund.id())
                 .bind(SALE_ID, saleId)
-                .bind("method", refund.method().name())
+                .bind(METHOD, refund.method().name())
                 .bind("amount", refund.amount())
                 .bind("reason", refund.reason())
                 .bind("description", refund.description())
@@ -243,8 +252,8 @@ public class SaleJdbiRepository
         rs.getString("cliente_telefone"),
         rs.getBigDecimal("desconto"),
         rs.getString("observacoes"),
-        rs.getObject("criado_por", UUID.class),
-        rs.getTimestamp("criado_em").toInstant());
+        rs.getObject(CRIADO_POR, UUID.class),
+        rs.getTimestamp(CRIADO_EM).toInstant());
   }
 
   @Override
@@ -270,13 +279,13 @@ public class SaleJdbiRepository
   private static SaleRefund mapRefund(ResultSet rs, StatementContext ctx) throws SQLException {
     return new SaleRefund(
         rs.getObject("id", UUID.class),
-        rs.getObject("venda_id", UUID.class),
+        rs.getObject(VENDA_ID, UUID.class),
         PaymentMethod.valueOf(rs.getString("forma_devolucao")),
-        rs.getBigDecimal("valor"),
+        rs.getBigDecimal(VALOR),
         rs.getString("motivo"),
-        rs.getString("descricao"),
-        rs.getObject("criado_por", UUID.class),
-        rs.getTimestamp("criado_em").toInstant());
+        rs.getString(DESCRICAO),
+        rs.getObject(CRIADO_POR, UUID.class),
+        rs.getTimestamp(CRIADO_EM).toInstant());
   }
 
   private static Map<UUID, List<SaleRefund>> loadRefunds(Handle handle, List<UUID> saleIds) {
@@ -288,21 +297,21 @@ public class SaleJdbiRepository
             FROM venda_estornos WHERE venda_id IN (<saleIds>)
             ORDER BY criado_em
             """)
-        .bindList("saleIds", saleIds)
+        .bindList(SALE_IDS, saleIds)
         .map(
             (rs, ctx) -> {
               bySale
-                  .computeIfAbsent(rs.getObject("venda_id", UUID.class), id -> new ArrayList<>())
+                  .computeIfAbsent(rs.getObject(VENDA_ID, UUID.class), id -> new ArrayList<>())
                   .add(
                       new SaleRefund(
                           rs.getObject("id", UUID.class),
-                          rs.getObject("venda_id", UUID.class),
+                          rs.getObject(VENDA_ID, UUID.class),
                           PaymentMethod.valueOf(rs.getString("forma_devolucao")),
-                          rs.getBigDecimal("valor"),
+                          rs.getBigDecimal(VALOR),
                           rs.getString("motivo"),
-                          rs.getString("descricao"),
-                          rs.getObject("criado_por", UUID.class),
-                          rs.getTimestamp("criado_em").toInstant()));
+                          rs.getString(DESCRICAO),
+                          rs.getObject(CRIADO_POR, UUID.class),
+                          rs.getTimestamp(CRIADO_EM).toInstant()));
               return 0;
             })
         .list();
@@ -324,19 +333,19 @@ public class SaleJdbiRepository
             SELECT id, venda_id, servico_preco_id, descricao, quantidade, preco_unitario, total
             FROM venda_itens WHERE venda_id IN (<saleIds>)
             """)
-        .bindList("saleIds", saleIds)
+        .bindList(SALE_IDS, saleIds)
         .map(
             (rs, ctx) -> {
               bySale
-                  .computeIfAbsent(rs.getObject("venda_id", UUID.class), id -> new ArrayList<>())
+                  .computeIfAbsent(rs.getObject(VENDA_ID, UUID.class), id -> new ArrayList<>())
                   .add(
                       new SaleItem(
                           rs.getObject("id", UUID.class),
                           rs.getInt("servico_preco_id"),
-                          rs.getString("descricao"),
+                          rs.getString(DESCRICAO),
                           rs.getInt("quantidade"),
                           rs.getBigDecimal("preco_unitario"),
-                          rs.getBigDecimal("total")));
+                          rs.getBigDecimal(TOTAL)));
               return 0;
             })
         .list();
@@ -352,16 +361,16 @@ public class SaleJdbiRepository
             FROM venda_pagamentos WHERE venda_id IN (<saleIds>)
             ORDER BY recebido_em
             """)
-        .bindList("saleIds", saleIds)
+        .bindList(SALE_IDS, saleIds)
         .map(
             (rs, ctx) -> {
               bySale
-                  .computeIfAbsent(rs.getObject("venda_id", UUID.class), id -> new ArrayList<>())
+                  .computeIfAbsent(rs.getObject(VENDA_ID, UUID.class), id -> new ArrayList<>())
                   .add(
                       new SalePayment(
                           rs.getObject("id", UUID.class),
                           PaymentMethod.valueOf(rs.getString("forma_pagamento")),
-                          rs.getBigDecimal("valor"),
+                          rs.getBigDecimal(VALOR),
                           rs.getTimestamp("recebido_em").toInstant()));
               return 0;
             })

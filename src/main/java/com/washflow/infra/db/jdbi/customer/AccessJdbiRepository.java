@@ -23,6 +23,9 @@ public class AccessJdbiRepository
         OtpRepository,
         CustomerIdentityRepository {
 
+  private static final String AND_TENANT = " AND estabelecimento_id = :tenant";
+  private static final String PHONE = "phone";
+
   private static final String USER_COLUMNS = "id, nome, telefone, email, perfil, criado_em, ativo";
 
   private final Jdbi jdbi;
@@ -115,9 +118,7 @@ public class AccessJdbiRepository
               .bind("token", candidate)
               .execute();
           return handle
-              .createQuery(
-                  "SELECT ticket_token FROM atendimentos WHERE id = :id"
-                      + " AND estabelecimento_id = :tenant")
+              .createQuery("SELECT ticket_token FROM atendimentos WHERE id = :id" + AND_TENANT)
               .bind("id", serviceOrderId)
               .mapTo(String.class)
               .findOne();
@@ -164,10 +165,8 @@ public class AccessJdbiRepository
     jdbi.useTransaction(
         handle -> {
           handle
-              .createUpdate(
-                  "DELETE FROM codigos_acesso WHERE telefone = :phone"
-                      + " AND estabelecimento_id = :tenant")
-              .bind("phone", phone)
+              .createUpdate("DELETE FROM codigos_acesso WHERE telefone = :phone" + AND_TENANT)
+              .bind(PHONE, phone)
               .execute();
           handle
               .createUpdate(
@@ -177,7 +176,7 @@ public class AccessJdbiRepository
                   VALUES (:id, :tenant, :phone, :hash, 0, :expiresAt, :createdAt)
                   """)
               .bind("id", UUID.randomUUID())
-              .bind("phone", phone)
+              .bind(PHONE, phone)
               .bind("hash", codeHash)
               .bind("expiresAt", expiresAt)
               .bind("createdAt", createdAt)
@@ -196,7 +195,7 @@ public class AccessJdbiRepository
                     FROM codigos_acesso WHERE telefone = :phone AND estabelecimento_id = :tenant
                     ORDER BY criado_em DESC
                     """)
-                .bind("phone", phone)
+                .bind(PHONE, phone)
                 .map(
                     (rs, ctx) ->
                         new PendingCode(
@@ -215,7 +214,7 @@ public class AccessJdbiRepository
             handle
                 .createUpdate(
                     "UPDATE codigos_acesso SET tentativas = tentativas + 1 WHERE id = :id"
-                        + " AND estabelecimento_id = :tenant")
+                        + AND_TENANT)
                 .bind("id", codeId)
                 .execute());
   }
@@ -225,10 +224,8 @@ public class AccessJdbiRepository
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate(
-                    "DELETE FROM codigos_acesso WHERE telefone = :phone"
-                        + " AND estabelecimento_id = :tenant")
-                .bind("phone", phone)
+                .createUpdate("DELETE FROM codigos_acesso WHERE telefone = :phone" + AND_TENANT)
+                .bind(PHONE, phone)
                 .execute());
   }
 
@@ -237,7 +234,7 @@ public class AccessJdbiRepository
   @Override
   public Optional<User> loadByGoogleSubject(String subject) {
     // Customer accounts belong to one lava-jato: the same Google account can sign up in several.
-    return loadUser("google_sub", subject, " AND estabelecimento_id = :tenant");
+    return loadUser("google_sub", subject, AND_TENANT);
   }
 
   @Override
@@ -245,9 +242,7 @@ public class AccessJdbiRepository
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate(
-                    "UPDATE usuarios SET google_sub = :sub WHERE id = :id"
-                        + " AND estabelecimento_id = :tenant")
+                .createUpdate("UPDATE usuarios SET google_sub = :sub WHERE id = :id" + AND_TENANT)
                 .bind("id", userId)
                 .bind("sub", subject)
                 .execute());

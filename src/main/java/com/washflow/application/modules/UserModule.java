@@ -31,6 +31,9 @@ import org.jdbi.v3.core.Jdbi;
 /** Composition root of accounts, sign-in and the team: builds its use cases and controllers. */
 public final class UserModule {
 
+  private static final String PHONE = "phone";
+  private static final String PASSWORD = "password";
+
   private UserModule() {}
 
   /**
@@ -85,7 +88,7 @@ public final class UserModule {
             List.of(
                 // "name" is only needed to create the account - DbAuthenticateUser checks it
                 // there, so returning customers can sign in with phone and password.
-                new RequiredFieldValidation("phone"), new RequiredFieldValidation("password")));
+                new RequiredFieldValidation(PHONE), new RequiredFieldValidation(PASSWORD)));
 
     return new AuthenticateUserController(
         authenticateUser(jdbi, appConfig), validation, UserProfile.CUSTOMER);
@@ -98,8 +101,8 @@ public final class UserModule {
     Validation validation =
         new ValidationComposite(
             List.of(
-                new AnyRequiredFieldValidation("email", "phone"),
-                new RequiredFieldValidation("password")));
+                new AnyRequiredFieldValidation("email", PHONE),
+                new RequiredFieldValidation(PASSWORD)));
 
     return new AuthenticateUserController(
         authenticateUser(jdbi, appConfig), validation, UserProfile.MANAGER);
@@ -111,7 +114,7 @@ public final class UserModule {
   public static Controller authenticateWasherController(Jdbi jdbi, AppConfig appConfig) {
     Validation validation =
         new ValidationComposite(
-            List.of(new RequiredFieldValidation("phone"), new RequiredFieldValidation("password")));
+            List.of(new RequiredFieldValidation(PHONE), new RequiredFieldValidation(PASSWORD)));
 
     return new AuthenticateUserController(
         authenticateUser(jdbi, appConfig), validation, UserProfile.WASHER);

@@ -19,6 +19,8 @@ import org.jdbi.v3.core.statement.StatementContext;
 public class ChecklistJdbiRepository
     implements SaveServiceOrderChecklistRepository, LoadServiceOrderChecklistRepository {
 
+  private static final String SERVICE_ORDER_ID = "serviceOrderId";
+
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private static final String INSERT_SQL =
@@ -93,13 +95,13 @@ public class ChecklistJdbiRepository
         handle -> {
           handle
               .createUpdate(DELETE_SAME_TYPE_SQL)
-              .bind("serviceOrderId", checklist.serviceOrderId())
+              .bind(SERVICE_ORDER_ID, checklist.serviceOrderId())
               .bind("type", checklist.type().name())
               .execute();
           handle
               .createUpdate(INSERT_SQL)
               .bind("id", checklist.id())
-              .bind("serviceOrderId", checklist.serviceOrderId())
+              .bind(SERVICE_ORDER_ID, checklist.serviceOrderId())
               .bind("type", checklist.type().name())
               .bind("items", serializeItems(checklist.items()))
               .bind("signatureImage", checklist.signatureImage())
@@ -116,7 +118,7 @@ public class ChecklistJdbiRepository
         handle ->
             handle
                 .createQuery(SELECT_BY_ORDER_SQL)
-                .bind("serviceOrderId", serviceOrderId)
+                .bind(SERVICE_ORDER_ID, serviceOrderId)
                 .map(this::mapRow)
                 .list());
   }
@@ -128,7 +130,7 @@ public class ChecklistJdbiRepository
         handle ->
             handle
                 .createQuery(SELECT_BY_ORDER_AND_TYPE_SQL)
-                .bind("serviceOrderId", serviceOrderId)
+                .bind(SERVICE_ORDER_ID, serviceOrderId)
                 .bind("type", type.name())
                 .map(this::mapRow)
                 .findFirst());

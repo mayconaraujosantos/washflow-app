@@ -11,6 +11,9 @@ import org.jdbi.v3.core.Jdbi;
  */
 public final class ResourceAccessEvaluator {
 
+  private static final String CUSTOMER_ID = "customerId";
+  private static final String HTTP_PATCH = "PATCH";
+
   private ResourceAccessEvaluator() {}
 
   /**
@@ -45,7 +48,7 @@ public final class ResourceAccessEvaluator {
 
     // Create vehicle: check customerId in body
     if (isCreateVehicle(method, path)) {
-      return bodyValue(body, "customerId").equals(userId.toString());
+      return bodyValue(body, CUSTOMER_ID).equals(userId.toString());
     }
 
     // Create service order: check vehicle belongs to customer
@@ -102,7 +105,7 @@ public final class ResourceAccessEvaluator {
                       .createQuery(
                           "SELECT COUNT(*) FROM veiculos WHERE id = :vehicleId AND cliente_id = :customerId")
                       .bind("vehicleId", UUID.fromString(vehicleId))
-                      .bind("customerId", userId)
+                      .bind(CUSTOMER_ID, userId)
                       .mapTo(Integer.class)
                       .one()
                   == 1);
@@ -112,17 +115,17 @@ public final class ResourceAccessEvaluator {
   }
 
   private static boolean isStartWash(String method, String path) {
-    return method.equals("PATCH") && path.matches("/api/service-orders/[^/]+/start");
+    return method.equals(HTTP_PATCH) && path.matches("/api/service-orders/[^/]+/start");
   }
 
   private static boolean isWasherAction(String method, String path) {
-    return method.equals("PATCH")
+    return method.equals(HTTP_PATCH)
         && (path.matches("/api/service-orders/[^/]+/complete")
             || path.matches("/api/service-orders/[^/]+/(pause|resume)"));
   }
 
   private static boolean isUpdateUserProfile(String method, String path) {
-    return method.equals("PATCH") && path.matches("/api/users/[^/]+/profile");
+    return method.equals(HTTP_PATCH) && path.matches("/api/users/[^/]+/profile");
   }
 
   private static boolean isGetServiceOrder(String method, String path) {
@@ -142,7 +145,7 @@ public final class ResourceAccessEvaluator {
                       WHERE a.id = :orderId AND v.cliente_id = :customerId
                       """)
                       .bind("orderId", orderId)
-                      .bind("customerId", userId)
+                      .bind(CUSTOMER_ID, userId)
                       .mapTo(Integer.class)
                       .one()
                   == 1);

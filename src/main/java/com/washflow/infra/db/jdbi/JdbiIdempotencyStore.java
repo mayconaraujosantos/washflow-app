@@ -13,6 +13,8 @@ import org.jdbi.v3.core.Jdbi;
  */
 public class JdbiIdempotencyStore implements IdempotencyStore {
 
+  private static final String USER_ID = "userId";
+
   static final Duration RETENTION = Duration.ofHours(24);
   // A request that never completed nor released its key (server killed mid-request).
   static final Duration STALE_AFTER = Duration.ofMinutes(2);
@@ -48,7 +50,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
                       VALUES (:userId, :key, CAST(:establishmentId AS UUID), :method, :route, :hash, :now)
                       ON CONFLICT (usuario_id, chave) DO NOTHING
                       """)
-                  .bind("userId", userId)
+                  .bind(USER_ID, userId)
                   .bind("key", key)
                   .bind("establishmentId", establishmentId)
                   .bind("method", method)
@@ -67,7 +69,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
                       WHERE usuario_id = :userId AND chave = :key AND status_resposta IS NULL
                         AND hash_requisicao = :hash AND criado_em < :stale
                       """)
-                  .bind("userId", userId)
+                  .bind(USER_ID, userId)
                   .bind("key", key)
                   .bind("hash", requestHash)
                   .bind("now", now)
@@ -83,7 +85,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
                       SELECT hash_requisicao, status_resposta, corpo_resposta
                       FROM chaves_idempotencia WHERE usuario_id = :userId AND chave = :key
                       """)
-                  .bind("userId", userId)
+                  .bind(USER_ID, userId)
                   .bind("key", key)
                   .map(
                       (rs, ctx) -> {
@@ -112,7 +114,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
                     """)
                 .bind("status", status)
                 .bind("body", body)
-                .bind("userId", userId)
+                .bind(USER_ID, userId)
                 .bind("key", key)
                 .execute());
   }
@@ -127,7 +129,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
                     DELETE FROM chaves_idempotencia
                     WHERE usuario_id = :userId AND chave = :key AND status_resposta IS NULL
                     """)
-                .bind("userId", userId)
+                .bind(USER_ID, userId)
                 .bind("key", key)
                 .execute());
   }

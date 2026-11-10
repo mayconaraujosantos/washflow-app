@@ -40,6 +40,12 @@ public class ServiceOrderJdbiRepository
         CancelServiceOrderRepository,
         RefundServiceOrderRepository {
 
+  private static final String UPDATED_AT = "updatedAt";
+  private static final String WASHER_ID = "washerId";
+  private static final String REASON = "reason";
+  private static final String DESCRIPTION = "description";
+  private static final String AMOUNT = "amount";
+
   private static final String STATUS = "status";
 
   private static final String INSERT_SQL =
@@ -141,7 +147,7 @@ public class ServiceOrderJdbiRepository
         .bind(STATUS, serviceOrder.status().dbValue())
         .bind("scheduledAt", serviceOrder.scheduledAt())
         .bind("createdAt", serviceOrder.createdAt())
-        .bind("updatedAt", serviceOrder.updatedAt())
+        .bind(UPDATED_AT, serviceOrder.updatedAt())
         .bind("expectedDeliveryAt", serviceOrder.expectedDeliveryAt())
         .bind("notes", serviceOrder.notes())
         .execute();
@@ -178,8 +184,8 @@ public class ServiceOrderJdbiRepository
                           .bind("id", id)
                           .bind("expected", expected.dbValue())
                           .bind(STATUS, status.dbValue())
-                          .bind("washerId", washerId)
-                          .bind("updatedAt", Instant.now())
+                          .bind(WASHER_ID, washerId)
+                          .bind(UPDATED_AT, Instant.now())
                           .execute();
                   if (updated != 1) {
                     return Optional.<ServiceOrder>empty();
@@ -213,7 +219,7 @@ public class ServiceOrderJdbiRepository
                       """)
                   .bind("now", now)
                   .bind("id", orderId)
-                  .bind("washerId", washerId)
+                  .bind(WASHER_ID, washerId)
                   .execute();
           if (updated != 1) {
             return false;
@@ -227,9 +233,9 @@ public class ServiceOrderJdbiRepository
                   """)
               .bind("id", UUID.randomUUID())
               .bind("orderId", orderId)
-              .bind("washerId", washerId)
-              .bind("reason", reason)
-              .bind("description", description)
+              .bind(WASHER_ID, washerId)
+              .bind(REASON, reason)
+              .bind(DESCRIPTION, description)
               .bind("startedAt", now)
               .execute();
           return true;
@@ -256,7 +262,7 @@ public class ServiceOrderJdbiRepository
                       """)
                   .bind("now", now)
                   .bind("id", orderId)
-                  .bind("washerId", washerId)
+                  .bind(WASHER_ID, washerId)
                   .execute();
           if (updated != 1) {
             return false;
@@ -272,7 +278,7 @@ public class ServiceOrderJdbiRepository
                       """)
                   .bind("now", now)
                   .bind("id", orderId)
-                  .bind("washerId", washerId)
+                  .bind(WASHER_ID, washerId)
                   .execute();
           if (resumed != 1) {
             throw new IllegalStateException("Active wash pause was not found");
@@ -299,8 +305,8 @@ public class ServiceOrderJdbiRepository
                         """)
                     .bind("now", Instant.now())
                     .bind("managerId", managerId)
-                    .bind("reason", reason)
-                    .bind("description", description)
+                    .bind(REASON, reason)
+                    .bind(DESCRIPTION, description)
                     .bind("id", orderId)
                     .execute())
         == 1;
@@ -370,10 +376,10 @@ public class ServiceOrderJdbiRepository
                   """)
               .bind("id", refund.id())
               .bind("orderId", orderId)
-              .bind("amount", refund.amount())
+              .bind(AMOUNT, refund.amount())
               .bind("method", refund.method().name())
-              .bind("reason", reason)
-              .bind("description", description)
+              .bind(REASON, reason)
+              .bind(DESCRIPTION, description)
               .bind("reversedCommission", refund.reversedCommission())
               .bind("createdBy", managerId)
               .bind("createdAt", now)
@@ -395,7 +401,7 @@ public class ServiceOrderJdbiRepository
                       SET status = 'FINALIZADO', atualizado_em = :updatedAt
                       WHERE id = :id AND status = 'PRONTO' AND estabelecimento_id = :tenant
                       """)
-                  .bind("updatedAt", payment.receivedAt())
+                  .bind(UPDATED_AT, payment.receivedAt())
                   .bind("id", serviceOrder.id())
                   .execute();
           if (updated != 1) {
@@ -410,7 +416,7 @@ public class ServiceOrderJdbiRepository
               .bind("id", payment.id())
               .bind("serviceOrderId", payment.serviceOrderId())
               .bind("method", payment.method().name())
-              .bind("amount", payment.amount())
+              .bind(AMOUNT, payment.amount())
               .bind("receivedAt", payment.receivedAt())
               .execute();
           handle
@@ -421,8 +427,8 @@ public class ServiceOrderJdbiRepository
                   """)
               .bind("id", commission.id())
               .bind("serviceOrderId", commission.serviceOrderId())
-              .bind("washerId", commission.washerId())
-              .bind("amount", commission.amount())
+              .bind(WASHER_ID, commission.washerId())
+              .bind(AMOUNT, commission.amount())
               .bind("creditedAt", commission.creditedAt())
               .execute();
           return Optional.of(

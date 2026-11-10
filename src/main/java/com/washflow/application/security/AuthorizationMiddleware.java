@@ -12,6 +12,8 @@ import org.jdbi.v3.core.Jdbi;
 
 public final class AuthorizationMiddleware {
 
+  private static final String BEARER_PREFIX = "Bearer ";
+
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
   private static final Set<String> PUBLIC_API_PATHS =
       Set.of(
@@ -124,11 +126,11 @@ public final class AuthorizationMiddleware {
 
   private String extractToken(Context ctx) {
     String authorization = ctx.header("Authorization");
-    if (authorization == null || !authorization.startsWith("Bearer ")) {
+    if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
       ctx.status(401).json(HttpHelper.errorBody("Authentication required"));
       return null;
     }
-    return authorization.substring("Bearer ".length());
+    return authorization.substring(BEARER_PREFIX.length());
   }
 
   private Optional<AccountSecurityGateway.AccountAccess> validateAccountStatus(
@@ -179,12 +181,12 @@ public final class AuthorizationMiddleware {
 
   private Optional<UUID> establishmentOfOptionalToken(Context ctx) {
     String authorization = ctx.header("Authorization");
-    if (authorization == null || !authorization.startsWith("Bearer ")) {
+    if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
       return Optional.empty();
     }
     try {
       AuthTokenService.Claims claims =
-          tokenService.verify(authorization.substring("Bearer ".length()));
+          tokenService.verify(authorization.substring(BEARER_PREFIX.length()));
       return securityGateway
           .findAccessById(claims.userId())
           .filter(AccountSecurityGateway.AccountAccess::active)

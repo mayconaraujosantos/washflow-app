@@ -11,6 +11,9 @@ import java.util.Set;
  */
 public class DbPauseServiceOrder implements PauseServiceOrder {
 
+  private static final String INVALID_REASON =
+      "Choose a valid pause reason; OTHER requires a description of up to 200 characters";
+
   private static final Set<String> VALID_REASONS = Set.of("LUNCH", "RESTROOM", "OTHER");
 
   private final PauseServiceOrderRepository pauseRepository;
@@ -25,16 +28,13 @@ public class DbPauseServiceOrder implements PauseServiceOrder {
     String description = params.description() == null ? null : params.description().trim();
 
     if (!VALID_REASONS.contains(reason)) {
-      throw new IllegalArgumentException(
-          "Choose a valid pause reason; OTHER requires a description of up to 200 characters");
+      throw new IllegalArgumentException(INVALID_REASON);
     }
     if ("OTHER".equals(reason) && (description == null || description.isBlank())) {
-      throw new IllegalArgumentException(
-          "Choose a valid pause reason; OTHER requires a description of up to 200 characters");
+      throw new IllegalArgumentException(INVALID_REASON);
     }
     if (description != null && description.length() > 200) {
-      throw new IllegalArgumentException(
-          "Choose a valid pause reason; OTHER requires a description of up to 200 characters");
+      throw new IllegalArgumentException(INVALID_REASON);
     }
     if (description != null && description.isBlank()) {
       description = null;
