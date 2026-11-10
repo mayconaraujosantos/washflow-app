@@ -58,6 +58,7 @@ const STATUS_CHANGE_NOTICES: Record<ServiceOrderModel['status'], string> = {
   READY: 'Seu veículo está pronto para retirada',
   DONE: 'Atendimento finalizado',
   CANCELLED: 'Atendimento cancelado',
+  REFUNDED: 'Pagamento estornado',
 }
 
 const REFRESH_MS = 3000

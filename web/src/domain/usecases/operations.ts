@@ -1,5 +1,8 @@
 import { AuditEntryModel } from '@/domain/models/audit-entry-model'
-import { ServiceOrderModel } from '@/domain/models/service-order-model'
+import {
+  ServiceOrderModel,
+  ServiceOrderRefundModel,
+} from '@/domain/models/service-order-model'
 import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { UserModel, UserProfile } from '@/domain/models/user-model'
@@ -8,6 +11,15 @@ import { SaleModel, SaleType } from '@/domain/models/sale-model'
 
 export type PaymentMethod = 'CASH' | 'PIX' | 'DEBIT_CARD' | 'CREDIT_CARD'
 export type PauseReason = 'LUNCH' | 'RESTROOM' | 'OTHER'
+export type RefundReason =
+  'CUSTOMER_COMPLAINT' | 'WRONG_CHARGE' | 'SERVICE_NOT_DONE' | 'OTHER'
+export type RefundParams = {
+  reason: RefundReason
+  description?: string
+  // Omitted: refunded in the method the customer paid with.
+  refundMethod?: PaymentMethod
+  reverseCommission?: boolean
+}
 export type CancelReason =
   'CUSTOMER_GAVE_UP' | 'NO_SHOW' | 'REGISTERED_BY_MISTAKE' | 'OTHER'
 
@@ -68,6 +80,10 @@ export interface Operations {
     description?: string,
   ) => Promise<void>
   complete: (serviceOrderId: string) => Promise<void>
+  refund: (
+    serviceOrderId: string,
+    params: RefundParams,
+  ) => Promise<ServiceOrderRefundModel>
   finalize: (
     serviceOrderId: string,
     paymentMethod: PaymentMethod,

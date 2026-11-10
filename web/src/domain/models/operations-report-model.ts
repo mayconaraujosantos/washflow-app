@@ -20,4 +20,11 @@ export type OperationsReportModel = {
     reason: 'LUNCH' | 'RESTROOM' | 'OTHER'
     count: number
   }[]
+  // Refunds made in the period (by refund date): net = gross - refunds.
+  refundedOrders: number
+  refunds: number
+  reversedCommissions: number
+  netRevenue: number
+  netCommissions: number
+  refundReasons: { reason: string; count: number; amount: number }[]
 }

@@ -8,10 +8,24 @@ export type ServiceOrderStatus =
   | 'READY'
   | 'DONE'
   | 'CANCELLED'
+  | 'REFUNDED'
 
-/** Finalized or cancelled: no longer in the yard nor tracked by the customer. */
+/** Finalized, cancelled or refunded: no longer in the yard nor tracked by the customer. */
 export const isClosedStatus = (status: ServiceOrderStatus) =>
-  status === 'DONE' || status === 'CANCELLED'
+  status === 'DONE' || status === 'CANCELLED' || status === 'REFUNDED'
+
+// The API's ServiceOrderRefund: the full payment, dated when it was made.
+export type ServiceOrderRefundModel = {
+  id: string
+  serviceOrderId: string
+  amount: number
+  method: 'CASH' | 'PIX' | 'DEBIT_CARD' | 'CREDIT_CARD'
+  reason: string
+  description: string | null
+  reversedCommission: number
+  createdBy: string
+  createdAt: string
+}
 
 // Display data joined by the API (ServiceOrder.Details) - absent on older responses.
 export type ServiceOrderDetails = {

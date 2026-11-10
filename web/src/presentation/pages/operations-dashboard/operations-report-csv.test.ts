@@ -19,6 +19,12 @@ const report: OperationsReportModel = {
   ],
   paymentMethods: [{ method: 'PIX', orders: 1, amount: 60 }],
   pauses: [{ reason: 'LUNCH', count: 1 }],
+  refundedOrders: 1,
+  refunds: 60,
+  reversedCommissions: 20,
+  netRevenue: 0,
+  netCommissions: 0,
+  refundReasons: [{ reason: 'WRONG_CHARGE', count: 1, amount: 60 }],
 }
 
 describe('operationsReportCsv', () => {
@@ -30,5 +36,9 @@ describe('operationsReportCsv', () => {
     expect(csv).toContain('"\'=HYPERLINK(""bad"")";"1";"60.00";"20.00"')
     expect(csv).toContain('"Pix";"1";"60.00"')
     expect(csv).toContain('"Almoço";"1"')
+    expect(csv).toContain('"Estornos (R$)";"60.00"')
+    expect(csv).toContain('"Faturamento líquido (R$)";"0.00"')
+    expect(csv).toContain('"Comissões líquidas (R$)";"0.00"')
+    expect(csv).toContain('"Cobrança errada";"1";"60.00"')
   })
 })

@@ -1,6 +1,9 @@
 import { HttpClient } from '@/data/protocols/http/http-client'
 import { AuditEntryModel } from '@/domain/models/audit-entry-model'
-import { ServiceOrderModel } from '@/domain/models/service-order-model'
+import {
+  ServiceOrderModel,
+  ServiceOrderRefundModel,
+} from '@/domain/models/service-order-model'
 import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { UserModel, UserProfile } from '@/domain/models/user-model'
@@ -12,6 +15,7 @@ import {
   CancelReason,
   PauseReason,
   PaymentMethod,
+  RefundParams,
   RegisterEntryParams,
 } from '@/domain/usecases/operations'
 
@@ -136,6 +140,17 @@ export class RemoteOperations implements Operations {
 
   async resume(serviceOrderId: string): Promise<void> {
     await this.request(`/api/service-orders/${serviceOrderId}/resume`, 'patch')
+  }
+
+  refund(
+    serviceOrderId: string,
+    params: RefundParams,
+  ): Promise<ServiceOrderRefundModel> {
+    return this.request(
+      `/api/service-orders/${serviceOrderId}/refund`,
+      'patch',
+      params,
+    ) as Promise<ServiceOrderRefundModel>
   }
 
   async finalize(

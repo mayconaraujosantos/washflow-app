@@ -9,8 +9,9 @@ import {
   Notice,
   OrderCard,
 } from '@/presentation/components/ui/blocks'
-import { errorMessage } from '@/presentation/helpers/format'
+import { errorMessage, formatMoney } from '@/presentation/helpers/format'
 import { MANAGER_NAV, useManager } from './manager-context'
+import { RefundSheet } from './refund-sheet'
 
 const WEEKDAYS = ['dom.', 'seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.']
 
@@ -56,12 +57,14 @@ function dayCapacity(
 }
 
 export function AgendaScreen() {
-  const { operations, openMenu, settings } = useManager()
+  const { operations, openMenu, settings, servicePrices, notify } = useManager()
   const today = manausDate()
   const [month, setMonth] = useState(today.slice(0, 7))
   const [selected, setSelected] = useState(today)
   const [orders, setOrders] = useState<ServiceOrderModel[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [refunding, setRefunding] = useState<ServiceOrderModel | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
 
   const { first, last, year, monthNumber } = monthBounds(month)
 
@@ -173,11 +176,52 @@ export function AgendaScreen() {
         ) : (
           <ul className="list">
             {selectedOrders.map((order) => (
-              <OrderCard key={order.id} order={order} showWasher />
+              <OrderCard key={order.id} order={order} showWasher>
+                {order.status === 'DONE' && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={busyId === order.id}
+                    onClick={() => setRefunding(order)}
+                  >
+                    <UiIcon name="money" size={18} />
+                    Estornar
+                  </button>
+                )}
+              </OrderCard>
             ))}
           </ul>
         )}
       </section>
+      <RefundSheet
+        order={refunding}
+        amount={
+          servicePrices.find((item) => item.id === refunding?.servicePriceId)
+            ?.price
+        }
+        onClose={() => setRefunding(null)}
+        onConfirm={(order, params) => {
+          setRefunding(null)
+          setBusyId(order.id)
+          operations
+            .refund(order.id, params)
+            .then((refund) => {
+              setOrders((current) =>
+                current.map((item) =>
+                  item.id === order.id ? { ...item, status: 'REFUNDED' } : item,
+                ),
+              )
+              notify(
+                'success',
+                `Estorno de ${formatMoney(refund.amount)} registrado.`,
+              )
+            })
+            .catch((cause) =>
+              notify('error', errorMessage(cause, 'Falha ao estornar')),
+            )
+            .finally(() => setBusyId(null))
+        }}
+      />
     </ScreenLayout>
   )
 }

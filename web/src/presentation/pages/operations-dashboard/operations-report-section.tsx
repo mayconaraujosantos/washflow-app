@@ -151,6 +151,37 @@ export function OperationsReportSection({ operations }: Props) {
                 })}
               </strong>
             </article>
+            {report.refundedOrders > 0 && (
+              <>
+                <article>
+                  <span>Estornos ({report.refundedOrders})</span>
+                  <strong>
+                    {report.refunds.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </strong>
+                </article>
+                <article>
+                  <span>Faturamento líquido</span>
+                  <strong>
+                    {report.netRevenue.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </strong>
+                </article>
+                <article>
+                  <span>Comissões líquidas</span>
+                  <strong>
+                    {report.netCommissions.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </strong>
+                </article>
+              </>
+            )}
             <article>
               <span>Tempo médio de lavagem</span>
               <strong>

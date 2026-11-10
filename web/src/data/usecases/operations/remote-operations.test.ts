@@ -183,6 +183,24 @@ describe('RemoteOperations', () => {
     })
   })
 
+  it('refunds with the reason, method and commission choice', async () => {
+    await operations.refund('order-1', {
+      reason: 'WRONG_CHARGE',
+      refundMethod: 'CASH',
+      reverseCommission: true,
+    })
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/service-orders/order-1/refund',
+      method: 'patch',
+      body: {
+        reason: 'WRONG_CHARGE',
+        refundMethod: 'CASH',
+        reverseCommission: true,
+      },
+    })
+  })
+
   it('calls the resume endpoint', async () => {
     await operations.resume('order-1')
 

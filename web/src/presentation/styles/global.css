@@ -709,6 +709,10 @@ select option {
   background: var(--surface-3);
   color: var(--text-muted);
 }
+.status-refunded {
+  background: var(--surface-3);
+  color: var(--danger);
+}
 .status-cancelled {
   background: var(--surface-3);
   color: var(--danger);
