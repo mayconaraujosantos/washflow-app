@@ -109,11 +109,12 @@ Mantém o histórico das pausas feitas pelo lavador durante uma lavagem.
 * `descricao`: VARCHAR(200) (Obrigatória para `OTHER`)
 * `iniciada_em` / `retomada_em`: TIMESTAMP
 
-### 2.8 Tabelas: `vendas`, `venda_itens`, `venda_pagamentos`
+### 2.8 Tabelas: `vendas`, `venda_itens`, `venda_pagamentos`, `venda_estornos`
 Venda rápida no balcão (`tipo = 'VENDA'`) e orçamento (`tipo = 'ORCAMENTO'`), sem passar pelo pátio.
 * `vendas`: `id`, `tipo`, `veiculo_id` (opcional), `cliente_nome`, `cliente_telefone`, `subtotal`, `desconto`, `total`, `observacoes`, `criado_por`, `criado_em`
 * `venda_itens`: item do catálogo `servicos_preco` com `descricao` e `preco_unitario` congelados, `quantidade` e `total`
 * `venda_pagamentos`: pagamentos parciais e em mais de uma forma (`CASH`, `PIX`, `DEBIT_CARD`, `CREDIT_CARD`); a soma nunca passa do total
+* `venda_estornos` (V7, somente inserção): `venda_id`, `forma_devolucao`, `valor`, `motivo` (`CUSTOMER_COMPLAINT`, `WRONG_CHARGE`, `SERVICE_NOT_DONE`, `OTHER`), `descricao` (obrigatória para `OTHER`), `criado_por`, `criado_em`. Estorno total ou parcial de venda rápida (orçamento não tem); cada forma devolve no máximo o que entrou nela, menos o já estornado. Os pagamentos nunca mudam
 
 ---
 
@@ -156,7 +157,9 @@ Endpoints operacionais:
 * `GET /api/schedule/availability?date=YYYY-MM-DD` (público): horários do dia com vagas restantes (`booked`/`capacity`), já marcando horários lotados, passados ou dia fechado - as telas de agendamento do gerente e do cliente só oferecem horários aceitos pela API.
 * `GET /api/operations/agenda?from=YYYY-MM-DD&to=YYYY-MM-DD`: atendimentos por data de agendamento (data Manaus, qualquer status), intervalo máximo de 62 dias.
 * `POST /api/sales`: registra venda rápida ou orçamento (`type` = `QUICK_SALE` ou `BUDGET`, `items` com `servicePriceId` e `quantity`, `discount`, `payments` com `method` e `amount`). Preços vêm do catálogo; desconto entre zero e o subtotal; pagamentos não excedem o total. A resposta traz `paidAmount` e `outstandingAmount`.
-* `GET /api/sales?from=YYYY-MM-DD&to=YYYY-MM-DD[&type=]`: vendas/orçamentos por data Manaus de criação.
+* `GET /api/sales?from=YYYY-MM-DD&to=YYYY-MM-DD[&type=]`: vendas/orçamentos por data Manaus de criação, com `refunds` e `refundedAmount`.
+* `POST /api/sales/{id}/refunds` (gerente): estorna `amount` (até 2 casas) na forma `method`, com `reason` e `description`; acima do que a forma ainda tem → 409 ("Pix só tem R$ 20,00 para estornar nesta venda"), orçamento → 409. A venda fica travada (`FOR UPDATE`) durante a conta, então estornos simultâneos nunca passam do pago. Responde a venda atualizada.
+* `GET /api/sales/refunds?from=&to=` (gerente): estornos de venda pela data do estorno (usado no caixa do dia).
 * `POST /api/services`: o gerente cadastra produto ou serviço no catálogo (`name`, `price`, `washerCommission`). Somente `GET /api/services` é público.
 * Caixa (`/api/cash-transactions`), categorias de despesa (`/api/expense-categories`) e checklist/fotos de atendimento são exclusivos do gerente.
 * `PATCH /api/service-orders/{id}/pause`: pausa uma lavagem atribuída ao lavador; exige motivo (`LUNCH`, `RESTROOM`, `OTHER`) e descrição para `OTHER`.
