@@ -81,6 +81,26 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
         AND estabelecimento_id = :tenant
       """;
 
+  private static final String ORDER_REFUND_REASONS_SQL =
+      """
+      SELECT motivo, COUNT(*) AS refunds, SUM(valor) AS amount
+      FROM estornos_atendimento
+      WHERE criado_em >= :start AND criado_em < :end
+        AND estabelecimento_id = :tenant
+      GROUP BY motivo
+      ORDER BY COUNT(*) DESC, motivo
+      """;
+
+  private static final String SALE_REFUND_REASONS_SQL =
+      """
+      SELECT motivo, COUNT(*) AS refunds, SUM(valor) AS amount
+      FROM venda_estornos
+      WHERE criado_em >= :start AND criado_em < :end
+        AND estabelecimento_id = :tenant
+      GROUP BY motivo
+      ORDER BY COUNT(*) DESC, motivo
+      """;
+
   private final Jdbi jdbi;
 
   public OperationsReportJdbiRepository(Jdbi jdbi) {
@@ -104,10 +124,8 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
           pauses
               .counts()
               .forEach((reason, count) -> pauseBreakdowns.add(new PauseBreakdown(reason, count)));
-          List<RefundBreakdown> refundReasons =
-              refundReasons(handle, "estornos_atendimento", start, end);
-          List<RefundBreakdown> saleRefundReasons =
-              refundReasons(handle, "venda_estornos", start, end);
+          List<RefundBreakdown> refundReasons = orderRefundReasons(handle, start, end);
+          List<RefundBreakdown> saleRefundReasons = saleRefundReasons(handle, start, end);
           List<ReasonCount> cancellationReasons = cancellationReasons(handle, start, end);
           BigDecimal salesReceived = salesReceived(handle, start, end);
           BigDecimal reversedCommissions = reversedCommissions(handle, start, end);
@@ -262,23 +280,28 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
       List<ServiceBreakdown> services,
       List<PaymentBreakdown> payments) {}
 
-  // Refunds by reason in the period (refund date): orders' or quick sales' refund table.
-  private static List<RefundBreakdown> refundReasons(
-      Handle handle, String table, Instant start, Instant end) {
-    return handle
-        .createQuery(
-            "SELECT motivo, COUNT(*) AS refunds, SUM(valor) AS amount FROM "
-                + table
-                + " WHERE criado_em >= :start AND criado_em < :end"
-                + " AND estabelecimento_id = :tenant"
-                + " GROUP BY motivo ORDER BY COUNT(*) DESC, motivo")
-        .bind(START, start)
-        .bind(END, end)
-        .map(
-            (rs, ctx) ->
-                new RefundBreakdown(
-                    rs.getString("motivo"), rs.getInt("refunds"), rs.getBigDecimal("amount")))
-        .list();
+  private static List<RefundBreakdown> orderRefundReasons(
+      Handle handle, Instant start, Instant end) {
+    return queryRefundReasons(handle, ORDER_REFUND_REASONS_SQL, start, end);
+  }
+
+  private static List<RefundBreakdown> saleRefundReasons(
+      Handle handle, Instant start, Instant end) {
+    return queryRefundReasons(handle, SALE_REFUND_REASONS_SQL, start, end);
+  }
+
+  private static List<RefundBreakdown> queryRefundReasons(
+      Handle handle, String sql, Instant start, Instant end) {
+    try (var query = handle.createQuery(sql)) {
+      return query
+          .bind(START, start)
+          .bind(END, end)
+          .map(
+              (rs, ctx) ->
+                  new RefundBreakdown(
+                      rs.getString("motivo"), rs.getInt("refunds"), rs.getBigDecimal("amount")))
+          .list();
+    }
   }
 
   private static BigDecimal sum(List<RefundBreakdown> reasons) {
