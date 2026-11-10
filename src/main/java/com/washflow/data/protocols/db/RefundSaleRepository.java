@@ -2,8 +2,8 @@ package com.washflow.data.protocols.db;
 
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleRefund;
-import com.washflow.domain.errors.SaleNotFoundError;
-import com.washflow.domain.errors.SaleRefundNotAllowedError;
+import com.washflow.domain.errors.sale.SaleNotFoundError;
+import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import java.util.UUID;
 
 /**

@@ -7,8 +7,8 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.errors.InvalidServiceOrderStatusError;
-import com.washflow.domain.errors.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.CheckInServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

@@ -2,7 +2,7 @@ package com.washflow.data.usecases.refundserviceorder;
 
 import com.washflow.data.protocols.db.RefundServiceOrderRepository;
 import com.washflow.domain.entities.ServiceOrderRefund;
-import com.washflow.domain.errors.ServiceOrderNotRefundableError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
 import com.washflow.domain.usecases.RefundServiceOrder;
 import java.util.Set;
 

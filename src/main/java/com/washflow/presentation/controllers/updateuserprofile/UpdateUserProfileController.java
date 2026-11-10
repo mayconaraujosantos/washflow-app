@@ -1,9 +1,9 @@
 package com.washflow.presentation.controllers.updateuserprofile;
 
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.ForbiddenError;
-import com.washflow.domain.errors.UserHasActiveWashesError;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.common.ForbiddenError;
+import com.washflow.domain.errors.user.UserHasActiveWashesError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.UpdateUserProfile;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

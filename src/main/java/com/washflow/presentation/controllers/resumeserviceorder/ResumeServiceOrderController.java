@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.resumeserviceorder;
 
-import com.washflow.domain.errors.ServiceOrderNotWashingError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotWashingError;
 import com.washflow.domain.usecases.ResumeServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

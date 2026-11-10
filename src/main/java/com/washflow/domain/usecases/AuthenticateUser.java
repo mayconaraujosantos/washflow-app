@@ -2,10 +2,10 @@ package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.InvalidCredentialsError;
-import com.washflow.domain.errors.ManagerSelfRegistrationNotAllowedError;
-import com.washflow.domain.errors.UserProfileMismatchError;
-import com.washflow.domain.errors.WasherSelfRegistrationNotAllowedError;
+import com.washflow.domain.errors.user.InvalidCredentialsError;
+import com.washflow.domain.errors.user.ManagerSelfRegistrationNotAllowedError;
+import com.washflow.domain.errors.user.UserProfileMismatchError;
+import com.washflow.domain.errors.user.WasherSelfRegistrationNotAllowedError;
 
 /**
  * Login/registration by phone and password, scoped to one profile per QR code (CLIENTE, LAVADOR or

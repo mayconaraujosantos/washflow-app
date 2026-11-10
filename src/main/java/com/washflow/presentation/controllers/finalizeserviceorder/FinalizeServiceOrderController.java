@@ -1,9 +1,9 @@
 package com.washflow.presentation.controllers.finalizeserviceorder;
 
 import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.errors.InvalidServiceOrderStatusError;
-import com.washflow.domain.errors.ServiceOrderNotFoundError;
-import com.washflow.domain.errors.ServicePriceNotFoundError;
+import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
+import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.FinalizeServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

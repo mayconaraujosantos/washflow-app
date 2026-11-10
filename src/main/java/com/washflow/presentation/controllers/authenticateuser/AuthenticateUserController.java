@@ -1,10 +1,10 @@
 package com.washflow.presentation.controllers.authenticateuser;
 
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.InvalidCredentialsError;
-import com.washflow.domain.errors.ManagerSelfRegistrationNotAllowedError;
-import com.washflow.domain.errors.UserProfileMismatchError;
-import com.washflow.domain.errors.WasherSelfRegistrationNotAllowedError;
+import com.washflow.domain.errors.user.InvalidCredentialsError;
+import com.washflow.domain.errors.user.ManagerSelfRegistrationNotAllowedError;
+import com.washflow.domain.errors.user.UserProfileMismatchError;
+import com.washflow.domain.errors.user.WasherSelfRegistrationNotAllowedError;
 import com.washflow.domain.usecases.AuthenticateUser;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

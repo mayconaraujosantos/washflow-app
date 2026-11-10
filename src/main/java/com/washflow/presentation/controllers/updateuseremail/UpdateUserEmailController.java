@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.updateuseremail;
 
-import com.washflow.domain.errors.EmailAlreadyRegisteredError;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.UpdateUserEmail;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

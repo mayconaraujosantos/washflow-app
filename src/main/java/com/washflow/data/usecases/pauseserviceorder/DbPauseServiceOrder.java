@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.pauseserviceorder;
 
 import com.washflow.data.protocols.db.PauseServiceOrderRepository;
-import com.washflow.domain.errors.ServiceOrderNotPausedError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotPausedError;
 import com.washflow.domain.usecases.PauseServiceOrder;
 import java.util.Set;
 

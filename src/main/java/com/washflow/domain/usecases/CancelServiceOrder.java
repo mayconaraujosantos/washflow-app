@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases;
 
-import com.washflow.domain.errors.ServiceOrderNotCancellableError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
 import java.util.UUID;
 
 /**

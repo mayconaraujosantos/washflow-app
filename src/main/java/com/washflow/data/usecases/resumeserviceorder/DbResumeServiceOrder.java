@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.resumeserviceorder;
 
 import com.washflow.data.protocols.db.ResumeServiceOrderRepository;
-import com.washflow.domain.errors.ServiceOrderNotWashingError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotWashingError;
 import com.washflow.domain.usecases.ResumeServiceOrder;
 
 /**

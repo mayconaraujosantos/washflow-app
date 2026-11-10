@@ -7,8 +7,8 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.UserHasActiveWashesError;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.UserHasActiveWashesError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.UpdateUserActive;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

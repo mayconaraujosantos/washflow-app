@@ -3,7 +3,7 @@ package com.washflow.data.usecases.listvehiclesbycustomer;
 import com.washflow.data.protocols.db.LoadUserByIdRepository;
 import com.washflow.data.protocols.db.LoadVehiclesByCustomerIdRepository;
 import com.washflow.domain.entities.Vehicle;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.ListVehiclesByCustomer;
 import java.util.List;
 

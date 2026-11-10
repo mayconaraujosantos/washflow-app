@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.ResumeServiceOrderRepository;
-import com.washflow.domain.errors.ServiceOrderNotWashingError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotWashingError;
 import com.washflow.domain.usecases.ResumeServiceOrder;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

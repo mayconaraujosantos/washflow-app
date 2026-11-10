@@ -2,8 +2,8 @@ package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.ForbiddenError;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.common.ForbiddenError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.UUID;
 
 /**

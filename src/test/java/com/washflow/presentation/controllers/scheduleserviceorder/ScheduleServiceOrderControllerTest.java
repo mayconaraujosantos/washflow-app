@@ -7,10 +7,10 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.errors.InsufficientLeadTimeError;
-import com.washflow.domain.errors.OutsideBusinessHoursError;
-import com.washflow.domain.errors.SlotFullyBookedError;
-import com.washflow.domain.errors.VehicleNotFoundError;
+import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
+import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
+import com.washflow.domain.errors.schedule.SlotFullyBookedError;
+import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import com.washflow.domain.usecases.ScheduleServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

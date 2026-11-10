@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.listvehiclesbycustomer;
 
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.ListVehiclesByCustomer;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

@@ -2,7 +2,7 @@ package com.washflow.data.usecases.savechecklist;
 
 import com.washflow.data.protocols.db.SaveServiceOrderChecklistRepository;
 import com.washflow.domain.entities.ServiceOrderChecklist;
-import com.washflow.domain.errors.InvalidChecklistTypeError;
+import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
 import com.washflow.domain.usecases.SaveServiceOrderChecklist;
 import java.time.Instant;
 import java.util.UUID;

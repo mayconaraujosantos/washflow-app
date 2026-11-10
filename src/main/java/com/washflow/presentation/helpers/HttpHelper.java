@@ -1,6 +1,6 @@
 package com.washflow.presentation.helpers;
 
-import com.washflow.domain.errors.TenantRequiredError;
+import com.washflow.domain.errors.common.TenantRequiredError;
 import com.washflow.presentation.errors.ServerError;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.LinkedHashMap;

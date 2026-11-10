@@ -2,8 +2,8 @@ package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.Sale;
-import com.washflow.domain.errors.SaleNotFoundError;
-import com.washflow.domain.errors.SaleRefundNotAllowedError;
+import com.washflow.domain.errors.sale.SaleNotFoundError;
+import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import java.math.BigDecimal;
 import java.util.UUID;
 

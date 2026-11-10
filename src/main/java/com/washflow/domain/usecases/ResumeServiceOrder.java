@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases;
 
-import com.washflow.domain.errors.ServiceOrderNotWashingError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotWashingError;
 import java.util.UUID;
 
 /** Resumes a paused wash. Implemented by {@code DbResumeServiceOrder} in the data layer. */

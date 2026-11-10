@@ -14,7 +14,7 @@ import com.washflow.data.protocols.db.UpdateUserProfileRepository;
 import com.washflow.data.tenancy.TenantContext;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.UserHasActiveWashesError;
+import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;

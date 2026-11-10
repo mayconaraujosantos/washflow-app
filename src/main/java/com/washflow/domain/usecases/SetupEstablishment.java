@@ -1,8 +1,8 @@
 package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.User;
-import com.washflow.domain.errors.EstablishmentAlreadyConfiguredError;
-import com.washflow.domain.errors.InvalidSetupCodeError;
+import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
+import com.washflow.domain.errors.establishment.InvalidSetupCodeError;
 
 /**
  * First-run wizard: names the car wash, sets its hours and yard capacity, and creates the owner

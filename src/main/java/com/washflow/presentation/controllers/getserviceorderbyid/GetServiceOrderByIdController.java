@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.getserviceorderbyid;
 
-import com.washflow.domain.errors.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.GetServiceOrderById;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

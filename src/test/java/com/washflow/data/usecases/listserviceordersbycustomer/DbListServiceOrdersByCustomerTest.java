@@ -11,7 +11,7 @@ import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.ListServiceOrdersByCustomer;
 import java.time.Instant;
 import java.util.List;

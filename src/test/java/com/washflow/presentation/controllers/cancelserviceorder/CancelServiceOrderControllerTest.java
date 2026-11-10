@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
-import com.washflow.domain.errors.ServiceOrderNotCancellableError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
 import com.washflow.domain.usecases.CancelServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

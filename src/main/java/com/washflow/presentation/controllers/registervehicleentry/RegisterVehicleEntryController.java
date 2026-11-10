@@ -1,11 +1,11 @@
 package com.washflow.presentation.controllers.registervehicleentry;
 
-import com.washflow.domain.errors.InsufficientLeadTimeError;
-import com.washflow.domain.errors.InvalidPlateError;
-import com.washflow.domain.errors.OutsideBusinessHoursError;
-import com.washflow.domain.errors.ServicePriceNotFoundError;
-import com.washflow.domain.errors.SlotFullyBookedError;
-import com.washflow.domain.errors.VehicleAlreadyInYardError;
+import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
+import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
+import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
+import com.washflow.domain.errors.schedule.SlotFullyBookedError;
+import com.washflow.domain.errors.vehicle.InvalidPlateError;
+import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.RegisterVehicleEntry;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

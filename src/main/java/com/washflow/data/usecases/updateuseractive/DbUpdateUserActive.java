@@ -2,8 +2,8 @@ package com.washflow.data.usecases.updateuseractive;
 
 import com.washflow.data.protocols.db.UpdateUserActiveRepository;
 import com.washflow.domain.entities.User;
-import com.washflow.domain.errors.UserHasActiveWashesError;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.UserHasActiveWashesError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.UpdateUserActive;
 
 /**

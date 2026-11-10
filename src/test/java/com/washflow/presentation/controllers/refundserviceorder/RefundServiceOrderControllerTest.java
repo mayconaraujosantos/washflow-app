@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrderRefund;
-import com.washflow.domain.errors.ServiceOrderNotRefundableError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
 import com.washflow.domain.usecases.RefundServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

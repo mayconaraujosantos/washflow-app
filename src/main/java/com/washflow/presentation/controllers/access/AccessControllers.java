@@ -1,15 +1,15 @@
 package com.washflow.presentation.controllers.access;
 
-import com.washflow.domain.errors.AccountLockedError;
-import com.washflow.domain.errors.GoogleLoginUnavailableError;
-import com.washflow.domain.errors.InvalidCredentialsError;
-import com.washflow.domain.errors.InvalidOtpError;
-import com.washflow.domain.errors.OtpTooSoonError;
-import com.washflow.domain.errors.OtpUnavailableError;
-import com.washflow.domain.errors.ServiceOrderNotFoundError;
-import com.washflow.domain.errors.TicketNotFoundError;
-import com.washflow.domain.errors.UserNotFoundError;
-import com.washflow.domain.errors.UserProfileMismatchError;
+import com.washflow.domain.errors.auth.GoogleLoginUnavailableError;
+import com.washflow.domain.errors.auth.InvalidOtpError;
+import com.washflow.domain.errors.auth.OtpTooSoonError;
+import com.washflow.domain.errors.auth.OtpUnavailableError;
+import com.washflow.domain.errors.common.TicketNotFoundError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.user.AccountLockedError;
+import com.washflow.domain.errors.user.InvalidCredentialsError;
+import com.washflow.domain.errors.user.UserNotFoundError;
+import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.usecases.CustomerPasswordlessLogin;
 import com.washflow.domain.usecases.ServiceOrderTicket;
 import com.washflow.domain.usecases.WasherBadge;

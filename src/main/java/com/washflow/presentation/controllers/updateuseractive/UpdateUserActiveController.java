@@ -1,8 +1,8 @@
 package com.washflow.presentation.controllers.updateuseractive;
 
 import com.washflow.domain.entities.User;
-import com.washflow.domain.errors.UserHasActiveWashesError;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.UserHasActiveWashesError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.UpdateUserActive;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

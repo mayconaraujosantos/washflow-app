@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
-import com.washflow.domain.errors.ServiceOrderNotPausedError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotPausedError;
 import com.washflow.domain.usecases.PauseServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

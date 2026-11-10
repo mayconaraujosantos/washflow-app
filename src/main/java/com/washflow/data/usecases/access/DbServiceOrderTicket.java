@@ -2,8 +2,8 @@ package com.washflow.data.usecases.access;
 
 import com.washflow.data.protocols.db.TicketRepository;
 import com.washflow.domain.entities.TicketView;
-import com.washflow.domain.errors.ServiceOrderNotFoundError;
-import com.washflow.domain.errors.TicketNotFoundError;
+import com.washflow.domain.errors.common.TicketNotFoundError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.ServiceOrderTicket;
 import java.util.UUID;
 

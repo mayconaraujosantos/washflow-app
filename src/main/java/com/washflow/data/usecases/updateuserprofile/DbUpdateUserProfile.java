@@ -4,8 +4,8 @@ import com.washflow.data.protocols.db.LoadUserByIdRepository;
 import com.washflow.data.protocols.db.UpdateUserProfileRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.ForbiddenError;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.common.ForbiddenError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.UpdateUserProfile;
 
 /**

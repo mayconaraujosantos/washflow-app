@@ -2,7 +2,7 @@ package com.washflow.application.observability;
 
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.data.tenancy.TenantContext;
-import com.washflow.domain.errors.TenantRequiredError;
+import com.washflow.domain.errors.common.TenantRequiredError;
 import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
 import io.micrometer.core.instrument.MeterRegistry;

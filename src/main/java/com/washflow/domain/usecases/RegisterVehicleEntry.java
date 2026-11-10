@@ -1,12 +1,12 @@
 package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.errors.InsufficientLeadTimeError;
-import com.washflow.domain.errors.InvalidPlateError;
-import com.washflow.domain.errors.OutsideBusinessHoursError;
-import com.washflow.domain.errors.ServicePriceNotFoundError;
-import com.washflow.domain.errors.SlotFullyBookedError;
-import com.washflow.domain.errors.VehicleAlreadyInYardError;
+import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
+import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
+import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
+import com.washflow.domain.errors.schedule.SlotFullyBookedError;
+import com.washflow.domain.errors.vehicle.InvalidPlateError;
+import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import java.time.Instant;
 
 /**

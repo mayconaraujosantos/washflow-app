@@ -1,12 +1,12 @@
 package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.User;
-import com.washflow.domain.errors.GoogleLoginUnavailableError;
-import com.washflow.domain.errors.InvalidCredentialsError;
-import com.washflow.domain.errors.InvalidOtpError;
-import com.washflow.domain.errors.OtpTooSoonError;
-import com.washflow.domain.errors.OtpUnavailableError;
-import com.washflow.domain.errors.UserProfileMismatchError;
+import com.washflow.domain.errors.auth.GoogleLoginUnavailableError;
+import com.washflow.domain.errors.auth.InvalidOtpError;
+import com.washflow.domain.errors.auth.OtpTooSoonError;
+import com.washflow.domain.errors.auth.OtpUnavailableError;
+import com.washflow.domain.errors.user.InvalidCredentialsError;
+import com.washflow.domain.errors.user.UserProfileMismatchError;
 
 /**
  * Customers sign in with a one-time code sent by WhatsApp (also usable as a magic link) or with

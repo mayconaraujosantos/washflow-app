@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.cancelserviceorder;
 
-import com.washflow.domain.errors.ServiceOrderNotCancellableError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
 import com.washflow.domain.usecases.CancelServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

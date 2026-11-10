@@ -5,8 +5,8 @@ import com.washflow.data.protocols.db.LoadUserByIdRepository;
 import com.washflow.data.protocols.db.UpdateUserEmailRepository;
 import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.domain.entities.User;
-import com.washflow.domain.errors.EmailAlreadyRegisteredError;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.UpdateUserEmail;
 import java.util.UUID;
 

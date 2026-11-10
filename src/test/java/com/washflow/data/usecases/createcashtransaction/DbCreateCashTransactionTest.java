@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 import com.washflow.data.protocols.db.SaveCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.CashTransaction.TransactionType;
-import com.washflow.domain.errors.InvalidTransactionTypeError;
+import com.washflow.domain.errors.cash.InvalidTransactionTypeError;
 import com.washflow.domain.usecases.CreateCashTransaction;
 import java.math.BigDecimal;
 import java.time.Instant;

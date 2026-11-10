@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.createcashtransaction;
 
 import com.washflow.domain.entities.CashTransaction.TransactionType;
-import com.washflow.domain.errors.InvalidTransactionTypeError;
+import com.washflow.domain.errors.cash.InvalidTransactionTypeError;
 import com.washflow.domain.usecases.CreateCashTransaction;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

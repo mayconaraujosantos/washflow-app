@@ -14,7 +14,7 @@ import com.washflow.data.protocols.db.CreateWasherRepository;
 import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.PhoneAlreadyRegisteredError;
+import com.washflow.domain.errors.user.PhoneAlreadyRegisteredError;
 import com.washflow.domain.usecases.CreateWasher;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;

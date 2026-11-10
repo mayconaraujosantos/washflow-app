@@ -1,8 +1,8 @@
 package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.errors.InvalidServiceOrderStatusError;
-import com.washflow.domain.errors.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import java.util.UUID;
 
 /**

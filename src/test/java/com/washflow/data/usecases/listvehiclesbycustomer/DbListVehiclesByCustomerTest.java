@@ -10,7 +10,7 @@ import com.washflow.data.protocols.db.LoadVehiclesByCustomerIdRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.entities.Vehicle;
-import com.washflow.domain.errors.UserNotFoundError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.ListVehiclesByCustomer;
 import java.time.Instant;
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.washflow.domain.usecases;
 
 import com.washflow.domain.entities.User;
-import com.washflow.domain.errors.PhoneAlreadyRegisteredError;
+import com.washflow.domain.errors.user.PhoneAlreadyRegisteredError;
 
 /** Creates a new washer user. Implemented by {@code DbCreateWasher} in the data layer. */
 public interface CreateWasher {

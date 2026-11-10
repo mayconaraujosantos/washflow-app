@@ -8,7 +8,7 @@ import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.authenticateuser.DbAuthenticateUser;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.InvalidCredentialsError;
+import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.usecases.AuthenticateUser;
 import com.washflow.infra.security.BCryptPasswordHasher;
 import java.time.Instant;

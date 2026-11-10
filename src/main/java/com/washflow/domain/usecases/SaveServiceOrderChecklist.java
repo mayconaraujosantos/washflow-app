@@ -3,7 +3,7 @@ package com.washflow.domain.usecases;
 import com.washflow.domain.entities.ServiceOrderChecklist;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistItem;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistType;
-import com.washflow.domain.errors.InvalidChecklistTypeError;
+import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
 import java.util.List;
 import java.util.UUID;
 

@@ -3,10 +3,10 @@ package com.washflow.domain.usecases;
 import com.washflow.domain.entities.EstablishmentListing;
 import com.washflow.domain.entities.EstablishmentSummary;
 import com.washflow.domain.entities.User;
-import com.washflow.domain.errors.EmailAlreadyRegisteredError;
-import com.washflow.domain.errors.EstablishmentNotFoundError;
-import com.washflow.domain.errors.EstablishmentSlugTakenError;
-import com.washflow.domain.errors.InvalidCredentialsError;
+import com.washflow.domain.errors.establishment.EstablishmentNotFoundError;
+import com.washflow.domain.errors.establishment.EstablishmentSlugTakenError;
+import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
+import com.washflow.domain.errors.user.InvalidCredentialsError;
 import java.util.List;
 import java.util.UUID;
 

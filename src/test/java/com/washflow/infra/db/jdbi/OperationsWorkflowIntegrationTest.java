@@ -12,7 +12,7 @@ import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.ServicePayment;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.entities.WasherCommission;
-import com.washflow.domain.errors.UserHasActiveWashesError;
+import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;

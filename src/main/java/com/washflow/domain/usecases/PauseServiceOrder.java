@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases;
 
-import com.washflow.domain.errors.ServiceOrderNotPausedError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotPausedError;
 import java.util.UUID;
 
 /**

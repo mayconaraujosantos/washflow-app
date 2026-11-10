@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.CancelServiceOrderRepository;
-import com.washflow.domain.errors.ServiceOrderNotCancellableError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
 import com.washflow.domain.usecases.CancelServiceOrder;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
