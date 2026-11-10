@@ -56,13 +56,13 @@ Catálogo de tipos de lavagem oferecidos pelo estabelecimento.
 * `id`: INT (Chave Primária)
 * `nome`: VARCHAR(50) (Ex: Lavagem Simples, Completa, Higienização)
 * `preco`: DECIMAL(10,2)
-* `comissao_lavador`: DECIMAL(10,2) (Valor fixo ou percentual que vai para o lavador)
+* `comissao_lavador`: DECIMAL(10,2) (Valor fixo creditado ao lavador)
 
 ### 2.4 Tabela: `atendimentos` (A Fila Operacional)
 A tabela central que dita o fluxo físico e financeiro do lava-jato.
 * `id`: UUID ou BIGINT (Chave Primária)
 * `veiculo_id`: BIGINT (Chave Estrangeira -> `veiculos.id`)
-* `servico_preco_id`: INT (Chave Estrangeira -> `servicos_preco.id`)
+* `servico_preco_id`: INT (Chave Estrangeira -> `servicos_preco.id`, primeiro serviço para compatibilidade)
 * `lavador_id`: BIGINT (Chave Estrangeira -> `usuarios.id`, anulável até que um lavador assuma o serviço)
 * `status`: VARCHAR(25) (Padrão: `AGENDADO`)
 * `data_agendamento`: TIMESTAMP (Data/Hora que o cliente escolheu)
@@ -73,6 +73,8 @@ A tabela central que dita o fluxo físico e financeiro do lava-jato.
 * `previsao_entrega`: TIMESTAMP (opcional, combinada na entrada)
 * `observacoes`: VARCHAR(500) (opcional)
 * `cancelado_em`, `cancelado_por` (-> `usuarios.id`), `motivo_cancelamento` (`CUSTOMER_GAVE_UP`, `NO_SHOW`, `REGISTERED_BY_MISTAKE`, `OTHER`) e `descricao_cancelamento` (VARCHAR(200), obrigatória para `OTHER`): preenchidos ao cancelar (V5)
+
+`atendimento_servicos` relaciona um ou mais serviços do catálogo ao atendimento, em ordem de seleção. O total cobrado e a comissão são, respectivamente, a soma de `preco` e de `comissao_lavador` dos serviços selecionados; cada atendimento continua reservando uma única vaga.
 
 ### 2.5 Tabela: `pagamentos`
 Registra o recebimento manual no balcão, no momento em que o gerente finaliza o atendimento.
@@ -156,6 +158,7 @@ Endpoints operacionais:
 * `GET /api/operations/vehicles?query=`: busca veículos por início da placa, nome ou telefone do dono (mínimo 2 caracteres, até 10 resultados).
 * `GET /api/schedule/availability?date=YYYY-MM-DD` (público): horários do dia com vagas restantes (`booked`/`capacity`), já marcando horários lotados, passados ou dia fechado - as telas de agendamento do gerente e do cliente só oferecem horários aceitos pela API.
 * `GET /api/operations/agenda?from=YYYY-MM-DD&to=YYYY-MM-DD`: atendimentos por data de agendamento (data Manaus, qualquer status), intervalo máximo de 62 dias.
+* `POST /api/service-orders`: cliente agenda um veículo com `servicePriceIds` (um ou mais serviços), `scheduledAt`; um atendimento ocupa uma única vaga, cobra a soma dos preços e credita ao lavador a soma das comissões fixas.
 * `POST /api/sales`: registra venda rápida ou orçamento (`type` = `QUICK_SALE` ou `BUDGET`, `items` com `servicePriceId` e `quantity`, `discount`, `payments` com `method` e `amount`). Preços vêm do catálogo; desconto entre zero e o subtotal; pagamentos não excedem o total. A resposta traz `paidAmount` e `outstandingAmount`.
 * `GET /api/sales?from=YYYY-MM-DD&to=YYYY-MM-DD[&type=]`: vendas/orçamentos por data Manaus de criação, com `refunds` e `refundedAmount`.
 * `POST /api/sales/{id}/refunds` (gerente): estorna `amount` (até 2 casas) na forma `method`, com `reason` e `description`; acima do que a forma ainda tem → 409 ("Pix só tem R$ 20,00 para estornar nesta venda"), orçamento → 409. A venda fica travada (`FOR UPDATE`) durante a conta, então estornos simultâneos nunca passam do pago. Responde a venda atualizada.

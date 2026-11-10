@@ -53,7 +53,6 @@ public final class ScheduleModule {
         new ValidationComposite(
             List.of(
                 new RequiredFieldValidation("vehicleId"),
-                new RequiredFieldValidation("servicePriceId"),
                 new RequiredFieldValidation("scheduledAt")));
 
     return new ScheduleServiceOrderController(scheduleServiceOrder(jdbi, appConfig), validation);

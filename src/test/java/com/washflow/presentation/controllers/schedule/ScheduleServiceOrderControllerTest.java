@@ -2,6 +2,7 @@ package com.washflow.presentation.controllers.schedule;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import com.washflow.presentation.protocols.HttpResponse;
 import com.washflow.validation.protocols.Validation;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +46,7 @@ class ScheduleServiceOrderControllerTest {
   void schedulesServiceOrderAndReturnsOk() throws Exception {
     Map<String, Object> body = new HashMap<>();
     body.put("vehicleId", vehicleId.toString());
-    body.put("servicePriceId", 1);
+    body.put("servicePriceIds", List.of(1, 2));
     body.put("scheduledAt", Instant.now().toString());
     HttpRequest request = new HttpRequest(body, Map.of(), Map.of());
 
@@ -64,7 +66,12 @@ class ScheduleServiceOrderControllerTest {
     HttpResponse response = sut.handle(request);
 
     assertEquals(200, response.statusCode());
-    verify(scheduleServiceOrder).schedule(any(ScheduleServiceOrder.Params.class));
+    verify(scheduleServiceOrder)
+        .schedule(
+            argThat(
+                params ->
+                    params.servicePriceId() == 1
+                        && params.servicePriceIds().equals(List.of(1, 2))));
   }
 
   @Test

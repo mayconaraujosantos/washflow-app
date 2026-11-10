@@ -70,6 +70,18 @@ class BodyValuesTest {
   }
 
   @Test
+  void readsListsOfIntegersWithoutTruncatingDecimalValues() {
+    assertEquals(List.of(1, 2), BodyValues.integers(body("ids", List.of(1, 2)), "ids"));
+    assertEquals(List.of(), BodyValues.integers(body(), "ids"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BodyValues.integers(body("ids", List.of(1, "2")), "ids"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BodyValues.integers(body("ids", List.of(1, 2.5)), "ids"));
+  }
+
+  @Test
   void readsTheAuthenticatedUserInjectedByTheRouteAdapter() {
     UUID user = UUID.randomUUID();
     assertEquals(user, BodyValues.createdBy(body("createdBy", user)));

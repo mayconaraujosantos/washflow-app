@@ -141,6 +141,12 @@ public class ServiceOrderJdbiRepository
          :updatedAt, :expectedDeliveryAt, :notes)
       """;
 
+  private static final String INSERT_SERVICE_SQL =
+      """
+      INSERT INTO atendimento_servicos (atendimento_id, servico_preco_id, ordem)
+      VALUES (:orderId, :servicePriceId, :position)
+      """;
+
   private static final String SELECT_SQL =
       ServiceOrderRows.SELECT_WITH_DETAILS
           + """
@@ -188,7 +194,7 @@ public class ServiceOrderJdbiRepository
 
   @Override
   public ServiceOrder create(ServiceOrder serviceOrder) {
-    UniqueViolations.translate(() -> jdbi.useHandle(handle -> insert(handle, serviceOrder)));
+    UniqueViolations.translate(() -> jdbi.useTransaction(handle -> insert(handle, serviceOrder)));
     return serviceOrder;
   }
 
@@ -235,6 +241,15 @@ public class ServiceOrderJdbiRepository
         .bind("expectedDeliveryAt", serviceOrder.expectedDeliveryAt())
         .bind("notes", serviceOrder.notes())
         .execute();
+    for (int position = 0; position < serviceOrder.servicePriceIds().size(); position++) {
+      try (var update = handle.createUpdate(INSERT_SERVICE_SQL)) {
+        update
+            .bind("orderId", serviceOrder.id())
+            .bind("servicePriceId", serviceOrder.servicePriceIds().get(position))
+            .bind("position", position)
+            .execute();
+      }
+    }
   }
 
   @Override

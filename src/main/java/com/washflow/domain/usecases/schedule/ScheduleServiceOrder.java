@@ -7,6 +7,7 @@ import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -24,5 +25,14 @@ public interface ScheduleServiceOrder {
           InsufficientLeadTimeError,
           SlotFullyBookedError;
 
-  record Params(UUID vehicleId, int servicePriceId, Instant scheduledAt) {}
+  record Params(
+      UUID vehicleId, int servicePriceId, List<Integer> servicePriceIds, Instant scheduledAt) {
+    public Params {
+      servicePriceIds = servicePriceIds == null ? null : List.copyOf(servicePriceIds);
+    }
+
+    public Params(UUID vehicleId, int servicePriceId, Instant scheduledAt) {
+      this(vehicleId, servicePriceId, List.of(servicePriceId), scheduledAt);
+    }
+  }
 }

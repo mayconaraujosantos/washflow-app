@@ -1,6 +1,8 @@
 package com.washflow.domain.entities.serviceorder;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -13,10 +15,10 @@ import java.util.UUID;
  * <p>{@code expectedDeliveryAt} ({@code previsao_entrega}) and {@code notes} ({@code observacoes})
  * are agreed with the customer when the manager registers the vehicle's entry; both are optional.
  *
- * <p>{@code details} is read-only display data joined from {@code veiculos}, {@code usuarios} and
- * {@code servicos_preco} when the order is loaded, so the yard/queue screens can show the plate and
- * service without one extra request per card. It is {@code null} on orders that were just built in
- * memory and not loaded back from the database.
+ * <p>{@code servicePriceId} remains the first selected service for compatibility; {@code
+ * servicePriceIds} holds the complete selection. {@code details} is read-only display data joined
+ * from {@code veiculos}, {@code usuarios} and {@code servicos_preco} when the order is loaded. It
+ * is {@code null} on orders that were just built in memory and not loaded back from the database.
  */
 public record ServiceOrder(
     UUID id,
@@ -30,7 +32,44 @@ public record ServiceOrder(
     String pauseReason,
     Instant expectedDeliveryAt,
     String notes,
-    Details details) {
+    Details details,
+    List<Integer> servicePriceIds) {
+
+  public ServiceOrder {
+    servicePriceIds =
+        servicePriceIds == null || servicePriceIds.isEmpty()
+            ? List.of(servicePriceId)
+            : List.copyOf(servicePriceIds);
+  }
+
+  public ServiceOrder(
+      UUID id,
+      UUID vehicleId,
+      int servicePriceId,
+      UUID washerId,
+      ServiceOrderStatus status,
+      Instant scheduledAt,
+      Instant createdAt,
+      Instant updatedAt,
+      String pauseReason,
+      Instant expectedDeliveryAt,
+      String notes,
+      Details details) {
+    this(
+        id,
+        vehicleId,
+        servicePriceId,
+        washerId,
+        status,
+        scheduledAt,
+        createdAt,
+        updatedAt,
+        pauseReason,
+        expectedDeliveryAt,
+        notes,
+        details,
+        List.of(servicePriceId));
+  }
 
   public ServiceOrder(
       UUID id,
@@ -54,7 +93,8 @@ public record ServiceOrder(
         pauseReason,
         null,
         null,
-        null);
+        null,
+        List.of(servicePriceId));
   }
 
   public ServiceOrder(
@@ -66,10 +106,48 @@ public record ServiceOrder(
       Instant scheduledAt,
       Instant createdAt,
       Instant updatedAt) {
-    this(id, vehicleId, servicePriceId, washerId, status, scheduledAt, createdAt, updatedAt, null);
+    this(
+        id,
+        vehicleId,
+        servicePriceId,
+        washerId,
+        status,
+        scheduledAt,
+        createdAt,
+        updatedAt,
+        null,
+        null,
+        null,
+        null,
+        List.of(servicePriceId));
   }
 
-  /** Display data for the order's vehicle, customer, service and assigned washer. */
+  public ServiceOrder(
+      UUID id,
+      UUID vehicleId,
+      List<Integer> servicePriceIds,
+      UUID washerId,
+      ServiceOrderStatus status,
+      Instant scheduledAt,
+      Instant createdAt,
+      Instant updatedAt) {
+    this(
+        id,
+        vehicleId,
+        servicePriceIds.getFirst(),
+        washerId,
+        status,
+        scheduledAt,
+        createdAt,
+        updatedAt,
+        null,
+        null,
+        null,
+        null,
+        servicePriceIds);
+  }
+
+  /** Display data for the order's vehicle, customer, selected services and assigned washer. */
   public record Details(
       String vehiclePlate,
       String vehicleModel,
@@ -77,5 +155,25 @@ public record ServiceOrder(
       String customerName,
       String customerPhone,
       String serviceName,
-      String washerName) {}
+      String washerName,
+      BigDecimal serviceTotal) {
+    public Details(
+        String vehiclePlate,
+        String vehicleModel,
+        String vehicleColor,
+        String customerName,
+        String customerPhone,
+        String serviceName,
+        String washerName) {
+      this(
+          vehiclePlate,
+          vehicleModel,
+          vehicleColor,
+          customerName,
+          customerPhone,
+          serviceName,
+          washerName,
+          null);
+    }
+  }
 }
