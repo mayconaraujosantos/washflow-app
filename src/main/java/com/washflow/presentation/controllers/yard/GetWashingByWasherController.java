@@ -2,6 +2,7 @@ package com.washflow.presentation.controllers.yard;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.usecases.yard.GetWashingByWasher;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
@@ -22,7 +23,7 @@ public class GetWashingByWasherController implements Controller {
 
   @Override
   public HttpResponse handle(HttpRequest request) {
-    UUID washerId = (UUID) request.body().get("createdBy");
+    UUID washerId = BodyValues.createdBy(request.body());
     List<ServiceOrder> orders = getWashingByWasher.get(washerId);
     return new HttpResponse(200, orders);
   }

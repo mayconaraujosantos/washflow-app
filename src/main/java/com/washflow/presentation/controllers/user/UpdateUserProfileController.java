@@ -5,6 +5,7 @@ import com.washflow.domain.errors.common.ForbiddenError;
 import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.user.UpdateUserProfile;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -31,8 +32,8 @@ public class UpdateUserProfileController implements Controller {
       }
 
       UUID targetUserId = UUID.fromString(request.pathParams().get("id"));
-      UUID requestedByUserId = UUID.fromString((String) request.body().get("managerId"));
-      UserProfile newProfile = UserProfile.valueOf((String) request.body().get("newProfile"));
+      UUID requestedByUserId = UUID.fromString(BodyValues.text(request.body(), "managerId"));
+      UserProfile newProfile = UserProfile.valueOf(BodyValues.text(request.body(), "newProfile"));
       if (newProfile == UserProfile.ADMIN) {
         // Platform administrators are not establishment accounts.
         throw new IllegalArgumentException("Perfil inválido: ADMIN");

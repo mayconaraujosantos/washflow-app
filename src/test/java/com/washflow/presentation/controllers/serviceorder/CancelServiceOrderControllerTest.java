@@ -71,4 +71,15 @@ class CancelServiceOrderControllerTest {
     body.put("createdBy", managerId);
     return new HttpRequest(body, Map.of("id", id), Map.of());
   }
+
+  @Test
+  void aReasonThatIsNotTextIsABadRequest() {
+    Map<String, Object> body = new HashMap<>();
+    body.put("reason", 123);
+    body.put("createdBy", managerId);
+
+    assertEquals(
+        400,
+        sut.handle(new HttpRequest(body, Map.of("id", orderId.toString()), Map.of())).statusCode());
+  }
 }

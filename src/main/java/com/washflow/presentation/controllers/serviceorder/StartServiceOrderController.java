@@ -3,6 +3,7 @@ package com.washflow.presentation.controllers.serviceorder;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.serviceorder.StartServiceOrder;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -29,7 +30,7 @@ public class StartServiceOrderController implements Controller {
       }
 
       UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
-      UUID washerId = UUID.fromString((String) request.body().get("washerId"));
+      UUID washerId = UUID.fromString(BodyValues.text(request.body(), "washerId"));
 
       var serviceOrder =
           startServiceOrder.start(new StartServiceOrder.Params(serviceOrderId, washerId));

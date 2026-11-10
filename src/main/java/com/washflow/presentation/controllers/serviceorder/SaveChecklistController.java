@@ -4,6 +4,7 @@ import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.Checklist
 import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistType;
 import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderChecklist;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -31,18 +32,16 @@ public class SaveChecklistController implements Controller {
   public HttpResponse handle(HttpRequest request) {
     try {
       UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
-
-      @SuppressWarnings("unchecked")
       Map<String, Object> body = request.body();
 
-      String typeStr = (String) body.get("type");
+      String typeStr = BodyValues.text(body, "type");
       if (typeStr == null || typeStr.isBlank()) {
         return HttpHelper.badRequest(new IllegalArgumentException("type is required"));
       }
       ChecklistType type = ChecklistType.valueOf(typeStr);
 
       @SuppressWarnings("unchecked")
-      List<Map<String, Object>> itemsMap = (List<Map<String, Object>>) body.get("items");
+      List<Map<String, Object>> itemsMap = BodyValues.objects(body, "items");
       if (itemsMap == null || itemsMap.isEmpty()) {
         return HttpHelper.badRequest(new IllegalArgumentException("items are required"));
       }
@@ -56,9 +55,9 @@ public class SaveChecklistController implements Controller {
                           (String) m.get("note")))
               .toList();
 
-      String signatureImage = (String) body.get("signatureImage");
+      String signatureImage = BodyValues.text(body, "signatureImage");
 
-      UUID createdBy = (UUID) body.get("createdBy");
+      UUID createdBy = BodyValues.createdBy(body);
       if (createdBy == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("createdBy is required"));
       }

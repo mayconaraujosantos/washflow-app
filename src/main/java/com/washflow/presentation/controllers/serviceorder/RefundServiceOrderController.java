@@ -3,6 +3,7 @@ package com.washflow.presentation.controllers.serviceorder;
 import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
 import com.washflow.domain.usecases.serviceorder.RefundServiceOrder;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -25,11 +26,11 @@ public class RefundServiceOrderController implements Controller {
     try {
       UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
       Map<String, Object> body = request.body();
-      UUID managerId = (UUID) body.get("createdBy");
+      UUID managerId = BodyValues.createdBy(body);
       if (managerId == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("managerId is required"));
       }
-      String method = (String) body.get("refundMethod");
+      String method = BodyValues.text(body, "refundMethod");
       PaymentMethod refundMethod =
           method == null || method.isBlank()
               ? null
@@ -39,8 +40,8 @@ public class RefundServiceOrderController implements Controller {
               new RefundServiceOrder.Params(
                   serviceOrderId,
                   managerId,
-                  (String) body.get("reason"),
-                  (String) body.get("description"),
+                  BodyValues.text(body, "reason"),
+                  BodyValues.text(body, "description"),
                   refundMethod,
                   Boolean.TRUE.equals(body.get("reverseCommission")))));
     } catch (IllegalArgumentException e) {
