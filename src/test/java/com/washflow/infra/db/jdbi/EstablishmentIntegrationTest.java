@@ -13,6 +13,7 @@ import com.washflow.data.usecases.establishment.DbManagePlatform;
 import com.washflow.data.usecases.establishment.DbSetupEstablishment;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.data.usecases.user.DbAuthenticateUser;
+import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserEmail;
 import com.washflow.domain.entities.establishment.Establishment;
 import com.washflow.domain.entities.establishment.EstablishmentSummary;
@@ -23,10 +24,13 @@ import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.errors.common.TenantRequiredError;
 import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
+import com.washflow.domain.errors.establishment.EstablishmentNotFoundError;
 import com.washflow.domain.errors.establishment.EstablishmentSlugTakenError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
+import com.washflow.domain.errors.user.PasswordResetNotAllowedError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.establishment.ManageEstablishment;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;
@@ -182,6 +186,85 @@ class EstablishmentIntegrationTest {
             auth.authenticate(
                 new AuthenticateUser.Params(
                     null, null, "errada-123", UserProfile.MANAGER, "ana@centro.com")));
+  }
+
+  @Test
+  void lostPasswordsAreResetByManagerAndAdministrator() throws Exception {
+    Jdbi jdbi = createJdbi();
+    DbManagePlatform platform = platform(jdbi);
+    EstablishmentSummary centro =
+        platform.create(newEstablishment("Lava Centro", "ana@centro.com"));
+    EstablishmentSummary bairro =
+        platform.create(newEstablishment("Lava Bairro", "bia@bairro.com"));
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    BCryptPasswordHasher hasher = new BCryptPasswordHasher();
+
+    // Administrator: the manager's new password works, the old one no longer does.
+    TenantContext.clear();
+    platform.resetManagerPassword(centro.id(), "nova-senha-gerente");
+    DbAuthenticateUser auth =
+        new DbAuthenticateUser(
+            users,
+            users,
+            users,
+            users,
+            hasher,
+            AppConfig.load(Map.of("APP_ENV", "production-like"), Map.of()),
+            users);
+    assertEquals(
+        centro.managerName(),
+        auth.authenticate(
+                new AuthenticateUser.Params(
+                    null, null, "nova-senha-gerente", UserProfile.MANAGER, "ana@centro.com"))
+            .name());
+    assertThrows(
+        InvalidCredentialsError.class,
+        () ->
+            auth.authenticate(
+                new AuthenticateUser.Params(
+                    null, null, "senha-do-gerente", UserProfile.MANAGER, "ana@centro.com")));
+    assertThrows(
+        EstablishmentNotFoundError.class,
+        () -> platform.resetManagerPassword(UUID.randomUUID(), "nova-senha-gerente"));
+
+    // Manager: resets a washer of their own lava-jato, never a manager or another lava-jato's.
+    TenantContext.set(bairro.id());
+    User bairroWasher =
+        users.createWasher(
+            new User(
+                UUID.randomUUID(),
+                "Lavador Bairro",
+                "92981110009",
+                UserProfile.WASHER,
+                Instant.now(),
+                true),
+            hasher.hash("senha-antiga-1"));
+    TenantContext.set(centro.id());
+    User centroWasher =
+        users.createWasher(
+            new User(
+                UUID.randomUUID(),
+                "Lavador Centro",
+                "92981110008",
+                UserProfile.WASHER,
+                Instant.now(),
+                true),
+            hasher.hash("senha-antiga-1"));
+    User centroManager = users.loadByEmail("ana@centro.com").orElseThrow();
+    DbResetUserPassword reset = new DbResetUserPassword(users, users, hasher);
+
+    reset.reset(centroWasher.id(), "senha-nova-123");
+
+    assertTrue(
+        hasher.matches("senha-nova-123", users.loadPasswordHash(centroWasher.id()).orElseThrow()));
+    assertThrows(UserNotFoundError.class, () -> reset.reset(bairroWasher.id(), "senha-nova-123"));
+    assertThrows(
+        PasswordResetNotAllowedError.class,
+        () -> reset.reset(centroManager.id(), "senha-nova-123"));
+    TenantContext.set(bairro.id());
+    assertTrue(
+        hasher.matches("senha-antiga-1", users.loadPasswordHash(bairroWasher.id()).orElseThrow()));
+    TenantContext.clear();
   }
 
   @Test

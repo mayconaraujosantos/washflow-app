@@ -6,6 +6,7 @@ import {
   clearAdminSession,
   loadAdminSession,
 } from '@/main/session/admin-session'
+import { PasswordResetForm } from '@/presentation/components/password-reset-form'
 import { ScreenLayout } from '@/presentation/components/ui/app-chrome'
 import {
   PasswordField,
@@ -35,6 +36,7 @@ export function AdminPanel({ platform }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const [resettingId, setResettingId] = useState<string | null>(null)
 
   const load = useCallback(() => {
     platform
@@ -61,6 +63,23 @@ export function AdminPanel({ platform }: Props) {
   const logout = () => {
     clearAdminSession()
     navigate('/login/admin', { replace: true })
+  }
+
+  const resetManagerPassword = async (
+    item: EstablishmentSummaryModel,
+    password: string,
+  ) => {
+    setError(null)
+    setNotice(null)
+    try {
+      await platform.resetManagerPassword(item.id, password)
+      setResettingId(null)
+      setNotice(
+        `Senha de ${item.managerName ?? 'gerente'} (${item.name}) redefinida. Entregue a nova senha pessoalmente.`,
+      )
+    } catch (cause) {
+      setError(errorMessage(cause, 'Não foi possível redefinir a senha'))
+    }
   }
 
   const toggle = async (item: EstablishmentSummaryModel) => {
@@ -161,7 +180,26 @@ export function AdminPanel({ platform }: Props) {
               <button type="button" onClick={() => void toggle(item)}>
                 {item.active ? 'Suspender' : 'Reativar'}
               </button>
+              {item.managerEmail && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setResettingId((current) =>
+                      current === item.id ? null : item.id,
+                    )
+                  }
+                >
+                  Redefinir senha do gerente
+                </button>
+              )}
             </div>
+            {resettingId === item.id && (
+              <PasswordResetForm
+                name={item.managerName ?? item.name}
+                onSave={(password) => resetManagerPassword(item, password)}
+                onCancel={() => setResettingId(null)}
+              />
+            )}
           </li>
         ))}
       </ul>

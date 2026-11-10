@@ -190,6 +190,7 @@ class RoutePermissionMatcherTest {
     "POST, /api/services",
     "PUT, /api/establishment",
     "PATCH, /api/users/abc-123/email",
+    "PATCH, /api/users/abc-123/password",
     "POST, /api/users/abc-123/badge",
     "POST, /api/service-orders/abc-123/ticket"
   })

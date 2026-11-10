@@ -97,6 +97,12 @@ export class RemoteOperations implements Operations {
     }) as Promise<UserModel>
   }
 
+  resetUserPassword(userId: string, password: string): Promise<UserModel> {
+    return this.request(`/api/users/${userId}/password`, 'patch', {
+      password,
+    }) as Promise<UserModel>
+  }
+
   async checkIn(serviceOrderId: string): Promise<void> {
     await this.request(
       `/api/service-orders/${serviceOrderId}/check-in`,

@@ -224,7 +224,7 @@ export function AccessScreen({
             <p className="subtitle">
               {whatsappEnabled
                 ? 'Entre com um código enviado ao seu WhatsApp, sem precisar da senha.'
-                : 'Ainda não há recuperação de senha pelo app. Fale com o atendimento do lava-jato para redefinir o seu acesso.'}
+                : 'Peça uma nova senha no balcão: o gerente do lava-jato cria na hora e você entra com ela.'}
             </p>
             {whatsappEnabled && (
               <button

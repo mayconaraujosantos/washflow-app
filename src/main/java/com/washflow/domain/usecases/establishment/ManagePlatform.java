@@ -23,6 +23,13 @@ public interface ManagePlatform {
   EstablishmentSummary setActive(UUID establishmentId, boolean active)
       throws EstablishmentNotFoundError;
 
+  /**
+   * Sets a new password for the lava-jato's manager (the one shown on the admin panel), for a
+   * manager who lost theirs. The administrator hands it over; the manager signs in with it.
+   */
+  EstablishmentSummary resetManagerPassword(UUID establishmentId, String newPassword)
+      throws EstablishmentNotFoundError;
+
   /** Public: active lava-jatos whose name or address matches, for the customer picker. */
   List<EstablishmentListing> search(String query);
 
