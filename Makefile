@@ -50,7 +50,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev dev-backend dev-frontend build run start test lint format generate-auth-secret seed-test-users \
+.PHONY: help install dev dev-backend dev-frontend build run start test lint format generate-auth-secret seed-test-users load-seed load-test \
 	coverage sonar stop ip clean db-up db-down db-logs \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
@@ -68,6 +68,9 @@ help:
 	@echo "  make build     Build the frontend only (web/dist), nothing started."
 	@echo "  make generate-auth-secret  Generate AUTH_TOKEN_SECRET in the local .env file."
 	@echo "  make seed-test-users  Create local-only customer, washer, and manager test accounts."
+	@echo "  make load-seed  Create the load-test data (20 lava-jatos, Podman, see docs/load-test.md)."
+	@echo "  make load-test  Peak-day load test with a hosting plan's limits"
+	@echo "                 (PROFILE=render-starter, HOLD=5m; PROFILES=\"a b\" runs several)."
 	@echo "  make test      Run the backend test suite (+ JaCoCo coverage report)."
 	@echo "  make lint      Lint + check formatting for both frontend (ESLint/Prettier)"
 	@echo "                 and backend (Spotless)."
@@ -107,6 +110,13 @@ generate-auth-secret:
 
 seed-test-users:
 	@bun scripts/seed-test-users.mjs
+
+load-seed:
+	@scripts/load/run.sh seed
+
+load-test:
+	@if [ -n "$(PROFILES)" ]; then scripts/load/matrix.sh $(PROFILES); \
+	else scripts/load/run.sh $(or $(PROFILE),render-starter); fi
 
 ## Fast iteration: hot reload on both ends. Open http://localhost:$(FRONTEND_PORT)
 ## in the browser you're coding with. Not representative of the installed PWA -
