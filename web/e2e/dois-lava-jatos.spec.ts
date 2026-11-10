@@ -217,8 +217,10 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     await customerPhone
       .getByRole('radio', { name: new RegExp(customer.plate) })
       .click()
+    // Um serviço (radio) ou vários (checkbox), conforme a versão da tela.
     await customerPhone
-      .getByRole('checkbox', { name: /Lavagem Completa/ })
+      .locator('[role="checkbox"], [role="radio"]')
+      .filter({ hasText: 'Lavagem Completa' })
       .click()
     const firstFreeSlot = customerPhone
       .getByRole('radiogroup', { name: 'Horário' })
