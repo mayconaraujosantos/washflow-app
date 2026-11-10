@@ -8,9 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.FinalizeServiceOrderRepository;
-import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
-import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
+import com.washflow.data.protocols.db.serviceorder.FinalizeServiceOrderRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
+import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;

@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.DeleteServiceOrderPhotoRepository;
+import com.washflow.data.protocols.db.serviceorder.DeleteServiceOrderPhotoRepository;
 import com.washflow.domain.usecases.serviceorder.DeleteServiceOrderPhoto;
 import java.util.UUID;
 

@@ -1,9 +1,9 @@
 package com.washflow.data.usecases.user;
 
 import com.washflow.data.protocols.PasswordHasher;
-import com.washflow.data.protocols.db.CreateWasherRepository;
-import com.washflow.data.protocols.db.DuplicateKeyError;
-import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
+import com.washflow.data.protocols.db.user.CreateWasherRepository;
+import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.user.PhoneAlreadyRegisteredError;

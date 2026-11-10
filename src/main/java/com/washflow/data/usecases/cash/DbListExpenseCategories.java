@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.cash;
 
-import com.washflow.data.protocols.db.LoadExpenseCategoryRepository;
+import com.washflow.data.protocols.db.cash.LoadExpenseCategoryRepository;
 import com.washflow.domain.entities.ExpenseCategory;
 import com.washflow.domain.usecases.cash.ListExpenseCategories;
 import java.util.List;

@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadCashTransactionRepository;
-import com.washflow.data.protocols.db.UpdateCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.LoadCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.UpdateCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.CashTransaction.PartialUpdate;
 import com.washflow.domain.entities.CashTransaction.TransactionType;

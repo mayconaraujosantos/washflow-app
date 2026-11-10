@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.CashTransactionReportRepository;
+import com.washflow.data.protocols.db.cash.CashTransactionReportRepository;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;

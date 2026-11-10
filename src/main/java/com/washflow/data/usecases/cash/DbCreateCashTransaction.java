@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.cash;
 
-import com.washflow.data.protocols.db.SaveCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.SaveCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.errors.cash.InvalidTransactionTypeError;
 import com.washflow.domain.usecases.cash.CreateCashTransaction;

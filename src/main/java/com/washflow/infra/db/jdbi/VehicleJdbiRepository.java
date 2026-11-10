@@ -1,10 +1,10 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.CreateVehicleRepository;
-import com.washflow.data.protocols.db.LoadVehicleByIdRepository;
-import com.washflow.data.protocols.db.LoadVehicleByPlateRepository;
-import com.washflow.data.protocols.db.LoadVehiclesByCustomerIdRepository;
-import com.washflow.data.protocols.db.SearchVehiclesRepository;
+import com.washflow.data.protocols.db.vehicle.CreateVehicleRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehicleByIdRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehicleByPlateRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehiclesByCustomerIdRepository;
+import com.washflow.data.protocols.db.vehicle.SearchVehiclesRepository;
 import com.washflow.domain.entities.Vehicle;
 import com.washflow.domain.entities.VehicleLookup;
 import java.sql.ResultSet;

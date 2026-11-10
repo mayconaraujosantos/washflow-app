@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadUserByIdRepository;
-import com.washflow.data.protocols.db.LoadVehiclesByCustomerIdRepository;
+import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehiclesByCustomerIdRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.entities.Vehicle;

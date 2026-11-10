@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.SaveServiceOrderPhotoRepository;
+import com.washflow.data.protocols.db.serviceorder.SaveServiceOrderPhotoRepository;
 import com.washflow.domain.entities.ServiceOrderPhoto;
 import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderPhoto;

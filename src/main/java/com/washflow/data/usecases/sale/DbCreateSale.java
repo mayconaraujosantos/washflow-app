@@ -1,8 +1,8 @@
 package com.washflow.data.usecases.sale;
 
-import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
-import com.washflow.data.protocols.db.LoadVehicleByIdRepository;
-import com.washflow.data.protocols.db.SaveSaleRepository;
+import com.washflow.data.protocols.db.sale.SaveSaleRepository;
+import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehicleByIdRepository;
 import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleItem;

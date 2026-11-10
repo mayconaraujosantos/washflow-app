@@ -8,9 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.CreateVehicleRepository;
-import com.washflow.data.protocols.db.LoadUserByIdRepository;
-import com.washflow.data.protocols.db.LoadVehicleByPlateRepository;
+import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
+import com.washflow.data.protocols.db.vehicle.CreateVehicleRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehicleByPlateRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.entities.Vehicle;

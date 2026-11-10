@@ -2,7 +2,7 @@ package com.washflow.data.usecases.cash;
 
 import static org.mockito.Mockito.verify;
 
-import com.washflow.data.protocols.db.DeleteCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.DeleteCashTransactionRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.cash;
 
-import com.washflow.data.protocols.db.SaveExpenseCategoryRepository;
+import com.washflow.data.protocols.db.cash.SaveExpenseCategoryRepository;
 import com.washflow.domain.entities.ExpenseCategory;
 import com.washflow.domain.usecases.cash.CreateExpenseCategory;
 import java.time.Instant;

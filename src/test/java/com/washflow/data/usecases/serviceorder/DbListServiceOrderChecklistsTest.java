@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadServiceOrderChecklistRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderChecklistRepository;
 import com.washflow.domain.entities.ServiceOrderChecklist;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistItem;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistType;

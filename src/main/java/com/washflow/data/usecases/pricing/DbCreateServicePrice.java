@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.pricing;
 
-import com.washflow.data.protocols.db.CreateServicePriceRepository;
+import com.washflow.data.protocols.db.shared.CreateServicePriceRepository;
 import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.domain.entities.ServicePrice;
 import com.washflow.domain.usecases.pricing.CreateServicePrice;

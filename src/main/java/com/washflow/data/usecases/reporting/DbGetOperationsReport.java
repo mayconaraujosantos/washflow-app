@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.reporting;
 
-import com.washflow.data.protocols.db.LoadOperationsReportRepository;
+import com.washflow.data.protocols.db.shared.LoadOperationsReportRepository;
 import com.washflow.domain.usecases.reporting.GetOperationsReport;
 import com.washflow.infra.db.jdbi.OperationsReport;
 import java.time.temporal.ChronoUnit;

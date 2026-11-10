@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.SaveCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.SaveCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.CashTransaction.TransactionType;
 import com.washflow.domain.errors.cash.InvalidTransactionTypeError;

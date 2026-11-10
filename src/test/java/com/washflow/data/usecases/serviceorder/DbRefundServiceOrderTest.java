@@ -7,7 +7,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.RefundServiceOrderRepository;
+import com.washflow.data.protocols.db.serviceorder.RefundServiceOrderRepository;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrderRefund;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;

@@ -1,6 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.EstablishmentRepository;
+import com.washflow.data.protocols.db.establishment.EstablishmentRepository;
 import com.washflow.domain.entities.Establishment;
 import java.sql.ResultSet;
 import java.sql.SQLException;

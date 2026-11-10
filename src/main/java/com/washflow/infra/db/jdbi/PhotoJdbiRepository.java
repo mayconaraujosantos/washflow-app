@@ -1,8 +1,8 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.DeleteServiceOrderPhotoRepository;
-import com.washflow.data.protocols.db.LoadServiceOrderPhotoRepository;
-import com.washflow.data.protocols.db.SaveServiceOrderPhotoRepository;
+import com.washflow.data.protocols.db.serviceorder.DeleteServiceOrderPhotoRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderPhotoRepository;
+import com.washflow.data.protocols.db.serviceorder.SaveServiceOrderPhotoRepository;
 import com.washflow.domain.entities.ServiceOrderPhoto;
 import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
 import java.sql.ResultSet;

@@ -1,8 +1,8 @@
 package com.washflow.data.usecases.vehicle;
 
-import com.washflow.data.protocols.db.CreateVehicleRepository;
-import com.washflow.data.protocols.db.LoadUserByIdRepository;
-import com.washflow.data.protocols.db.LoadVehicleByPlateRepository;
+import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
+import com.washflow.data.protocols.db.vehicle.CreateVehicleRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehicleByPlateRepository;
 import com.washflow.domain.entities.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;

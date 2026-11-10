@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadServiceOrdersByCustomerIdRepository;
-import com.washflow.data.protocols.db.LoadUserByIdRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrdersByCustomerIdRepository;
+import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.User;

@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.sale;
 
-import com.washflow.data.protocols.db.LoadSalesRepository;
+import com.washflow.data.protocols.db.sale.LoadSalesRepository;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleRefund;

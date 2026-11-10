@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.cash;
 
-import com.washflow.data.protocols.db.LoadCashTransactionRepository;
-import com.washflow.data.protocols.db.UpdateCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.LoadCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.UpdateCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.usecases.cash.UpdateCashTransaction;
 import java.util.UUID;

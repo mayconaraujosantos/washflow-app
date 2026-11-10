@@ -1,11 +1,11 @@
 package com.washflow.data.usecases.customer;
 
 import com.washflow.data.protocols.TokenHasher;
-import com.washflow.data.protocols.db.CreateUserRepository;
-import com.washflow.data.protocols.db.CustomerIdentityRepository;
-import com.washflow.data.protocols.db.LoadUserByEmailRepository;
-import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
-import com.washflow.data.protocols.db.OtpRepository;
+import com.washflow.data.protocols.db.access.CustomerIdentityRepository;
+import com.washflow.data.protocols.db.access.OtpRepository;
+import com.washflow.data.protocols.db.user.CreateUserRepository;
+import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
+import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.identity.GoogleTokenVerifier;
 import com.washflow.data.protocols.messaging.OtpSender;
 import com.washflow.data.usecases.access.Secrets;

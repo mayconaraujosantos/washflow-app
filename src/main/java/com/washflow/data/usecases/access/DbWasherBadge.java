@@ -2,9 +2,9 @@ package com.washflow.data.usecases.access;
 
 import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.protocols.TokenHasher;
-import com.washflow.data.protocols.db.LoadUserByIdRepository;
-import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
-import com.washflow.data.protocols.db.StaffCredentialsRepository;
+import com.washflow.data.protocols.db.access.StaffCredentialsRepository;
+import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
+import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.user.AccountLockedError;

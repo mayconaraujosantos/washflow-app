@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.yard;
 
-import com.washflow.data.protocols.db.LoadWashingByWasherRepository;
+import com.washflow.data.protocols.db.yard.LoadWashingByWasherRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.usecases.yard.GetWashingByWasher;
 import java.util.List;

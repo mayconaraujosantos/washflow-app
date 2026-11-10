@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.LoadServiceOrderChecklistRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderChecklistRepository;
 import com.washflow.domain.entities.ServiceOrderChecklist;
 import com.washflow.domain.usecases.serviceorder.ListServiceOrderChecklists;
 import java.util.List;

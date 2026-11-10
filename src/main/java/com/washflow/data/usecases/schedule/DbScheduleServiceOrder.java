@@ -1,9 +1,9 @@
 package com.washflow.data.usecases.schedule;
 
-import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
-import com.washflow.data.protocols.db.CreateServiceOrderRepository;
-import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
-import com.washflow.data.protocols.db.LoadVehicleByIdRepository;
+import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRangeRepository;
+import com.washflow.data.protocols.db.serviceorder.CreateServiceOrderRepository;
+import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehicleByIdRepository;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;

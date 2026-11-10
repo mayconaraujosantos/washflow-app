@@ -1,8 +1,8 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.DuplicateKeyError;
-import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
-import com.washflow.data.protocols.db.UpdateServiceOrderStatusRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
+import com.washflow.data.protocols.db.serviceorder.UpdateServiceOrderStatusRepository;
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;

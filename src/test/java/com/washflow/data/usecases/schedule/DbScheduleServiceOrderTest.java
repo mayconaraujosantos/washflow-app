@@ -9,10 +9,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
-import com.washflow.data.protocols.db.CreateServiceOrderRepository;
-import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
-import com.washflow.data.protocols.db.LoadVehicleByIdRepository;
+import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRangeRepository;
+import com.washflow.data.protocols.db.serviceorder.CreateServiceOrderRepository;
+import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehicleByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.ServicePrice;

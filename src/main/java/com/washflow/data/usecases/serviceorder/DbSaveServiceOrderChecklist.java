@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.SaveServiceOrderChecklistRepository;
+import com.washflow.data.protocols.db.serviceorder.SaveServiceOrderChecklistRepository;
 import com.washflow.domain.entities.ServiceOrderChecklist;
 import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderChecklist;

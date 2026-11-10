@@ -1,6 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.CheckDatabaseHealthRepository;
+import com.washflow.data.protocols.db.shared.CheckDatabaseHealthRepository;
 import org.jdbi.v3.core.Jdbi;
 
 public class DatabaseHealthJdbiRepository implements CheckDatabaseHealthRepository {

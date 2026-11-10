@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.RefundServiceOrderRepository;
+import com.washflow.data.protocols.db.serviceorder.RefundServiceOrderRepository;
 import com.washflow.domain.entities.ServiceOrderRefund;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
 import com.washflow.domain.usecases.serviceorder.RefundServiceOrder;

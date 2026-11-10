@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.cash;
 
-import com.washflow.data.protocols.db.CashTransactionReportRepository;
+import com.washflow.data.protocols.db.cash.CashTransactionReportRepository;
 import com.washflow.domain.usecases.cash.GetCashTransactionReport;
 import java.time.LocalDate;
 import java.util.Map;

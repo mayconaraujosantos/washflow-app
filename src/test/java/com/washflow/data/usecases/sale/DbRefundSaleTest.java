@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.RefundSaleRepository;
+import com.washflow.data.protocols.db.sale.RefundSaleRepository;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleRefund;

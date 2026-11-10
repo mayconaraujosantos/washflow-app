@@ -1,6 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.DuplicateKeyError;
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
 import java.sql.SQLException;
 import java.util.function.Supplier;
 import org.jdbi.v3.core.JdbiException;

@@ -3,7 +3,7 @@ package com.washflow.data.usecases.pricing;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadAllServicePricesRepository;
+import com.washflow.data.protocols.db.shared.LoadAllServicePricesRepository;
 import com.washflow.domain.entities.ServicePrice;
 import java.math.BigDecimal;
 import java.util.List;

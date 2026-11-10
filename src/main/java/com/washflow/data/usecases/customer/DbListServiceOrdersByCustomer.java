@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.customer;
 
-import com.washflow.data.protocols.db.LoadServiceOrdersByCustomerIdRepository;
-import com.washflow.data.protocols.db.LoadUserByIdRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrdersByCustomerIdRepository;
+import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.customer.ListServiceOrdersByCustomer;

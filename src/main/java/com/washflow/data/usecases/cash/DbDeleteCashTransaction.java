@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.cash;
 
-import com.washflow.data.protocols.db.DeleteCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.DeleteCashTransactionRepository;
 import com.washflow.domain.usecases.cash.DeleteCashTransaction;
 import java.util.UUID;
 

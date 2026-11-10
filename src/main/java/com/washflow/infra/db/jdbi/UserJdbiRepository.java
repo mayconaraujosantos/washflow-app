@@ -1,16 +1,16 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.CreateUserRepository;
-import com.washflow.data.protocols.db.CreateWasherRepository;
-import com.washflow.data.protocols.db.LoadAllUsersRepository;
-import com.washflow.data.protocols.db.LoadUserByEmailRepository;
-import com.washflow.data.protocols.db.LoadUserByIdRepository;
-import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
-import com.washflow.data.protocols.db.LoadUserPasswordHashRepository;
-import com.washflow.data.protocols.db.SaveUserPasswordHashRepository;
-import com.washflow.data.protocols.db.UpdateUserActiveRepository;
-import com.washflow.data.protocols.db.UpdateUserEmailRepository;
-import com.washflow.data.protocols.db.UpdateUserProfileRepository;
+import com.washflow.data.protocols.db.user.CreateUserRepository;
+import com.washflow.data.protocols.db.user.CreateWasherRepository;
+import com.washflow.data.protocols.db.user.LoadAllUsersRepository;
+import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
+import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
+import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
+import com.washflow.data.protocols.db.user.LoadUserPasswordHashRepository;
+import com.washflow.data.protocols.db.user.SaveUserPasswordHashRepository;
+import com.washflow.data.protocols.db.user.UpdateUserActiveRepository;
+import com.washflow.data.protocols.db.user.UpdateUserEmailRepository;
+import com.washflow.data.protocols.db.user.UpdateUserProfileRepository;
 import com.washflow.data.tenancy.TenantContext;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;

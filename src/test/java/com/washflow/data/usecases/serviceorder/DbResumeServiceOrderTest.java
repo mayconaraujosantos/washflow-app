@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.ResumeServiceOrderRepository;
+import com.washflow.data.protocols.db.serviceorder.ResumeServiceOrderRepository;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotWashingError;
 import com.washflow.domain.usecases.serviceorder.ResumeServiceOrder;
 import java.util.UUID;

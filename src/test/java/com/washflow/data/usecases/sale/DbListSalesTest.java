@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadSalesRepository;
+import com.washflow.data.protocols.db.sale.LoadSalesRepository;
 import com.washflow.domain.entities.SaleRefund;
 import java.time.Instant;
 import java.time.LocalDate;

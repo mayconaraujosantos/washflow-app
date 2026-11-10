@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.SaveServiceOrderPhotoRepository;
+import com.washflow.data.protocols.db.serviceorder.SaveServiceOrderPhotoRepository;
 import com.washflow.domain.entities.ServiceOrderPhoto;
 import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
 import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;

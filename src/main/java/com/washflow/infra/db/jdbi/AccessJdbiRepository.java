@@ -1,9 +1,9 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.CustomerIdentityRepository;
-import com.washflow.data.protocols.db.OtpRepository;
-import com.washflow.data.protocols.db.StaffCredentialsRepository;
-import com.washflow.data.protocols.db.TicketRepository;
+import com.washflow.data.protocols.db.access.CustomerIdentityRepository;
+import com.washflow.data.protocols.db.access.OtpRepository;
+import com.washflow.data.protocols.db.access.StaffCredentialsRepository;
+import com.washflow.data.protocols.db.access.TicketRepository;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.TicketView;
 import com.washflow.domain.entities.User;

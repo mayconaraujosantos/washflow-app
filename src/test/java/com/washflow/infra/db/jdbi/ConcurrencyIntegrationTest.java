@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.data.protocols.db.DuplicateKeyError;
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
 import com.washflow.data.tenancy.TenantContext;
 import com.washflow.data.usecases.serviceorder.DbStartServiceOrder;
 import com.washflow.data.usecases.shared.SchedulingRules;

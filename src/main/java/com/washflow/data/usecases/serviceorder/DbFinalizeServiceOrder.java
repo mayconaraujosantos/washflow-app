@@ -1,8 +1,8 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.FinalizeServiceOrderRepository;
-import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
-import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
+import com.washflow.data.protocols.db.serviceorder.FinalizeServiceOrderRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
+import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.ServicePayment;

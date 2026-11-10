@@ -2,7 +2,7 @@ package com.washflow.data.usecases.serviceorder;
 
 import static org.mockito.Mockito.verify;
 
-import com.washflow.data.protocols.db.DeleteServiceOrderPhotoRepository;
+import com.washflow.data.protocols.db.serviceorder.DeleteServiceOrderPhotoRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

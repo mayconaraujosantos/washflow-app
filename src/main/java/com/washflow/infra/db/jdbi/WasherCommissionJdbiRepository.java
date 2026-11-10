@@ -1,6 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.CreateWasherCommissionRepository;
+import com.washflow.data.protocols.db.user.CreateWasherCommissionRepository;
 import com.washflow.domain.entities.WasherCommission;
 import org.jdbi.v3.core.Jdbi;
 

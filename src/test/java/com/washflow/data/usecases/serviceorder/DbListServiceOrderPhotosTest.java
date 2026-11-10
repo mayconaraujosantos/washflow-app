@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadServiceOrderPhotoRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderPhotoRepository;
 import com.washflow.domain.entities.ServiceOrderPhoto;
 import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
 import java.time.Instant;

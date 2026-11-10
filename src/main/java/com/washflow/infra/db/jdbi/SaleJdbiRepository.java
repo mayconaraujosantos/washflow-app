@@ -1,8 +1,8 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.LoadSalesRepository;
-import com.washflow.data.protocols.db.RefundSaleRepository;
-import com.washflow.data.protocols.db.SaveSaleRepository;
+import com.washflow.data.protocols.db.sale.LoadSalesRepository;
+import com.washflow.data.protocols.db.sale.RefundSaleRepository;
+import com.washflow.data.protocols.db.sale.SaveSaleRepository;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleItem;

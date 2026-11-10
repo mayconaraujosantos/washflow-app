@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.establishment;
 
 import com.washflow.data.protocols.PasswordHasher;
-import com.washflow.data.protocols.db.PlatformRepository;
+import com.washflow.data.protocols.db.establishment.PlatformRepository;
 import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;

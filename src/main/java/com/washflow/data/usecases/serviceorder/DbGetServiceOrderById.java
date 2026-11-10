@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.serviceorder.GetServiceOrderById;

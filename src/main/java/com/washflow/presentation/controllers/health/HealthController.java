@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.health;
 
-import com.washflow.data.protocols.db.CheckDatabaseHealthRepository;
+import com.washflow.data.protocols.db.shared.CheckDatabaseHealthRepository;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

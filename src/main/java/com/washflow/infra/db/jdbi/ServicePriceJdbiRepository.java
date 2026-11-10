@@ -1,8 +1,8 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.CreateServicePriceRepository;
-import com.washflow.data.protocols.db.LoadAllServicePricesRepository;
-import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
+import com.washflow.data.protocols.db.shared.CreateServicePriceRepository;
+import com.washflow.data.protocols.db.shared.LoadAllServicePricesRepository;
+import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
 import com.washflow.domain.entities.ServicePrice;
 import java.math.BigDecimal;
 import java.sql.ResultSet;

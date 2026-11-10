@@ -1,12 +1,12 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.CashTransactionReportRepository;
-import com.washflow.data.protocols.db.DeleteCashTransactionRepository;
-import com.washflow.data.protocols.db.LoadCashTransactionRepository;
-import com.washflow.data.protocols.db.LoadExpenseCategoryRepository;
-import com.washflow.data.protocols.db.SaveCashTransactionRepository;
-import com.washflow.data.protocols.db.SaveExpenseCategoryRepository;
-import com.washflow.data.protocols.db.UpdateCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.CashTransactionReportRepository;
+import com.washflow.data.protocols.db.cash.DeleteCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.LoadCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.LoadExpenseCategoryRepository;
+import com.washflow.data.protocols.db.cash.SaveCashTransactionRepository;
+import com.washflow.data.protocols.db.cash.SaveExpenseCategoryRepository;
+import com.washflow.data.protocols.db.cash.UpdateCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.CashTransaction.TransactionType;
 import com.washflow.domain.entities.ExpenseCategory;

@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.sale;
 
-import com.washflow.data.protocols.db.RefundSaleRepository;
+import com.washflow.data.protocols.db.sale.RefundSaleRepository;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleRefund;
 import com.washflow.domain.errors.sale.SaleNotFoundError;

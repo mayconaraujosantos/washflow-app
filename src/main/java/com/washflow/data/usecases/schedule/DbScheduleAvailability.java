@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.schedule;
 
-import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
+import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.domain.usecases.schedule.ScheduleAvailability;
 import java.time.Clock;

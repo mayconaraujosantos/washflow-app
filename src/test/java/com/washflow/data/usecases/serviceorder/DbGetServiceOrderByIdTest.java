@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;

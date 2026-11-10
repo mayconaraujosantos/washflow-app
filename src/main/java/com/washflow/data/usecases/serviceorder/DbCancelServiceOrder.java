@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.serviceorder;
 
-import com.washflow.data.protocols.db.CancelServiceOrderRepository;
+import com.washflow.data.protocols.db.serviceorder.CancelServiceOrderRepository;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
 import com.washflow.domain.usecases.serviceorder.CancelServiceOrder;
 import java.util.Set;

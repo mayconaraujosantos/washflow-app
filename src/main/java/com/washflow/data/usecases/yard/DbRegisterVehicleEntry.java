@@ -1,13 +1,13 @@
 package com.washflow.data.usecases.yard;
 
-import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
-import com.washflow.data.protocols.db.CreateServiceOrderRepository;
-import com.washflow.data.protocols.db.CreateVehicleRepository;
-import com.washflow.data.protocols.db.DuplicateKeyError;
-import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
-import com.washflow.data.protocols.db.LoadServicePriceByIdRepository;
-import com.washflow.data.protocols.db.LoadUserByPhoneRepository;
-import com.washflow.data.protocols.db.LoadVehicleByPlateRepository;
+import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRangeRepository;
+import com.washflow.data.protocols.db.serviceorder.CreateServiceOrderRepository;
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
+import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
+import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
+import com.washflow.data.protocols.db.vehicle.CreateVehicleRepository;
+import com.washflow.data.protocols.db.vehicle.LoadVehicleByPlateRepository;
 import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.domain.entities.ServiceOrder;

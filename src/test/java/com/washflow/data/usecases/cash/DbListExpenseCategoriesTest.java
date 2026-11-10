@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.data.protocols.db.LoadExpenseCategoryRepository;
+import com.washflow.data.protocols.db.cash.LoadExpenseCategoryRepository;
 import com.washflow.domain.entities.ExpenseCategory;
 import java.time.Instant;
 import java.util.Collections;

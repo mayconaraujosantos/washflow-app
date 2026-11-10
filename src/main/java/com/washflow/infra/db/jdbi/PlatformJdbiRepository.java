@@ -1,6 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.data.protocols.db.PlatformRepository;
+import com.washflow.data.protocols.db.establishment.PlatformRepository;
 import com.washflow.domain.entities.Establishment;
 import com.washflow.domain.entities.EstablishmentListing;
 import com.washflow.domain.entities.EstablishmentSummary;
