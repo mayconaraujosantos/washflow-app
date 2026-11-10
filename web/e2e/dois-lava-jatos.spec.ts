@@ -22,7 +22,13 @@ type Shop = {
   name: string
   slug?: string
   manager: { name: string; email: string }
-  washer: { name: string; phone: string; pin?: string; badgeToken?: string }
+  washer: {
+    name: string
+    phone: string
+    id?: string
+    pin?: string
+    badgeToken?: string
+  }
 }
 
 const raio: Shop = {
@@ -135,7 +141,11 @@ test('2. cada gerente entra e cadastra o lavador com crachá', async () => {
           response.request().method() === 'POST',
       )
       await manager.getByRole('button', { name: 'Cadastrar lavador' }).click()
-      const badge = (await (await badgeIssued).json()) as {
+      const badgeResponse = await badgeIssued
+      shop.washer.id = /\/api\/users\/([^/]+)\/badge$/.exec(
+        badgeResponse.url(),
+      )![1]
+      const badge = (await badgeResponse.json()) as {
         pin: string
         badgeToken: string
       }
@@ -430,6 +440,47 @@ test('5. cada lava-jato é isolado do outro', async () => {
     await expect(
       other.getByRole('heading', { name: 'Qual é o seu lava-jato?' }),
     ).toBeVisible()
+  })
+
+  await test.step('o mesmo lavador trabalha nos dois: cada PIN abre o seu lava-jato', async () => {
+    const manager = managerOf.get(sol)!
+    await manager.goto('/gerente')
+    await manager.getByRole('button', { name: 'Abrir menu' }).click()
+    await manager.getByRole('link', { name: 'Equipe e acessos' }).click()
+    await manager.getByLabel('Nome', { exact: true }).fill(raio.washer.name)
+    await manager
+      .getByLabel('Telefone', { exact: true })
+      .fill(raio.washer.phone)
+    const badgeIssued = manager.waitForResponse(
+      (response) =>
+        /\/api\/users\/[^/]+\/badge$/.test(response.url()) &&
+        response.request().method() === 'POST',
+    )
+    await manager.getByRole('button', { name: 'Cadastrar lavador' }).click()
+    const solBadge = await badgeIssued
+    const lucasAtSol = /\/api\/users\/([^/]+)\/badge$/.exec(solBadge.url())![1]
+    const solPin = ((await solBadge.json()) as { pin: string }).pin
+    expect(lucasAtSol).not.toBe(raio.washer.id) // outra conta, no outro lava-jato
+    await manager
+      .getByRole('dialog', { name: 'Crachá do lavador' })
+      .getByRole('button', { name: 'Fechar' })
+      .click()
+
+    for (const [pin, shop, accountId] of [
+      [solPin, sol, lucasAtSol],
+      [raio.washer.pin!, raio, raio.washer.id!],
+    ] as const) {
+      const washer = await phones.of(`lucas-pin-${shop.slug}`)
+      await washer.goto('/login/lavador')
+      await washer.getByLabel('Telefone').fill(raio.washer.phone)
+      await washer.getByLabel('PIN').fill(pin)
+      await washer.getByRole('button', { name: 'Entrar com PIN' }).click()
+      await expect(washer).toHaveURL(/:\d+\/lavador$/)
+      const session = await washer.evaluate(() =>
+        JSON.stringify(Object.values(localStorage)),
+      )
+      expect(session, `PIN do ${shop.name}`).toContain(accountId)
+    }
   })
 
   await test.step('lavador do Lava Raio não entra pelo crachá no Lava Sol com PIN errado', async () => {
