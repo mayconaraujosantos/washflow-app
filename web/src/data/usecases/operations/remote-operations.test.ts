@@ -173,6 +173,16 @@ describe('RemoteOperations', () => {
     })
   })
 
+  it('cancels with the reason and description', async () => {
+    await operations.cancel('order-1', 'OTHER', 'Chuva forte')
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/service-orders/order-1/cancel',
+      method: 'patch',
+      body: { reason: 'OTHER', description: 'Chuva forte' },
+    })
+  })
+
   it('calls the resume endpoint', async () => {
     await operations.resume('order-1')
 

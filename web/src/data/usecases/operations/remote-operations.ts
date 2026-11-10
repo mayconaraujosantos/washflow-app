@@ -9,6 +9,7 @@ import { SaleModel, SaleType } from '@/domain/models/sale-model'
 import {
   CreateSaleParams,
   Operations,
+  CancelReason,
   PauseReason,
   PaymentMethod,
   RegisterEntryParams,
@@ -116,6 +117,21 @@ export class RemoteOperations implements Operations {
       reason,
       description,
     })
+  }
+
+  async cancel(
+    serviceOrderId: string,
+    reason: CancelReason,
+    description?: string,
+  ): Promise<void> {
+    await this.request(
+      `/api/service-orders/${serviceOrderId}/cancel`,
+      'patch',
+      {
+        reason,
+        description,
+      },
+    )
   }
 
   async resume(serviceOrderId: string): Promise<void> {

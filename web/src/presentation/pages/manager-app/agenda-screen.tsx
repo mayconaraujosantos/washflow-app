@@ -133,7 +133,10 @@ export function AgendaScreen() {
           <span key={`blank-${index}`} />
         ))}
         {days.map((day) => {
-          const count = byDay.get(day)?.length ?? 0
+          // Cancelled orders stay listed for the day but no longer take a slot.
+          const count =
+            byDay.get(day)?.filter((order) => order.status !== 'CANCELLED')
+              .length ?? 0
           const max = dayCapacity(day, settings)
           return (
             <button

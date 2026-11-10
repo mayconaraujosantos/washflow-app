@@ -709,6 +709,11 @@ select option {
   background: var(--surface-3);
   color: var(--text-muted);
 }
+.status-cancelled {
+  background: var(--surface-3);
+  color: var(--danger);
+  text-decoration: line-through;
+}
 
 .badge {
   display: inline-flex;

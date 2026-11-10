@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ChecklistType } from '@/domain/models/feature-models'
 import type { ServiceOrderModel } from '@/domain/models/service-order-model'
 import type { PaymentMethod } from '@/domain/usecases/operations'
-import { PAYMENT_LABELS } from '@/main/config/labels'
+import { CANCEL_LABELS, PAYMENT_LABELS } from '@/main/config/labels'
 import { ChecklistModal } from '@/presentation/components/checklist-modal'
 import { UiIcon } from '@/presentation/components/ui-icon'
 import { ScreenLayout } from '@/presentation/components/ui/app-chrome'
@@ -14,6 +14,7 @@ import {
 import { errorMessage, formatMoney } from '@/presentation/helpers/format'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { TicketSheet } from './access-sheets'
+import { CancelSheet } from './cancel-sheet'
 import { MANAGER_NAV, PAYMENT_METHODS, useManager } from './manager-context'
 
 const GROUPS: { title: string; statuses: ServiceOrderModel['status'][] }[] = [
@@ -29,6 +30,7 @@ export function YardScreen({ mode }: Props) {
   const { yard, operations, features, refresh, notify, openMenu } = useManager()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [paying, setPaying] = useState<ServiceOrderModel | null>(null)
+  const [cancelling, setCancelling] = useState<ServiceOrderModel | null>(null)
   const location = useLocation()
   const navigate = useNavigate()
   const [ticketFor, setTicketFor] = useState<ServiceOrderModel | null>(null)
@@ -173,6 +175,18 @@ export function YardScreen({ mode }: Props) {
               {group.orders.map((order) => (
                 <OrderCard key={order.id} order={order} showWasher>
                   {renderActions(order)}
+                  {(order.status === 'SCHEDULED' ||
+                    order.status === 'WAITING_IN_YARD') && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={busyId === order.id}
+                      onClick={() => setCancelling(order)}
+                    >
+                      <UiIcon name="close" size={18} />
+                      Cancelar
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn btn-ghost"
@@ -204,6 +218,18 @@ export function YardScreen({ mode }: Props) {
             order,
             () => operations.finalize(order.id, method),
             `Pagamento registrado. ${plateOf(order)} finalizado.`,
+          )
+        }}
+      />
+      <CancelSheet
+        order={cancelling}
+        onClose={() => setCancelling(null)}
+        onConfirm={(order, reason, description) => {
+          setCancelling(null)
+          void run(
+            order,
+            () => operations.cancel(order.id, reason, description),
+            `${plateOf(order)} cancelado: ${CANCEL_LABELS[reason].toLowerCase()}.`,
           )
         }}
       />

@@ -8,6 +8,8 @@ import { SaleModel, SaleType } from '@/domain/models/sale-model'
 
 export type PaymentMethod = 'CASH' | 'PIX' | 'DEBIT_CARD' | 'CREDIT_CARD'
 export type PauseReason = 'LUNCH' | 'RESTROOM' | 'OTHER'
+export type CancelReason =
+  'CUSTOMER_GAVE_UP' | 'NO_SHOW' | 'REGISTERED_BY_MISTAKE' | 'OTHER'
 
 export type RegisterEntryParams = {
   plate: string
@@ -60,6 +62,11 @@ export interface Operations {
     description?: string,
   ) => Promise<void>
   resume: (serviceOrderId: string) => Promise<void>
+  cancel: (
+    serviceOrderId: string,
+    reason: CancelReason,
+    description?: string,
+  ) => Promise<void>
   complete: (serviceOrderId: string) => Promise<void>
   finalize: (
     serviceOrderId: string,

@@ -5,7 +5,10 @@ import { ListServiceOrdersByCustomer } from '@/domain/usecases/list-service-orde
 import { ListServicePrices } from '@/domain/usecases/list-service-prices'
 import { ListVehiclesByCustomer } from '@/domain/usecases/list-vehicles-by-customer'
 import { ScheduleServiceOrder } from '@/domain/usecases/schedule-service-order'
-import { ServiceOrderModel } from '@/domain/models/service-order-model'
+import {
+  isClosedStatus,
+  ServiceOrderModel,
+} from '@/domain/models/service-order-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { VehicleModel } from '@/domain/models/vehicle-model'
 import {
@@ -54,6 +57,7 @@ const STATUS_CHANGE_NOTICES: Record<ServiceOrderModel['status'], string> = {
   PAUSED: 'Lavagem pausada',
   READY: 'Seu veículo está pronto para retirada',
   DONE: 'Atendimento finalizado',
+  CANCELLED: 'Atendimento cancelado',
 }
 
 const REFRESH_MS = 3000
@@ -188,7 +192,9 @@ export function CustomerDashboard({
       .finally(() => setRefreshingOrders(false))
   }
 
-  const activeOrders = serviceOrders.filter((order) => order.status !== 'DONE')
+  const activeOrders = serviceOrders.filter(
+    (order) => !isClosedStatus(order.status),
+  )
   const readyOrders = serviceOrders.filter((order) => order.status === 'READY')
 
   const logoutAction = (
