@@ -3,6 +3,7 @@ package com.washflow.presentation.controllers.establishment;
 import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
 import com.washflow.domain.errors.establishment.InvalidSetupCodeError;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

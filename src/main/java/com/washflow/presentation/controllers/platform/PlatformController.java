@@ -5,7 +5,7 @@ import com.washflow.domain.errors.establishment.EstablishmentSlugTakenError;
 import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
-import com.washflow.presentation.controllers.establishment.BodyValues;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import java.util.Map;

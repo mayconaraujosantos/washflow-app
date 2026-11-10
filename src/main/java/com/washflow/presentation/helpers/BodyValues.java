@@ -1,4 +1,4 @@
-package com.washflow.presentation.controllers.establishment;
+package com.washflow.presentation.helpers;
 
 import java.util.Map;
 
