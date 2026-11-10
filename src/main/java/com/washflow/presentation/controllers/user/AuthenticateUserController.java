@@ -15,11 +15,11 @@ import com.washflow.validation.protocols.Validation;
 
 /**
  * One instance per QR code / role - {@code profile} is fixed at construction time by whichever
- * {@code application.factories.controllers} factory wires up this controller for a given route
- * (e.g. {@code AuthenticateManagerControllerFactory} always passes {@link UserProfile#MANAGER}),
- * never read from the request body. That's what makes a phone unable to self-assign GERENTE by
- * simply editing a JSON field: the profile is determined by which URL was called, not by anything
- * the caller sends.
+ * {@code UserModule} method wires up this controller for a given route (e.g. {@code
+ * UserModule.authenticateManagerController} always passes {@link UserProfile#MANAGER}), never read
+ * from the request body. That's what makes a phone unable to self-assign GERENTE by simply editing
+ * a JSON field: the profile is determined by which URL was called, not by anything the caller
+ * sends.
  */
 public class AuthenticateUserController implements Controller {
 
@@ -46,7 +46,7 @@ public class AuthenticateUserController implements Controller {
       String name = BodyValues.text(request.body(), "name");
       String password = BodyValues.text(request.body(), "password");
       // Managers may log in with e-mail instead of phone (see
-      // AuthenticateManagerControllerFactory).
+      // UserModule.authenticateManagerController).
       String email =
           profile == UserProfile.MANAGER ? BodyValues.text(request.body(), "email") : null;
 

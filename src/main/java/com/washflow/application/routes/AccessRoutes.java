@@ -5,7 +5,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.usecases.customer.AccessFactory;
+import com.washflow.application.modules.CustomerModule;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.serviceorder.TicketView;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
@@ -29,9 +29,9 @@ public final class AccessRoutes {
   private AccessRoutes() {}
 
   public static void register(Jdbi jdbi, AppConfig appConfig) {
-    WasherBadge badge = AccessFactory.washerBadge(jdbi, appConfig);
-    ServiceOrderTicket ticket = AccessFactory.ticket(jdbi);
-    CustomerPasswordlessLogin customer = AccessFactory.customerLogin(jdbi, appConfig);
+    WasherBadge badge = CustomerModule.washerBadge(jdbi, appConfig);
+    ServiceOrderTicket ticket = CustomerModule.ticket(jdbi);
+    CustomerPasswordlessLogin customer = CustomerModule.customerLogin(jdbi, appConfig);
     AuthTokenService tokens = new AuthTokenService(appConfig.tokenSecret());
     registerIssueBadge(badge);
     registerPinLogin(badge, tokens);
