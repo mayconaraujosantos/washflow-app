@@ -38,7 +38,7 @@ public class DbScheduleAvailability implements ScheduleAvailability {
           "Escolha uma data entre hoje e os próximos " + MAX_DAYS_AHEAD + " dias");
     }
     SchedulingRules.Hours current = hours.get();
-    if (date.getDayOfWeek() == DayOfWeek.SUNDAY && !current.openOnSunday()) {
+    if (DayOfWeek.SUNDAY.equals(date.getDayOfWeek()) && !current.openOnSunday()) {
       return new Day(date, false, List.of());
     }
     List<Slot> slots = new ArrayList<>();

@@ -3,7 +3,6 @@ package com.washflow.data.usecases.serviceorder;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -53,7 +52,7 @@ class DbPauseServiceOrderTest {
         new PauseServiceOrder.Params(orderId, washerId, "OTHER", "Machine breakdown");
 
     assertDoesNotThrow(() -> sut.pause(params));
-    verify(pauseRepository).pause(eq(orderId), eq(washerId), eq("OTHER"), eq("Machine breakdown"));
+    verify(pauseRepository).pause(orderId, washerId, "OTHER", "Machine breakdown");
   }
 
   @Test
@@ -102,6 +101,6 @@ class DbPauseServiceOrderTest {
         new PauseServiceOrder.Params(orderId, washerId, "LUNCH", "   ");
 
     assertDoesNotThrow(() -> sut.pause(params));
-    verify(pauseRepository).pause(eq(orderId), eq(washerId), eq("LUNCH"), eq(null));
+    verify(pauseRepository).pause(orderId, washerId, "LUNCH", null);
   }
 }

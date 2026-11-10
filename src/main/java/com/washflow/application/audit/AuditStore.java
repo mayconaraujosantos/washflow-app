@@ -32,7 +32,7 @@ public interface AuditStore {
       int status,
       String details) {}
 
-  void record(Entry entry);
+  void save(Entry entry);
 
   /** The current lava-jato's entries between two Manaus dates (inclusive), newest first. */
   List<Row> list(LocalDate from, LocalDate to);

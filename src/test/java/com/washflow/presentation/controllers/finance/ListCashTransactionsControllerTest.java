@@ -1,7 +1,6 @@
 package com.washflow.presentation.controllers.finance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,7 +63,7 @@ class ListCashTransactionsControllerTest {
                 null,
                 Instant.now(),
                 null));
-    when(listCashTransactions.list(eq(from), eq(to))).thenReturn(transactions);
+    when(listCashTransactions.list(from, to)).thenReturn(transactions);
 
     Map<String, Object> body = new HashMap<>();
     body.put("from", "2025-01-01");

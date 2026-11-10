@@ -18,18 +18,18 @@ class ClientErrorLogTest {
     Map<String, Object> report = Map.of("message", "x is undefined", "page", "/gerente");
 
     for (int i = 0; i < ClientErrorLog.MAX_PER_MINUTE; i++) {
-      assertTrue(log.record("1.1.1.1", report));
+      assertTrue(log.report("1.1.1.1", report));
     }
-    assertFalse(log.record("1.1.1.1", report));
-    assertTrue(log.record("2.2.2.2", report), "other clients are not affected");
+    assertFalse(log.report("1.1.1.1", report));
+    assertTrue(log.report("2.2.2.2", report), "other clients are not affected");
   }
 
   @Test
   void acceptsMalformedOrHugeReportsWithoutFailing() {
     ClientErrorLog log = new ClientErrorLog(Clock.systemUTC());
 
-    assertTrue(log.record(null, null));
+    assertTrue(log.report(null, null));
     assertTrue(
-        log.record("3.3.3.3", Map.of("message", "a".repeat(10_000), "stack", "line1\nline2")));
+        log.report("3.3.3.3", Map.of("message", "a".repeat(10_000), "stack", "line1\nline2")));
   }
 }

@@ -31,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class LoginThrottle {
 
+  private static final String EMAIL = "email";
+
   static final int MAX_ACCOUNT_FAILURES = 5;
   static final int MAX_IP_FAILURES = 30;
   static final Duration LOCK = Duration.ofMinutes(15);
@@ -153,8 +155,8 @@ public final class LoginThrottle {
       return null;
     }
     String account = null;
-    if (body.hasNonNull("email") && !body.get("email").asText().isBlank()) {
-      account = body.get("email").asText().trim().toLowerCase(Locale.ROOT);
+    if (body.hasNonNull(EMAIL) && !body.get(EMAIL).asText().isBlank()) {
+      account = body.get(EMAIL).asText().trim().toLowerCase(Locale.ROOT);
     } else if (body.hasNonNull("phone")) {
       account = body.get("phone").asText().replaceAll("\\D", "");
     }

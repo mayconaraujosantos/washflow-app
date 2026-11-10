@@ -31,20 +31,14 @@ public class GetOperationsReportController implements Controller {
             new IllegalArgumentException("Provide from and to as YYYY-MM-DD dates"));
       }
 
-      LocalDate from;
-      LocalDate to;
-      try {
-        from = LocalDate.parse(fromParam);
-        to = LocalDate.parse(toParam);
-      } catch (DateTimeParseException e) {
-        return HttpHelper.badRequest(
-            new IllegalArgumentException("Provide from and to as YYYY-MM-DD dates"));
-      }
-
-      GetOperationsReport.Params params = new GetOperationsReport.Params(from, to);
+      GetOperationsReport.Params params =
+          new GetOperationsReport.Params(LocalDate.parse(fromParam), LocalDate.parse(toParam));
       OperationsReport report = getOperationsReport.get(params);
       return new HttpResponse(200, report);
 
+    } catch (DateTimeParseException e) {
+      return HttpHelper.badRequest(
+          new IllegalArgumentException("Provide from and to as YYYY-MM-DD dates"));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
     } catch (Exception e) {

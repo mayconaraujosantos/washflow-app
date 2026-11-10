@@ -35,7 +35,7 @@ public class DbFinalizeServiceOrder implements FinalizeServiceOrder {
   }
 
   @Override
-  public ServiceOrder finalize(Params params)
+  public ServiceOrder finalizeOrder(Params params)
       throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError, ServicePriceNotFoundError {
     ServiceOrder serviceOrder =
         loadServiceOrderByIdRepository

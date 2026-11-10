@@ -6,7 +6,10 @@ import java.util.regex.Pattern;
 public final class ContactRules {
 
   private static final Pattern PHONE = Pattern.compile("^\\d{10,11}$");
-  private static final Pattern EMAIL = Pattern.compile("^[^@\\s]{1,64}@[^@\\s]+\\.[^@\\s]{2,}$");
+  // local@label.label.tld - labels can't be empty or contain dots, so each character has one
+  // place to match and the check is linear (no backtracking).
+  private static final Pattern EMAIL =
+      Pattern.compile("^[^@\\s]{1,64}@(?:[^@\\s.]+\\.)+[^@\\s.]{2,}$");
   private static final int MAX_EMAIL = 254;
 
   private ContactRules() {}

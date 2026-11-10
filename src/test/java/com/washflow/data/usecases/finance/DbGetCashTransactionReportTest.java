@@ -1,7 +1,6 @@
 package com.washflow.data.usecases.finance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +33,7 @@ class DbGetCashTransactionReportTest {
     Map<String, Object> expected = new HashMap<>();
     expected.put("totalIncome", 1000.0);
     expected.put("totalExpense", 300.0);
-    when(reportRepository.report(eq(from), eq(to))).thenReturn(expected);
+    when(reportRepository.report(from, to)).thenReturn(expected);
 
     Map<String, Object> result = sut.report(from, to);
 

@@ -13,6 +13,15 @@ import org.jdbi.v3.core.Jdbi;
  */
 public class JdbiAccountSecurityGateway implements AccountSecurityGateway {
 
+  private static final String FIND_ACCESS_BY_ID_SELECT_SQL =
+      """
+      SELECT u.perfil, u.ativo, e.ativo AS estabelecimento_ativo,
+             u.estabelecimento_id
+      FROM usuarios u
+      JOIN estabelecimentos e ON e.id = u.estabelecimento_id
+      WHERE u.id = :id
+      """;
+
   private final Jdbi jdbi;
 
   public JdbiAccountSecurityGateway(Jdbi jdbi) {
@@ -25,14 +34,7 @@ public class JdbiAccountSecurityGateway implements AccountSecurityGateway {
         jdbi.withHandle(
             handle ->
                 handle
-                    .createQuery(
-                        """
-                        SELECT u.perfil, u.ativo, e.ativo AS estabelecimento_ativo,
-                               u.estabelecimento_id
-                        FROM usuarios u
-                        JOIN estabelecimentos e ON e.id = u.estabelecimento_id
-                        WHERE u.id = :id
-                        """)
+                    .createQuery(FIND_ACCESS_BY_ID_SELECT_SQL)
                     .bind("id", userId)
                     .map(
                         (rs, ctx) ->

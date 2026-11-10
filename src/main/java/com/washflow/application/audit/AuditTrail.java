@@ -38,9 +38,8 @@ public final class AuditTrail {
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
   private static final Set<String> CHANGES = Set.of("POST", "PUT", "PATCH", "DELETE");
   private static final Pattern SECRET_KEY =
-      Pattern.compile(
-          ".*(password|senha|pin|token|secret|code|codigo|credential|image|photo|foto|signature"
-              + "|assinatura).*");
+          Pattern.compile(
+                  "(?i)password|senha|pin|token|secret|code|codigo|credential|image|photo|foto|signature|assinatura");
   private static final ObjectMapper JSON = new ObjectMapper();
 
   private final AuditStore store;
@@ -59,7 +58,7 @@ public final class AuditTrail {
       return;
     }
     try {
-      store.record(
+      store.save(
           new AuditStore.Entry(
               TenantContext.current().orElse(null),
               claims.userId(),

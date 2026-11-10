@@ -70,7 +70,7 @@ public class DbCustomerPasswordlessLogin implements CustomerPasswordlessLogin {
     this.createUserRepository = createUserRepository;
     this.customerIdentityRepository = customerIdentityRepository;
     this.googleTokenVerifier = googleTokenVerifier;
-    this.publicAppUrl = publicAppUrl == null ? "" : publicAppUrl.replaceAll("/+$", "");
+    this.publicAppUrl = withoutTrailingSlashes(publicAppUrl);
     this.clock = clock;
   }
 
@@ -196,5 +196,16 @@ public class DbCustomerPasswordlessLogin implements CustomerPasswordlessLogin {
 
   private String hash(String phone, String code) {
     return tokenHasher.hash("otp:" + phone + ":" + code);
+  }
+
+  private static String withoutTrailingSlashes(String url) {
+    if (url == null) {
+      return "";
+    }
+    int end = url.length();
+    while (end > 0 && url.charAt(end - 1) == '/') {
+      end--;
+    }
+    return url.substring(0, end);
   }
 }

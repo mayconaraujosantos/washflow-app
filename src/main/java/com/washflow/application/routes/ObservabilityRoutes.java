@@ -78,7 +78,7 @@ public final class ObservabilityRoutes {
           } catch (Exception e) {
             body = Map.of("message", "unreadable report");
           }
-          if (CLIENT_ERRORS.record(ctx.ip(), body)) {
+          if (CLIENT_ERRORS.report(ctx.ip(), body)) {
             ctx.status(204);
           } else {
             ctx.status(429).json(HttpHelper.errorBody("Too many error reports"));

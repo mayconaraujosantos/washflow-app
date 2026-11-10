@@ -1,7 +1,6 @@
 package com.washflow.data.usecases.serviceorder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,7 +43,7 @@ class DbListServiceOrderPhotosTest {
                 null,
                 Instant.now(),
                 null));
-    when(loadRepository.loadByServiceOrderId(eq(serviceOrderId))).thenReturn(expected);
+    when(loadRepository.loadByServiceOrderId(serviceOrderId)).thenReturn(expected);
 
     List<ServiceOrderPhoto> result = sut.list(serviceOrderId);
 
@@ -55,8 +54,7 @@ class DbListServiceOrderPhotosTest {
 
   @Test
   void returnsEmptyListWhenNoPhotos() {
-    when(loadRepository.loadByServiceOrderId(eq(serviceOrderId)))
-        .thenReturn(Collections.emptyList());
+    when(loadRepository.loadByServiceOrderId(serviceOrderId)).thenReturn(Collections.emptyList());
 
     List<ServiceOrderPhoto> result = sut.list(serviceOrderId);
 
