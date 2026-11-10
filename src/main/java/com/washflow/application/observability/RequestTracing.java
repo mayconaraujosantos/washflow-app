@@ -5,6 +5,7 @@ import com.washflow.data.tenancy.TenantContext;
 import com.washflow.domain.errors.common.TenantRequiredError;
 import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.security.SecureRandom;
@@ -32,25 +33,19 @@ public final class RequestTracing {
   private static final Set<String> QUIET_ROUTES = Set.of("/api/health", "/api/metrics");
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
 
-  /** The endpoint's own work (authorization + handler). */
-  @FunctionalInterface
-  public interface Work {
-    void run() throws Exception;
-  }
-
   private final MeterRegistry registry;
 
   public RequestTracing(MeterRegistry registry) {
     this.registry = registry;
   }
 
-  public void handle(String method, String route, Context ctx, Work work) {
+  public void handle(String method, String route, Context ctx, Handler next) {
     String requestId = requestId(ctx.header(HEADER));
     MDC.put(HttpHelper.REQUEST_ID, requestId);
     ctx.header(HEADER, requestId);
     long started = System.nanoTime();
     try {
-      work.run();
+      next.handle(ctx);
     } catch (TenantRequiredError e) {
       ctx.status(400).json(HttpHelper.errorBody(e.getMessage()));
     } catch (Exception e) {

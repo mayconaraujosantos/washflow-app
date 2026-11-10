@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,12 +44,6 @@ public final class LoginThrottle {
           "/api/auth/managers",
           "/api/auth/admins");
 
-  /** The endpoint's own work. */
-  @FunctionalInterface
-  public interface Work {
-    void run() throws Exception;
-  }
-
   private final Clock clock;
   private final Map<String, Failures> failures = new ConcurrentHashMap<>();
 
@@ -56,10 +51,10 @@ public final class LoginThrottle {
     this.clock = clock;
   }
 
-  public void handle(String method, Context ctx, Work work) throws Exception {
+  public void handle(String method, Context ctx, Handler next) throws Exception {
     String route = ctx.path();
     if (!"POST".equals(method) || !ROUTES.contains(route)) {
-      work.run();
+      next.handle(ctx);
       return;
     }
     Instant now = Instant.now(clock);
@@ -79,7 +74,7 @@ public final class LoginThrottle {
       return;
     }
 
-    work.run();
+    next.handle(ctx);
     int status = ctx.statusCode();
     if (status == 401) {
       fail(ipKey, MAX_IP_FAILURES, now);
