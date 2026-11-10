@@ -1,6 +1,7 @@
 import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 import type {
   AuthOptionsModel,
+  PasswordResetAccount,
   TicketModel,
   WasherBadgeModel,
 } from '@/domain/models/access-model'
@@ -31,4 +32,19 @@ export interface Access {
     name?: string,
   ) => Promise<AuthenticatedSessionModel>
   googleLogin: (credential: string) => Promise<AuthenticatedSessionModel>
+  /** E-mails a 6-digit code; answers the same whether the account exists. */
+  requestPasswordReset: (account: PasswordResetAccount) => Promise<number>
+  confirmPasswordReset: (
+    account: PasswordResetAccount,
+    code: string,
+    password: string,
+  ) => Promise<void>
+  /** "Meus dados": where the customer's reset codes go. */
+  loadRecoveryEmail: (customerId: string) => Promise<string | null>
+  /** `accessToken` right after sign-up, before the page knows the session. */
+  saveRecoveryEmail: (
+    customerId: string,
+    email: string | null,
+    accessToken?: string,
+  ) => Promise<string | null>
 }

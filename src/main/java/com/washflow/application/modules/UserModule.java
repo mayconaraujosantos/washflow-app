@@ -2,9 +2,11 @@ package com.washflow.application.modules;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.protocols.PasswordHasher;
+import com.washflow.data.protocols.messaging.EmailSender;
 import com.washflow.data.usecases.user.DbAuthenticateUser;
 import com.washflow.data.usecases.user.DbCreateWasher;
 import com.washflow.data.usecases.user.DbListUsers;
+import com.washflow.data.usecases.user.DbResetPasswordByEmail;
 import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserActive;
 import com.washflow.data.usecases.user.DbUpdateUserProfile;
@@ -12,11 +14,17 @@ import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.usecases.user.AuthenticateUser;
 import com.washflow.domain.usecases.user.CreateWasher;
 import com.washflow.domain.usecases.user.ListUsers;
+import com.washflow.domain.usecases.user.ResetPasswordByEmail;
 import com.washflow.domain.usecases.user.ResetUserPassword;
 import com.washflow.domain.usecases.user.UpdateUserActive;
 import com.washflow.domain.usecases.user.UpdateUserProfile;
+import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.infra.messaging.LoggingEmailSender;
+import com.washflow.infra.messaging.SmtpEmailSender;
+import com.washflow.infra.messaging.UnavailableEmailSender;
 import com.washflow.infra.security.BCryptPasswordHasher;
+import com.washflow.infra.security.HmacTokenHasher;
 import com.washflow.presentation.controllers.user.AuthenticateUserController;
 import com.washflow.presentation.controllers.user.CreateWasherController;
 import com.washflow.presentation.controllers.user.ListUsersController;
@@ -28,6 +36,7 @@ import com.washflow.validation.protocols.Validation;
 import com.washflow.validation.validators.AnyRequiredFieldValidation;
 import com.washflow.validation.validators.RequiredFieldValidation;
 import com.washflow.validation.validators.ValidationComposite;
+import java.time.Clock;
 import java.util.List;
 import org.jdbi.v3.core.Jdbi;
 
@@ -152,5 +161,30 @@ public final class UserModule {
                 new RequiredFieldValidation("newProfile")));
 
     return new UpdateUserProfileController(updateUserProfile(jdbi), validation);
+  }
+
+  /**
+   * "Esqueci a senha" by e-mail code for customers and managers. Codes go through SMTP when
+   * SMTP_HOST is set; development without it writes them to the log; production without it hides
+   * the option.
+   */
+  public static ResetPasswordByEmail resetPasswordByEmail(Jdbi jdbi, AppConfig appConfig) {
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    return new DbResetPasswordByEmail(
+        users,
+        users,
+        new PasswordResetJdbiRepository(jdbi),
+        users,
+        new BCryptPasswordHasher(),
+        new HmacTokenHasher(appConfig.tokenSecret()),
+        emailSender(appConfig),
+        Clock.systemUTC());
+  }
+
+  static EmailSender emailSender(AppConfig appConfig) {
+    if (appConfig.smtp().configured()) {
+      return new SmtpEmailSender(appConfig.smtp());
+    }
+    return appConfig.isProduction() ? new UnavailableEmailSender() : new LoggingEmailSender();
   }
 }

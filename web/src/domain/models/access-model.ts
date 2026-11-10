@@ -20,4 +20,10 @@ export type TicketModel = {
 export type AuthOptionsModel = {
   whatsappCode: boolean
   googleClientId: string | null
+  /** A forgotten password can be reset with a code sent by e-mail. */
+  emailCode?: boolean
 }
+
+/** Who asks for a password-reset code: customers by phone, managers by login e-mail. */
+export type PasswordResetAccount =
+  { kind: 'customer'; phone: string } | { kind: 'manager'; email: string }

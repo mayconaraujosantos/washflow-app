@@ -79,4 +79,37 @@ class AppConfigTest {
 
     assertTrue(error.getMessage().contains("PORT"));
   }
+
+  @Test
+  void smtpIsOptionalButNeedsTheSenderOnceConfigured() {
+    AppConfig none = AppConfig.load(Map.of("APP_ENV", "development"), Map.of());
+    assertFalse(none.smtp().configured());
+
+    AppConfig brevo =
+        AppConfig.load(
+            Map.of(
+                "SMTP_HOST", "smtp-relay.brevo.com",
+                "SMTP_USERNAME", "user",
+                "SMTP_PASSWORD", "segredo",
+                "SMTP_FROM", "Washflow <nao-responda@washflow.app>"),
+            Map.of());
+    assertEquals("smtp-relay.brevo.com", brevo.smtp().host());
+    assertEquals(587, brevo.smtp().port());
+    assertTrue(brevo.smtp().startTls());
+    assertFalse(brevo.smtp().toString().contains("segredo"));
+
+    AppConfig mailpit =
+        AppConfig.load(
+            Map.of(
+                "SMTP_HOST", "127.0.0.1",
+                "SMTP_PORT", "1025",
+                "SMTP_STARTTLS", "false",
+                "SMTP_FROM", "teste@washflow.test"),
+            Map.of());
+    assertFalse(mailpit.smtp().startTls());
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> AppConfig.load(Map.of("SMTP_HOST", "smtp.example.com"), Map.of()));
+  }
 }

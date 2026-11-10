@@ -70,7 +70,7 @@ public final class ResourceAccessEvaluator {
   }
 
   private static boolean isCustomerResourcePath(String path) {
-    return path.matches("/api/customers/[^/]+/(vehicles|service-orders)");
+    return path.matches("/api/customers/[^/]+/(vehicles|service-orders|recovery-email)");
   }
 
   private static String pathCustomerId(String path) {

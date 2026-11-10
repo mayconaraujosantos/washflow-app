@@ -3,15 +3,18 @@ package com.washflow.application.modules;
 import com.washflow.application.AppConfig;
 import com.washflow.data.protocols.messaging.OtpSender;
 import com.washflow.data.usecases.customer.DbCustomerPasswordlessLogin;
+import com.washflow.data.usecases.customer.DbCustomerRecoveryEmail;
 import com.washflow.data.usecases.customer.DbListServiceOrdersByCustomer;
 import com.washflow.data.usecases.customer.DbServiceOrderTicket;
 import com.washflow.data.usecases.user.DbWasherBadge;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
+import com.washflow.domain.usecases.customer.CustomerRecoveryEmail;
 import com.washflow.domain.usecases.customer.ListServiceOrdersByCustomer;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
 import com.washflow.domain.usecases.user.WasherBadge;
 import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.identity.GoogleTokeninfoVerifier;
 import com.washflow.infra.messaging.LoggingOtpSender;
@@ -86,5 +89,9 @@ public final class CustomerModule {
 
   public static Controller listServiceOrdersByCustomerController(Jdbi jdbi) {
     return new ListServiceOrdersByCustomerController(listServiceOrdersByCustomer(jdbi));
+  }
+
+  public static CustomerRecoveryEmail recoveryEmail(Jdbi jdbi) {
+    return new DbCustomerRecoveryEmail(new PasswordResetJdbiRepository(jdbi));
   }
 }

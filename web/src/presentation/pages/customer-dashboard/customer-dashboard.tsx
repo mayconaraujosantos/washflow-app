@@ -34,7 +34,9 @@ import {
   formatBusinessHours,
   greeting,
 } from '@/presentation/helpers/format'
+import type { Access } from '@/domain/usecases/access'
 import type { Establishment } from '@/domain/usecases/establishment'
+import { AccountSection } from './account-section'
 import { ScheduleSection } from './schedule-section'
 import { TrackingSection } from './tracking-section'
 import { VehicleSection } from './vehicle-section'
@@ -46,6 +48,8 @@ type Props = Readonly<{
   scheduleServiceOrder: ScheduleServiceOrder
   listServiceOrdersByCustomer: ListServiceOrdersByCustomer
   establishment?: Establishment
+  // "Meus dados" (recovery e-mail), shown when given.
+  access?: Access
 }>
 
 const NAV: NavItem[] = [
@@ -75,6 +79,7 @@ export function CustomerDashboard({
   scheduleServiceOrder,
   listServiceOrdersByCustomer,
   establishment,
+  access,
 }: Props) {
   const navigate = useNavigate()
   const [session] = useState(() => loadCustomerSession())
@@ -216,14 +221,21 @@ export function CustomerDashboard({
   const readyOrders = serviceOrders.filter((order) => order.status === 'READY')
 
   const logoutAction = (
-    <button
-      type="button"
-      className="icon-btn"
-      aria-label="Sair"
-      onClick={handleLogout}
-    >
-      <UiIcon name="logout" size={22} />
-    </button>
+    <>
+      {access && (
+        <Link to="/cliente/dados" className="icon-btn" aria-label="Meus dados">
+          <UiIcon name="user" size={22} />
+        </Link>
+      )}
+      <button
+        type="button"
+        className="icon-btn"
+        aria-label="Sair"
+        onClick={handleLogout}
+      >
+        <UiIcon name="logout" size={22} />
+      </button>
+    </>
   )
 
   const tracking = (
@@ -351,6 +363,20 @@ export function CustomerDashboard({
             </ScreenLayout>
           }
         />
+        {access && (
+          <Route
+            path="dados"
+            element={
+              <ScreenLayout title="Meus dados" backTo="/cliente">
+                <AccountSection
+                  user={user}
+                  access={access}
+                  shopName={shopName}
+                />
+              </ScreenLayout>
+            }
+          />
+        )}
         <Route path="*" element={<Navigate to="/cliente" replace />} />
       </Routes>
     </div>

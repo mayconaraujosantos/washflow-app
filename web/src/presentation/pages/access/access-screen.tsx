@@ -12,6 +12,7 @@ import {
   saveEstablishmentChoice,
   type EstablishmentChoice,
 } from '@/main/session/establishment-choice'
+import { EmailPasswordReset } from '@/presentation/components/email-password-reset'
 import { UiIcon } from '@/presentation/components/ui-icon'
 import { BrandLogo } from '@/presentation/components/ui/app-chrome'
 import {
@@ -26,6 +27,8 @@ import { EstablishmentPicker } from './establishment-picker'
 import { GoogleButton, WhatsAppLogin } from './passwordless'
 
 type Mode = 'signup' | 'signin' | 'forgot' | 'whatsapp'
+
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 type Props = Readonly<{
   authenticateCustomer: AuthenticateCustomer
@@ -60,6 +63,7 @@ export function AccessScreen({
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [welcome, setWelcome] = useState(false)
@@ -138,12 +142,22 @@ export function AccessScreen({
     setLoading(true)
     try {
       if (mode === 'signup') {
+        const recoveryEmail = email.trim()
+        if (recoveryEmail && !EMAIL_SHAPE.test(recoveryEmail)) {
+          throw new Error('E-mail inválido')
+        }
         const session = await authenticateCustomer.auth({
           name: name.trim(),
           phone,
           password,
         })
         saveCustomerSession(session)
+        if (recoveryEmail && access) {
+          // The account already exists: a failure here is fixed in "Meus dados".
+          await access
+            .saveRecoveryEmail(session.user.id, recoveryEmail, session.token)
+            .catch(() => undefined)
+        }
         setWelcome(true)
       } else {
         saveCustomerSession(
@@ -219,7 +233,23 @@ export function AccessScreen({
           </p>
         )}
 
-        {mode === 'forgot' ? (
+        {mode === 'forgot' && access && options?.emailCode ? (
+          <EmailPasswordReset
+            access={access}
+            kind="customer"
+            initialAccount={phone}
+            onDone={async (resetPhone, newPassword) => {
+              saveCustomerSession(
+                await authenticateCustomer.auth({
+                  phone: resetPhone,
+                  password: newPassword,
+                }),
+              )
+              navigate('/cliente')
+            }}
+            onCancel={() => switchMode('signin')}
+          />
+        ) : mode === 'forgot' ? (
           <>
             <p className="subtitle">
               {whatsappEnabled
@@ -268,6 +298,17 @@ export function AccessScreen({
                 mode === 'signup' ? 'new-password' : 'current-password'
               }
             />
+            {mode === 'signup' && (
+              <TextField
+                label="E-mail (opcional, para recuperar a senha)"
+                value={email}
+                onChange={setEmail}
+                autoComplete="email"
+                inputMode="email"
+                maxLength={254}
+                required={false}
+              />
+            )}
             {mode === 'signup' && (
               <p className="auth-note">
                 Ao continuar, sua conta de cliente é criada com este telefone.
