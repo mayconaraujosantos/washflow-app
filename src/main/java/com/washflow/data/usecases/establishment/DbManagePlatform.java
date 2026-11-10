@@ -116,14 +116,27 @@ public class DbManagePlatform implements ManagePlatform {
         Normalizer.normalize(raw, Normalizer.Form.NFD)
             .replaceAll("\\p{M}", "")
             .toLowerCase(Locale.ROOT)
-            .replaceAll("[^a-z0-9]+", "-")
-            .replaceAll("(^-+|-+$)", "");
+            .replaceAll("[^a-z0-9]+", "-");
+    plain = trimDashes(plain);
     if (plain.length() > SLUG_MAX) {
-      plain = plain.substring(0, SLUG_MAX).replaceAll("-+$", "");
+      plain = trimDashes(plain.substring(0, SLUG_MAX));
     }
     if (plain.length() < 2) {
       throw new IllegalArgumentException("Endereço do lava-jato inválido");
     }
     return plain;
+  }
+
+  /** Strips leading and trailing '-' without a regex (no backtracking on long inputs). */
+  private static String trimDashes(String value) {
+    int start = 0;
+    int end = value.length();
+    while (start < end && value.charAt(start) == '-') {
+      start++;
+    }
+    while (end > start && value.charAt(end - 1) == '-') {
+      end--;
+    }
+    return value.substring(start, end);
   }
 }
