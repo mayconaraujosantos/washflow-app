@@ -13,10 +13,12 @@ import com.washflow.application.factories.controllers.GetWashingByWasherControll
 import com.washflow.application.factories.controllers.GetYardOverviewControllerFactory;
 import com.washflow.application.factories.controllers.ListAgendaControllerFactory;
 import com.washflow.application.factories.controllers.PauseServiceOrderControllerFactory;
+import com.washflow.application.factories.controllers.RefundServiceOrderControllerFactory;
 import com.washflow.application.factories.controllers.RegisterVehicleEntryControllerFactory;
 import com.washflow.application.factories.controllers.ResumeServiceOrderControllerFactory;
 import com.washflow.application.factories.controllers.SearchVehiclesControllerFactory;
 import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.ServiceOrderRefund;
 import com.washflow.domain.entities.VehicleLookup;
 import com.washflow.infra.db.jdbi.OperationsReport;
 import io.javalin.openapi.HttpMethod;
@@ -39,6 +41,7 @@ public final class OperationsRoutes {
     registerPause(jdbi);
     registerResume(jdbi);
     registerCancel(jdbi);
+    registerRefund(jdbi);
     registerQueue(jdbi);
     registerYard(jdbi);
     registerReport(jdbi);
@@ -152,6 +155,27 @@ public final class OperationsRoutes {
     patch(
         SERVICE_ORDER_BY_ID + "/cancel",
         JavalinRouteAdapter.adapt(CancelServiceOrderControllerFactory.make(jdbi)));
+  }
+
+  @OpenApi(
+      path = SERVICE_ORDER_BY_ID + "/refund",
+      methods = HttpMethod.PATCH,
+      summary =
+          "Manager refunds the full payment of a finalized order (FINALIZADO -> ESTORNADO), dated"
+              + " today; reverses the washer's commission only with reverseCommission",
+      tags = {"Operations"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            content = @OpenApiContent(from = ServiceOrderRefund.class)),
+        @OpenApiResponse(status = "400", description = "Invalid reason or refund method"),
+        @OpenApiResponse(status = "409", description = "Service order is not finalized")
+      })
+  private static void registerRefund(Jdbi jdbi) {
+    patch(
+        SERVICE_ORDER_BY_ID + "/refund",
+        JavalinRouteAdapter.adapt(RefundServiceOrderControllerFactory.make(jdbi)));
   }
 
   @OpenApi(

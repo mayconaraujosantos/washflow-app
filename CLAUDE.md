@@ -6,11 +6,12 @@ Este documento define as entidades de negócio, os estados do fluxo do veículo 
 
 ## 1. Máquina de Estados do Veículo (O Washflow)
 
-O ciclo de vida do atendimento é controlado pelo campo `status`; a lavagem pode ser pausada e retomada antes de seguir para `PRONTO`. Antes da lavagem (`AGENDADO` ou `AGUARDANDO_PATIO`) o gerente pode cancelar o atendimento (`CANCELADO`). A ordenação da fila do pátio é baseada estritamente no campo `atualizado_em` das tabelas de serviço.
+O ciclo de vida do atendimento é controlado pelo campo `status`; a lavagem pode ser pausada e retomada antes de seguir para `PRONTO`. Antes da lavagem (`AGENDADO` ou `AGUARDANDO_PATIO`) o gerente pode cancelar o atendimento (`CANCELADO`); depois de finalizado, pode estornar o pagamento (`ESTORNADO`). A ordenação da fila do pátio é baseada estritamente no campo `atualizado_em` das tabelas de serviço.
 
 [ AGENDADO ] ➔ [ AGUARDANDO_PATIO ] ➔ [ EM_LAVAGEM ] ⇄ [ PAUSADA ]
                                                    ➔ [ PRONTO ] ➔ [ FINALIZADO ]
 [ AGENDADO | AGUARDANDO_PATIO ] ➔ [ CANCELADO ]
+[ FINALIZADO ] ➔ [ ESTORNADO ]
 
 ---
 
@@ -89,6 +90,16 @@ Registra a comissão creditada ao lavador ao finalizar o atendimento.
 * `valor`: DECIMAL(10,2)
 * `criado_em`: TIMESTAMP
 
+### 2.6.1 Tabela: `estornos_atendimento`
+Estorno total de um atendimento finalizado (V6). Somente inserção (trigger recusa `UPDATE`/`DELETE`); o pagamento e a comissão originais nunca são alterados.
+* `id`: UUID (Chave Primária); `estabelecimento_id`
+* `atendimento_id`: UUID (Chave Estrangeira única -> `atendimentos.id`): um estorno por atendimento
+* `valor`: DECIMAL(10,2) (o valor do pagamento registrado; não aceito do cliente)
+* `forma_devolucao`: `CASH`, `PIX`, `DEBIT_CARD` ou `CREDIT_CARD` (padrão: a forma do pagamento)
+* `motivo`: `CUSTOMER_COMPLAINT`, `WRONG_CHARGE`, `SERVICE_NOT_DONE` ou `OTHER`; `descricao` VARCHAR(200) obrigatória para `OTHER`
+* `comissao_estornada`: DECIMAL(10,2) (zero quando o lavador mantém a comissão)
+* `criado_por` (-> `usuarios.id`), `criado_em`: TIMESTAMP (data do estorno, usada no relatório)
+
 ### 2.7 Tabela: `pausas_atendimento`
 Mantém o histórico das pausas feitas pelo lavador durante uma lavagem.
 * `id`: UUID (Chave Primária)
@@ -131,7 +142,7 @@ O login exige telefone e senha (mínimo de 8 caracteres); o nome só é exigido 
 |---|---|
 | `CLIENTE` | Cadastrar/listar seus veículos, agendar e consultar seus próprios atendimentos |
 | `LAVADOR` | Consultar fila, iniciar e concluir lavagens atribuídas a si |
-| `GERENTE` | Consultar o pátio e a agenda, registrar entradas pela placa, receber veículos, cancelar atendimentos antes da lavagem, registrar pagamento e finalizar atendimentos, cadastrar lavadores, alterar perfis e ativar/desativar contas |
+| `GERENTE` | Consultar o pátio e a agenda, registrar entradas pela placa, receber veículos, cancelar atendimentos antes da lavagem, registrar pagamento, estornar atendimentos finalizados e finalizar atendimentos, cadastrar lavadores, alterar perfis e ativar/desativar contas |
 
 O painel do gerente lista contas e permite cadastrar lavadores com senha inicial (mínimo de 8 caracteres). A senha é persistida somente como hash BCrypt e deve ser entregue diretamente ao colaborador. Um gerente pode alterar contas entre `CLIENTE`, `LAVADOR` e `GERENTE`, inclusive o próprio perfil; ao alterar o próprio perfil, precisa autenticar novamente pela tela do novo perfil. Contas podem ser desativadas sem exclusão dos dados históricos. A desativação é aplicada no login e em cada request autenticada; lavadores com atendimentos `EM_LAVAGEM` ou `PAUSADA` não podem ser desativados nem mudar de perfil até que esses atendimentos sejam resolvidos.
 
@@ -151,8 +162,9 @@ Endpoints operacionais:
 * `PATCH /api/service-orders/{id}/pause`: pausa uma lavagem atribuída ao lavador; exige motivo (`LUNCH`, `RESTROOM`, `OTHER`) e descrição para `OTHER`.
 * `PATCH /api/service-orders/{id}/resume`: retoma a lavagem pausada pelo próprio lavador.
 * `PATCH /api/service-orders/{id}/cancel` (gerente): cancela atendimento `AGENDADO` ou `AGUARDANDO_PATIO` com `reason` (`CUSTOMER_GAVE_UP`, `NO_SHOW`, `REGISTERED_BY_MISTAKE`, `OTHER`) e `description` (obrigatória para `OTHER`); depois disso, 409. O atendimento não é apagado: sai do pátio, libera a vaga da hora e a placa pode entrar de novo; continua na agenda e no ticket como cancelado.
+* `PATCH /api/service-orders/{id}/refund` (gerente): estorna o pagamento total de um atendimento `FINALIZADO` (vira `ESTORNADO`; segundo estorno → 409). Recebe `reason` (`CUSTOMER_COMPLAINT`, `WRONG_CHARGE`, `SERVICE_NOT_DONE`, `OTHER`), `description` (obrigatória para `OTHER`), `refundMethod` (opcional; padrão a forma do pagamento) e `reverseCommission` (padrão `false`: o lavador mantém a comissão). Na tela, o botão "Estornar" fica nos atendimentos finalizados da agenda.
 * `PATCH /api/service-orders/{id}/finalize`: recebe `paymentMethod`; em uma transação, muda o status para `FINALIZADO`, registra o pagamento pelo preço do catálogo e credita a comissão.
-* `GET /api/operations/report?from=YYYY-MM-DD&to=YYYY-MM-DD`: relatório do gerente por data Manaus, com faturamento, comissões, serviços, pagamentos, pausas e tempo médio de lavagem (descontadas as pausas); intervalo máximo de 366 dias.
+* `GET /api/operations/report?from=YYYY-MM-DD&to=YYYY-MM-DD`: relatório do gerente por data Manaus, com faturamento, comissões, serviços, pagamentos, pausas e tempo médio de lavagem (descontadas as pausas). Estornos entram na data do estorno (`refundedOrders`, `refunds`, `reversedCommissions`, `refundReasons`), com `netRevenue` e `netCommissions` líquidos; os dias anteriores não mudam; intervalo máximo de 366 dias.
 * `GET /api/users`: lista as contas para o gerente.
 * `POST /api/users`: cria uma conta `LAVADOR` com `name`, `phone` e `password`.
 * `PATCH /api/users/{id}/profile`: altera o perfil para `CUSTOMER`, `WASHER` ou `MANAGER`.

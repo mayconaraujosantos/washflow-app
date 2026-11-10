@@ -2,10 +2,11 @@ package com.washflow.domain.entities;
 
 /**
  * The vehicle status flow from CLAUDE.md, including the reversible washing pause and the
- * cancellation of an order that never reached washing. {@link #dbValue()} is the exact Portuguese
- * literal CLAUDE.md's schema/queries use ({@code AGENDADO}, {@code AGUARDANDO_PATIO}...) - that's
- * the business's domain language and the actual stored/queried value, kept as-is even though the
- * Java-side constant names follow the English code convention.
+ * cancellation of an order that never reached washing, and the refund of a finalized one. {@link
+ * #dbValue()} is the exact Portuguese literal CLAUDE.md's schema/queries use ({@code AGENDADO},
+ * {@code AGUARDANDO_PATIO}...) - that's the business's domain language and the actual
+ * stored/queried value, kept as-is even though the Java-side constant names follow the English code
+ * convention.
  */
 public enum ServiceOrderStatus {
   SCHEDULED("AGENDADO"),
@@ -14,7 +15,8 @@ public enum ServiceOrderStatus {
   PAUSED("PAUSADA"),
   READY("PRONTO"),
   DONE("FINALIZADO"),
-  CANCELLED("CANCELADO");
+  CANCELLED("CANCELADO"),
+  REFUNDED("ESTORNADO");
 
   private final String dbValue;
 

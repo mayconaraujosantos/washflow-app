@@ -23,6 +23,13 @@ class RoutePermissionMatcherTest {
   }
 
   @Test
+  void onlyManagersRefundServiceOrders() {
+    assertEquals(
+        UserProfile.MANAGER,
+        RoutePermissionMatcher.requiredProfile("PATCH", "/api/service-orders/abc-123/refund"));
+  }
+
+  @Test
   void returnsCustomerForCreateVehicle() {
     assertEquals(
         UserProfile.CUSTOMER, RoutePermissionMatcher.requiredProfile("POST", "/api/vehicles"));
