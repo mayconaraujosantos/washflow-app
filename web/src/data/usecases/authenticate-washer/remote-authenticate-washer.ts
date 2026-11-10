@@ -41,6 +41,11 @@ export class RemoteAuthenticateWasher implements AuthenticateWasher {
           (httpResponse.body as ErrorBody)?.error ??
             'Telefone ou senha inválidos',
         )
+      case HttpStatusCode.tooManyRequests:
+        throw new Error(
+          (httpResponse.body as ErrorBody)?.error ??
+            'Muitas tentativas de acesso. Aguarde alguns minutos.',
+        )
       default:
         throw new Error('Erro inesperado ao entrar')
     }

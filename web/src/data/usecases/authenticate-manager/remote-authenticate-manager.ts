@@ -43,6 +43,11 @@ export class RemoteAuthenticateManager implements AuthenticateManager {
           (httpResponse.body as ErrorBody)?.error ??
             'E-mail/telefone ou senha inválidos',
         )
+      case HttpStatusCode.tooManyRequests:
+        throw new Error(
+          (httpResponse.body as ErrorBody)?.error ??
+            'Muitas tentativas de acesso. Aguarde alguns minutos.',
+        )
       default:
         throw new Error('Erro inesperado ao entrar')
     }
