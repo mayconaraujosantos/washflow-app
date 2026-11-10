@@ -3,6 +3,7 @@ package com.washflow.presentation.controllers.finance;
 import com.washflow.domain.entities.finance.CashTransaction;
 import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
 import com.washflow.domain.usecases.finance.UpdateCashTransaction;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -44,7 +45,7 @@ public class UpdateCashTransactionController implements Controller {
         categoryId = UUID.fromString((String) catIdObj);
       }
 
-      String description = (String) body.get("description");
+      String description = BodyValues.text(body, "description");
 
       LocalDate referenceDate = null;
       Object dateObj = body.get("referenceDate");

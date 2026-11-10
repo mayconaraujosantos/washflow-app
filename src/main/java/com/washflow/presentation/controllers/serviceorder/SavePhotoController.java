@@ -3,6 +3,7 @@ package com.washflow.presentation.controllers.serviceorder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto.PhotoType;
 import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderPhoto;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -25,19 +26,19 @@ public class SavePhotoController implements Controller {
 
       Map<String, Object> body = request.body();
 
-      String typeStr = (String) body.get("type");
+      String typeStr = BodyValues.text(body, "type");
       if (typeStr == null || typeStr.isBlank()) {
         return HttpHelper.badRequest(new IllegalArgumentException("type is required"));
       }
       PhotoType type = PhotoType.valueOf(typeStr);
 
-      String imageData = (String) body.get("imageData");
+      String imageData = BodyValues.text(body, "imageData");
       if (imageData == null || imageData.isBlank()) {
         return HttpHelper.badRequest(new IllegalArgumentException("imageData is required"));
       }
 
-      String description = (String) body.get("description");
-      UUID createdBy = (UUID) body.get("createdBy");
+      String description = BodyValues.text(body, "description");
+      UUID createdBy = BodyValues.createdBy(body);
       if (createdBy == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("createdBy is required"));
       }

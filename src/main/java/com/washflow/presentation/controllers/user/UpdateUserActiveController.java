@@ -4,6 +4,7 @@ import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.user.UpdateUserActive;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -28,10 +29,8 @@ public class UpdateUserActiveController implements Controller {
   public HttpResponse handle(HttpRequest request) {
     try {
       UUID userId = UUID.fromString(request.pathParams().get("id"));
-
-      @SuppressWarnings("unchecked")
       Map<String, Object> body = request.body();
-      Boolean active = (Boolean) body.get("active");
+      Boolean active = BodyValues.bool(body, "active");
       if (active == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("Provide the active field"));
       }

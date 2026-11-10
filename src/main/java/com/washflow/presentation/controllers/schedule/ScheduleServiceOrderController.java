@@ -6,6 +6,7 @@ import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -34,9 +35,9 @@ public class ScheduleServiceOrderController implements Controller {
         return HttpHelper.badRequest(validationError);
       }
 
-      UUID vehicleId = UUID.fromString((String) request.body().get("vehicleId"));
-      int servicePriceId = ((Number) request.body().get("servicePriceId")).intValue();
-      Instant scheduledAt = Instant.parse((String) request.body().get("scheduledAt"));
+      UUID vehicleId = UUID.fromString(BodyValues.text(request.body(), "vehicleId"));
+      int servicePriceId = BodyValues.integer(request.body(), "servicePriceId");
+      Instant scheduledAt = Instant.parse(BodyValues.text(request.body(), "scheduledAt"));
 
       var serviceOrder =
           scheduleServiceOrder.schedule(

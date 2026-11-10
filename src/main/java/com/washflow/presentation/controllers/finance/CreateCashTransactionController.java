@@ -3,6 +3,7 @@ package com.washflow.presentation.controllers.finance;
 import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
 import com.washflow.domain.errors.finance.InvalidTransactionTypeError;
 import com.washflow.domain.usecases.finance.CreateCashTransaction;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -25,7 +26,7 @@ public class CreateCashTransactionController implements Controller {
     try {
       Map<String, Object> body = request.body();
 
-      String typeStr = (String) body.get("type");
+      String typeStr = BodyValues.text(body, "type");
       if (typeStr == null || typeStr.isBlank()) {
         return HttpHelper.badRequest(new IllegalArgumentException("type is required"));
       }
@@ -38,7 +39,7 @@ public class CreateCashTransactionController implements Controller {
       }
       BigDecimal amount = new BigDecimal(amountStr);
 
-      String dateStr = (String) body.get("referenceDate");
+      String dateStr = BodyValues.text(body, "referenceDate");
       if (dateStr == null || dateStr.isBlank()) {
         return HttpHelper.badRequest(new IllegalArgumentException("referenceDate is required"));
       }
@@ -50,7 +51,7 @@ public class CreateCashTransactionController implements Controller {
         categoryId = UUID.fromString((String) catId);
       }
 
-      String description = (String) body.get("description");
+      String description = BodyValues.text(body, "description");
 
       UUID serviceOrderId = null;
       Object soId = body.get("serviceOrderId");
@@ -58,7 +59,7 @@ public class CreateCashTransactionController implements Controller {
         serviceOrderId = UUID.fromString((String) soId);
       }
 
-      UUID createdBy = (UUID) body.get("createdBy");
+      UUID createdBy = BodyValues.createdBy(body);
       if (createdBy == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("createdBy is required"));
       }

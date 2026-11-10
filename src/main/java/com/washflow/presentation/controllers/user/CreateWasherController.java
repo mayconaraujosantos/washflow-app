@@ -3,6 +3,7 @@ package com.washflow.presentation.controllers.user;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.user.PhoneAlreadyRegisteredError;
 import com.washflow.domain.usecases.user.CreateWasher;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -24,11 +25,10 @@ public class CreateWasherController implements Controller {
   @Override
   public HttpResponse handle(HttpRequest request) {
     try {
-      @SuppressWarnings("unchecked")
       Map<String, Object> body = request.body();
-      String name = (String) body.get("name");
-      String phone = (String) body.get("phone");
-      String password = (String) body.get("password");
+      String name = BodyValues.text(body, "name");
+      String phone = BodyValues.text(body, "phone");
+      String password = BodyValues.text(body, "password");
 
       CreateWasher.Params params = new CreateWasher.Params(name, phone, password);
 

@@ -2,6 +2,7 @@ package com.washflow.presentation.controllers.serviceorder;
 
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotPausedError;
 import com.washflow.domain.usecases.serviceorder.PauseServiceOrder;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -25,13 +26,11 @@ public class PauseServiceOrderController implements Controller {
   public HttpResponse handle(HttpRequest request) {
     try {
       UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
-
-      @SuppressWarnings("unchecked")
       Map<String, Object> body = request.body();
-      String reason = (String) body.get("reason");
-      String description = (String) body.get("description");
+      String reason = BodyValues.text(body, "reason");
+      String description = BodyValues.text(body, "description");
 
-      UUID washerId = (UUID) body.get("createdBy");
+      UUID washerId = BodyValues.createdBy(body);
       if (washerId == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("washerId is required"));
       }

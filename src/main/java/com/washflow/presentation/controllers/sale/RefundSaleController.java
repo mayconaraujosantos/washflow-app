@@ -4,6 +4,7 @@ import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.sale.SaleNotFoundError;
 import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import com.washflow.domain.usecases.sale.RefundSale;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -27,7 +28,7 @@ public class RefundSaleController implements Controller {
     try {
       UUID saleId = UUID.fromString(request.pathParams().get("id"));
       Map<String, Object> body = request.body();
-      UUID managerId = (UUID) body.get("createdBy");
+      UUID managerId = BodyValues.createdBy(body);
       if (managerId == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("managerId is required"));
       }
@@ -42,8 +43,8 @@ public class RefundSaleController implements Controller {
                       ? null
                       : PaymentMethod.valueOf(method.toString().trim().toUpperCase(Locale.ROOT)),
                   amount == null ? null : new BigDecimal(amount.toString()),
-                  (String) body.get("reason"),
-                  (String) body.get("description"))));
+                  BodyValues.text(body, "reason"),
+                  BodyValues.text(body, "description"))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
     } catch (SaleNotFoundError e) {

@@ -2,6 +2,7 @@ package com.washflow.presentation.controllers.serviceorder;
 
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
 import com.washflow.domain.usecases.serviceorder.CancelServiceOrder;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -23,7 +24,7 @@ public class CancelServiceOrderController implements Controller {
     try {
       UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
       Map<String, Object> body = request.body();
-      UUID managerId = (UUID) body.get("createdBy");
+      UUID managerId = BodyValues.createdBy(body);
       if (managerId == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("managerId is required"));
       }
@@ -31,8 +32,8 @@ public class CancelServiceOrderController implements Controller {
           new CancelServiceOrder.Params(
               serviceOrderId,
               managerId,
-              (String) body.get("reason"),
-              (String) body.get("description")));
+              BodyValues.text(body, "reason"),
+              BodyValues.text(body, "description")));
       return new HttpResponse(200, Map.of("status", "CANCELLED"));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);

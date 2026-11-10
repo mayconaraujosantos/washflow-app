@@ -6,6 +6,7 @@ import com.washflow.domain.errors.user.ManagerSelfRegistrationNotAllowedError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.errors.user.WasherSelfRegistrationNotAllowedError;
 import com.washflow.domain.usecases.user.AuthenticateUser;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -41,12 +42,13 @@ public class AuthenticateUserController implements Controller {
         return HttpHelper.badRequest(validationError);
       }
 
-      String phone = (String) request.body().get("phone");
-      String name = (String) request.body().get("name");
-      String password = (String) request.body().get("password");
+      String phone = BodyValues.text(request.body(), "phone");
+      String name = BodyValues.text(request.body(), "name");
+      String password = BodyValues.text(request.body(), "password");
       // Managers may log in with e-mail instead of phone (see
       // AuthenticateManagerControllerFactory).
-      String email = profile == UserProfile.MANAGER ? (String) request.body().get("email") : null;
+      String email =
+          profile == UserProfile.MANAGER ? BodyValues.text(request.body(), "email") : null;
 
       if (password.length() < 8) {
         return HttpHelper.badRequest(

@@ -2,6 +2,7 @@ package com.washflow.presentation.controllers.serviceorder;
 
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotWashingError;
 import com.washflow.domain.usecases.serviceorder.ResumeServiceOrder;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -26,7 +27,7 @@ public class ResumeServiceOrderController implements Controller {
     try {
       UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
 
-      UUID washerId = (UUID) request.body().get("createdBy");
+      UUID washerId = BodyValues.createdBy(request.body());
       if (washerId == null) {
         return HttpHelper.badRequest(new IllegalArgumentException("washerId is required"));
       }

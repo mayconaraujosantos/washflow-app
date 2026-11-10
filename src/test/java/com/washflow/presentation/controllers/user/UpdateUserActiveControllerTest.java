@@ -89,4 +89,19 @@ class UpdateUserActiveControllerTest {
 
     assertEquals(409, response.statusCode());
   }
+
+  @Test
+  void anActiveFlagThatIsNotBooleanIsABadRequest() {
+    java.util.Map<String, Object> body = new java.util.HashMap<>();
+    body.put("active", "sim");
+
+    assertEquals(
+        400,
+        sut.handle(
+                new com.washflow.presentation.protocols.HttpRequest(
+                    body,
+                    java.util.Map.of("id", java.util.UUID.randomUUID().toString()),
+                    java.util.Map.of()))
+            .statusCode());
+  }
 }

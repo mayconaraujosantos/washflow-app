@@ -1,6 +1,7 @@
 package com.washflow.presentation.controllers.finance;
 
 import com.washflow.domain.usecases.finance.CreateExpenseCategory;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -19,11 +20,11 @@ public class CreateExpenseCategoryController implements Controller {
   public HttpResponse handle(HttpRequest request) {
     try {
       Map<String, Object> body = request.body();
-      String name = (String) body.get("name");
+      String name = BodyValues.text(body, "name");
       if (name == null || name.isBlank()) {
         return HttpHelper.badRequest(new IllegalArgumentException("name is required"));
       }
-      String color = (String) body.get("color");
+      String color = BodyValues.text(body, "color");
       if (color == null || color.isBlank()) {
         color = "#6B7280";
       }

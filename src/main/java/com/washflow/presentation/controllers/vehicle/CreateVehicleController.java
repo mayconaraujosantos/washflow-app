@@ -3,6 +3,7 @@ package com.washflow.presentation.controllers.vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
 import com.washflow.domain.usecases.vehicle.CreateVehicle;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -28,10 +29,10 @@ public class CreateVehicleController implements Controller {
         return HttpHelper.badRequest(validationError);
       }
 
-      UUID customerId = UUID.fromString((String) request.body().get("customerId"));
-      String plate = (String) request.body().get("plate");
-      String model = (String) request.body().get("model");
-      String color = (String) request.body().get("color");
+      UUID customerId = UUID.fromString(BodyValues.text(request.body(), "customerId"));
+      String plate = BodyValues.text(request.body(), "plate");
+      String model = BodyValues.text(request.body(), "model");
+      String color = BodyValues.text(request.body(), "color");
 
       var vehicle = createVehicle.create(new CreateVehicle.Params(customerId, plate, model, color));
 

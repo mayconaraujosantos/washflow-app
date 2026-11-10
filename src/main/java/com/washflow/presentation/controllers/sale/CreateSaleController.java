@@ -5,6 +5,7 @@ import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import com.washflow.domain.usecases.sale.CreateSale;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -56,7 +57,7 @@ public class CreateSaleController implements Controller {
                                   decimal(payment.get("amount"))))
                       .toList(),
                   text(body.get("notes")),
-                  (UUID) body.get("createdBy")));
+                  BodyValues.createdBy(body)));
       return HttpHelper.ok(sale);
     } catch (IllegalArgumentException | NullPointerException | ClassCastException e) {
       return HttpHelper.badRequest(
