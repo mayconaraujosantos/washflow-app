@@ -129,6 +129,37 @@ Other access settings:
 | `GOOGLE_CLIENT_ID` | empty | Google Identity Services client ID; empty hides "Entrar com Google". |
 | `APP_PUBLIC_URL` | empty | Public origin used in WhatsApp magic links (e.g. `https://app.lavajato.com`). |
 
+## Backup
+
+The `washflow-db-backup` CronJob (`apps/washflow/backup.yaml`) runs
+`pg_dump` every night at 03:00 Manaus time into the `washflow-db-backups`
+volume and keeps 14 days. That volume sits on the same node as the database:
+it covers a bad migration or a deleted table, not a lost disk. For an off-site
+copy add `BACKUP_S3_URI` (plus `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and,
+for R2/MinIO, `AWS_ENDPOINT_URL`) to the `washflow` secret and use an image with
+the aws CLI.
+
+`make test-backup` proves the scripts work: it backs up a throwaway Postgres,
+drops a table and restores it.
+
+```sh
+ns=washflow-dev
+# run a backup now
+kubectl -n $ns create job --from=cronjob/washflow-db-backup backup-now
+# run another command in the backup pod (same volumes and credentials)
+backup_job() {
+  kubectl -n $ns create job --from=cronjob/washflow-db-backup "$1" --dry-run=client -o json \
+    | jq '.spec.template.spec.containers[0].command = $ARGS.positional' --args -- "${@:2}" \
+    | kubectl apply -f -
+}
+backup_job list-backups ls -lh /backups && kubectl -n $ns logs -f job/list-backups
+# restore: stop the API, restore, start it again
+kubectl -n $ns scale deploy/washflow-api --replicas=0
+backup_job restore-now sh /scripts/db-restore.sh --yes /backups/washflow-<stamp>.dump
+kubectl -n $ns wait --for=condition=complete job/restore-now --timeout=10m
+kubectl -n $ns scale deploy/washflow-api --replicas=1
+```
+
 ## Logs, tracing and metrics
 
 | Variable | Default | Purpose |
