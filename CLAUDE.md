@@ -237,6 +237,6 @@ As camadas da Clean Architecture (`domain`, `data`, `application`, `infra`, `pre
 | `establishment` | lava-jato (tenant), configuração inicial e plataforma |
 | `customer` | visão do cliente: login sem senha (código e Google), seus atendimentos e ticket |
 | `pricing` | catálogo de serviços e preços |
-| `shared` | o que mais de um agregado usa (`ContactRules`, `SchedulingRules`, `Secrets`, saúde do banco, catálogo nas portas de persistência) |
+| `shared` | o que mais de um agregado usa (`SchedulingRules`, `Secrets`, `PaymentMethod` e `ContactRules` no domínio, saúde do banco, catálogo nas portas de persistência) |
 
-Evite agregado com uma classe só: junte ao agregado mais próximo. Pacotes: `domain/usecases/<agregado>`, `domain/errors/<agregado>` (mais `auth` e `common`), `data/usecases/<agregado>`, `data/protocols/db/<agregado>`, `application/factories/{controllers,usecases}/<agregado>` e `presentation/controllers/<agregado>` (mais `system` para health/hello). Os testes espelham o pacote da classe testada. O plano completo está em `docs/refactor-by-aggregate.md`.
+Evite agregado com uma classe só: junte ao agregado mais próximo. Pacotes: `domain/entities/<agregado>`, `domain/usecases/<agregado>`, `domain/errors/<agregado>` (mais `auth` e `common`), `data/usecases/<agregado>`, `data/protocols/db/<agregado>`, `application/factories/{controllers,usecases}/<agregado>` e `presentation/controllers/<agregado>` (mais `system` para health/hello) e `infra/db/jdbi/<agregado>` (com `JdbiFactory`, `UniqueViolations`, saúde do banco, idempotência e auditoria na raiz). Os testes espelham o pacote da classe testada. O plano completo está em `docs/refactor-by-aggregate.md`.

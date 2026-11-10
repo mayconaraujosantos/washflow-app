@@ -2,7 +2,7 @@ package com.washflow.data.usecases.establishment;
 
 import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.protocols.db.establishment.PlatformRepository;
-import com.washflow.data.usecases.shared.ContactRules;
+import com.washflow.domain.entities.shared.ContactRules;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;

@@ -1,8 +1,8 @@
 package com.washflow.data.usecases.pricing;
 
 import com.washflow.data.protocols.db.shared.CreateServicePriceRepository;
-import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.domain.entities.pricing.ServicePrice;
+import com.washflow.domain.entities.shared.ContactRules;
 import com.washflow.domain.usecases.pricing.CreateServicePrice;
 import java.math.BigDecimal;
 

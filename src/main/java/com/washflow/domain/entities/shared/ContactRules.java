@@ -1,4 +1,4 @@
-package com.washflow.data.usecases.shared;
+package com.washflow.domain.entities.shared;
 
 import java.util.regex.Pattern;
 

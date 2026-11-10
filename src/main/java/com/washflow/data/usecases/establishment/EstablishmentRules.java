@@ -1,6 +1,6 @@
 package com.washflow.data.usecases.establishment;
 
-import com.washflow.data.usecases.shared.ContactRules;
+import com.washflow.domain.entities.shared.ContactRules;
 
 /** Validation shared by the setup wizard and the settings screen. */
 public final class EstablishmentRules {
