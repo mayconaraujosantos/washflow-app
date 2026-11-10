@@ -23,6 +23,7 @@ import com.washflow.domain.entities.ServicePayment;
 import com.washflow.domain.entities.WasherCommission;
 import com.washflow.infra.db.jdbi.OperationsReport.PauseBreakdown;
 import com.washflow.infra.db.jdbi.OperationsReport.PaymentBreakdown;
+import com.washflow.infra.db.jdbi.OperationsReport.ReasonCount;
 import com.washflow.infra.db.jdbi.OperationsReport.RefundBreakdown;
 import com.washflow.infra.db.jdbi.OperationsReport.ServiceBreakdown;
 import java.math.BigDecimal;
@@ -604,25 +605,42 @@ public class ServiceOrderJdbiRepository
           pauseCounts.forEach(
               (reason, count) -> pauseBreakdowns.add(new PauseBreakdown(reason, count)));
           List<RefundBreakdown> refundReasons =
+              refundReasons(handle, "estornos_atendimento", start, end);
+          List<RefundBreakdown> saleRefundReasons =
+              refundReasons(handle, "venda_estornos", start, end);
+          List<ReasonCount> cancellationReasons =
               handle
                   .createQuery(
                       """
-                      SELECT motivo, COUNT(*) AS refunds, SUM(valor) AS amount,
-                             SUM(comissao_estornada) AS commission
-                      FROM estornos_atendimento
-                      WHERE criado_em >= :start AND criado_em < :end
+                      SELECT motivo_cancelamento, COUNT(*) AS cancelled
+                      FROM atendimentos
+                      WHERE status = 'CANCELADO'
+                        AND cancelado_em >= :start AND cancelado_em < :end
                         AND estabelecimento_id = :tenant
-                      GROUP BY motivo ORDER BY COUNT(*) DESC, motivo
+                      GROUP BY motivo_cancelamento
+                      ORDER BY COUNT(*) DESC, motivo_cancelamento
                       """)
                   .bind("start", start)
                   .bind("end", end)
                   .map(
                       (rs, ctx) ->
-                          new RefundBreakdown(
-                              rs.getString("motivo"),
-                              rs.getInt("refunds"),
-                              rs.getBigDecimal("amount")))
+                          new ReasonCount(
+                              rs.getString("motivo_cancelamento"), rs.getInt("cancelled")))
                   .list();
+          BigDecimal salesReceived =
+              handle
+                  .createQuery(
+                      """
+                      SELECT COALESCE(SUM(p.valor), 0)
+                      FROM venda_pagamentos p
+                      JOIN vendas v ON v.id = p.venda_id
+                      WHERE p.recebido_em >= :start AND p.recebido_em < :end
+                        AND v.estabelecimento_id = :tenant
+                      """)
+                  .bind("start", start)
+                  .bind("end", end)
+                  .mapTo(BigDecimal.class)
+                  .one();
           BigDecimal reversedCommissions =
               handle
                   .createQuery(
@@ -635,6 +653,8 @@ public class ServiceOrderJdbiRepository
                   .bind("end", end)
                   .mapTo(BigDecimal.class)
                   .one();
+          BigDecimal refunds = sum(refundReasons);
+          BigDecimal saleRefunds = sum(saleRefundReasons);
           return new OperationsReport(
               from,
               to,
@@ -646,12 +666,41 @@ public class ServiceOrderJdbiRepository
               paymentBreakdowns,
               pauseBreakdowns,
               refundReasons.stream().mapToInt(RefundBreakdown::count).sum(),
-              refundReasons.stream()
-                  .map(RefundBreakdown::amount)
-                  .reduce(BigDecimal.ZERO, BigDecimal::add),
+              refunds,
               reversedCommissions,
-              refundReasons);
+              revenue.subtract(refunds),
+              commissions.subtract(reversedCommissions),
+              refundReasons,
+              cancellationReasons.stream().mapToInt(ReasonCount::count).sum(),
+              cancellationReasons,
+              salesReceived,
+              saleRefunds,
+              salesReceived.subtract(saleRefunds),
+              saleRefundReasons);
         });
+  }
+
+  // Refunds by reason in the period (refund date): orders' or quick sales' refund table.
+  private static List<RefundBreakdown> refundReasons(
+      Handle handle, String table, Instant start, Instant end) {
+    return handle
+        .createQuery(
+            "SELECT motivo, COUNT(*) AS refunds, SUM(valor) AS amount FROM "
+                + table
+                + " WHERE criado_em >= :start AND criado_em < :end"
+                + " AND estabelecimento_id = :tenant"
+                + " GROUP BY motivo ORDER BY COUNT(*) DESC, motivo")
+        .bind("start", start)
+        .bind("end", end)
+        .map(
+            (rs, ctx) ->
+                new RefundBreakdown(
+                    rs.getString("motivo"), rs.getInt("refunds"), rs.getBigDecimal("amount")))
+        .list();
+  }
+
+  private static BigDecimal sum(List<RefundBreakdown> reasons) {
+    return reasons.stream().map(RefundBreakdown::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   private static Instant timestamp(ResultSet rs, String column) throws SQLException {
