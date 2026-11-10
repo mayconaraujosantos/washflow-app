@@ -51,7 +51,7 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help install dev dev-backend dev-frontend build run start test test-backup lint format generate-auth-secret seed-test-users load-seed load-test \
-	coverage sonar stop ip clean db-up db-down db-logs \
+	coverage sonar stop ip clean db-up db-down db-logs e2e e2e-ci \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
 	argocd-port-forward argo-install argo-port-forward argo-ui-service ci deploy-dev deploy-prod
@@ -209,6 +209,18 @@ db-down:
 
 db-logs:
 	docker-compose logs -f postgres
+
+## End-to-end journey (web/e2e, Playwright): two lava-jatos set up from
+## scratch, managers, washers (PIN and badge QR) and customers (app and
+## ticket), each on its own phone. Runs against a throwaway pod on :7100
+## (scripts/e2e-env.sh) - never the dev app on :7000 or its database.
+## `make e2e` shows the browser, slowed down; videos per person end up in
+## web/test-results/people and the report opens with `cd web && bun run e2e:report`.
+e2e:
+	cd web && bun run e2e
+
+e2e-ci:
+	cd web && bun run e2e:ci
 
 ## Local CI/CD: kind (via Podman) + Argo CD (GitOps) + Argo Workflows (pipelines).
 ## Production deploys to Render through Argo Workflows (`make deploy-prod`); Argo
