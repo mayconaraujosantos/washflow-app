@@ -1,11 +1,13 @@
 package com.washflow.infra.db.jdbi.establishment;
 
 import com.washflow.data.protocols.db.establishment.PlatformRepository;
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
 import com.washflow.domain.entities.establishment.Establishment;
 import com.washflow.domain.entities.establishment.EstablishmentListing;
 import com.washflow.domain.entities.establishment.EstablishmentSummary;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
+import com.washflow.infra.db.jdbi.UniqueViolations;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -108,23 +110,36 @@ public class PlatformJdbiRepository implements PlatformRepository {
 
   @Override
   public boolean createFirstAdmin(User admin, String passwordHash) {
-    return jdbi.inTransaction(
-        handle -> {
-          int existing =
-              handle.createQuery("SELECT COUNT(*) FROM administradores").mapTo(Integer.class).one();
-          if (existing > 0) {
-            return false;
-          }
-          handle
-              .createUpdate(CREATE_FIRST_ADMIN_INSERT_SQL)
-              .bind("id", admin.id())
-              .bind("name", admin.name())
-              .bind(EMAIL, admin.email())
-              .bind("hash", passwordHash)
-              .bind("createdAt", admin.createdAt())
-              .execute();
-          return true;
-        });
+    try {
+      return UniqueViolations.translate(
+          () ->
+              jdbi.inTransaction(
+                  handle -> {
+                    int existing =
+                        handle
+                            .createQuery("SELECT COUNT(*) FROM administradores")
+                            .mapTo(Integer.class)
+                            .one();
+                    if (existing > 0) {
+                      return false;
+                    }
+                    handle
+                        .createUpdate(CREATE_FIRST_ADMIN_INSERT_SQL)
+                        .bind("id", admin.id())
+                        .bind("name", admin.name())
+                        .bind(EMAIL, admin.email())
+                        .bind("hash", passwordHash)
+                        .bind("createdAt", admin.createdAt())
+                        .execute();
+                    return true;
+                  }));
+    } catch (DuplicateKeyError error) {
+      if (error.is("uq_administradores_singleton")
+          || error.is("uq_administradores_email")) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   @Override
