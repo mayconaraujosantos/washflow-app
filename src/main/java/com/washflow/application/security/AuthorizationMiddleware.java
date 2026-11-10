@@ -16,7 +16,6 @@ public final class AuthorizationMiddleware {
   private static final Set<String> PUBLIC_API_PATHS =
       Set.of(
           "/api/health",
-          "/api/hello",
           "/api/services",
           "/api/setup",
           "/api/establishment",

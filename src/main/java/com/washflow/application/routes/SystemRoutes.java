@@ -16,7 +16,6 @@ public final class SystemRoutes {
   /** Called from inside {@code config.routes.apiBuilder(...)} in Application. */
   public static void register(Jdbi jdbi) {
     registerHealth(jdbi);
-    registerHello();
   }
 
   @OpenApi(
@@ -26,14 +25,5 @@ public final class SystemRoutes {
       responses = @OpenApiResponse(status = "200"))
   private static void registerHealth(Jdbi jdbi) {
     get("/api/health", JavalinRouteAdapter.adapt(SystemModule.healthController(jdbi)));
-  }
-
-  @OpenApi(
-      path = "/api/hello",
-      methods = HttpMethod.GET,
-      summary = "Sample greeting endpoint",
-      responses = @OpenApiResponse(status = "200"))
-  private static void registerHello() {
-    get("/api/hello", JavalinRouteAdapter.adapt(SystemModule.helloController()));
   }
 }

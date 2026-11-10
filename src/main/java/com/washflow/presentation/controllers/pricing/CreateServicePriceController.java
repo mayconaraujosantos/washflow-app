@@ -1,11 +1,11 @@
 package com.washflow.presentation.controllers.pricing;
 
 import com.washflow.domain.usecases.pricing.CreateServicePrice;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
-import java.math.BigDecimal;
 import java.util.Map;
 
 /** {@code POST /api/services}: {@code name}, {@code price}, optional {@code washerCommission}. */
@@ -24,17 +24,13 @@ public class CreateServicePriceController implements Controller {
       return HttpHelper.ok(
           createServicePrice.create(
               new CreateServicePrice.Params(
-                  body.get("name") == null ? null : body.get("name").toString(),
-                  decimal(body.get("price")),
-                  decimal(body.get("washerCommission")))));
+                  BodyValues.text(body, "name"),
+                  BodyValues.decimal(body, "price"),
+                  BodyValues.decimal(body, "washerCommission"))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }
-  }
-
-  private static BigDecimal decimal(Object value) {
-    return value == null ? null : new BigDecimal(value.toString());
   }
 }

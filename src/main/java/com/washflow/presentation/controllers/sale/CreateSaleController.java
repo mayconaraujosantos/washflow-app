@@ -11,10 +11,8 @@ import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * {@code POST /api/sales}: {@code type} (QUICK_SALE|BUDGET), {@code items} [{servicePriceId,
@@ -37,33 +35,30 @@ public class CreateSaleController implements Controller {
           createSale.create(
               new CreateSale.Params(
                   SaleType.valueOf(required(body, "type").toUpperCase(Locale.ROOT)),
-                  uuid(body.get("vehicleId")),
-                  text(body.get("customerName")),
-                  text(body.get("customerPhone")),
-                  list(body.get("items")).stream()
+                  BodyValues.uuid(body, "vehicleId"),
+                  BodyValues.text(body, "customerName"),
+                  BodyValues.text(body, "customerPhone"),
+                  BodyValues.objects(body, "items").stream()
                       .map(
                           item ->
                               new CreateSale.Item(
-                                  number(item.get("servicePriceId")).intValue(),
-                                  number(item.get("quantity")).intValue()))
+                                  BodyValues.integer(item, "servicePriceId"),
+                                  BodyValues.integer(item, "quantity")))
                       .toList(),
-                  body.get("discount") == null ? null : decimal(body.get("discount")),
-                  list(body.get("payments")).stream()
+                  BodyValues.decimal(body, "discount"),
+                  BodyValues.objects(body, "payments").stream()
                       .map(
                           payment ->
                               new CreateSale.Payment(
                                   PaymentMethod.valueOf(
-                                      text(payment.get("method")).toUpperCase(Locale.ROOT)),
-                                  decimal(payment.get("amount"))))
+                                      required(payment, "method").toUpperCase(Locale.ROOT)),
+                                  requiredDecimal(payment, "amount")))
                       .toList(),
-                  text(body.get("notes")),
+                  BodyValues.text(body, "notes"),
                   BodyValues.createdBy(body)));
       return HttpHelper.ok(sale);
-    } catch (IllegalArgumentException | NullPointerException | ClassCastException e) {
-      return HttpHelper.badRequest(
-          e instanceof IllegalArgumentException
-              ? e
-              : new IllegalArgumentException("Dados da venda inválidos"));
+    } catch (IllegalArgumentException e) {
+      return HttpHelper.badRequest(e);
     } catch (ServicePriceNotFoundError | VehicleNotFoundError e) {
       return HttpHelper.notFound(e);
     } catch (Exception e) {
@@ -72,38 +67,18 @@ public class CreateSaleController implements Controller {
   }
 
   private static String required(Map<String, Object> body, String key) {
-    String value = text(body.get(key));
+    String value = BodyValues.text(body, key);
     if (value == null) {
       throw new IllegalArgumentException(key + " é obrigatório");
     }
     return value;
   }
 
-  private static String text(Object value) {
-    return value == null ? null : value.toString();
-  }
-
-  private static UUID uuid(Object value) {
-    String text = text(value);
-    return text == null || text.isBlank() ? null : UUID.fromString(text);
-  }
-
-  private static Number number(Object value) {
-    if (value instanceof Number n) {
-      return n;
-    }
-    throw new IllegalArgumentException("Número inválido: " + value);
-  }
-
-  private static BigDecimal decimal(Object value) {
+  private static BigDecimal requiredDecimal(Map<String, Object> body, String key) {
+    BigDecimal value = BodyValues.decimal(body, key);
     if (value == null) {
-      throw new IllegalArgumentException("Valor obrigatório");
+      throw new IllegalArgumentException(key + " é obrigatório");
     }
-    return new BigDecimal(value.toString());
-  }
-
-  @SuppressWarnings("unchecked")
-  private static List<Map<String, Object>> list(Object value) {
-    return value == null ? List.of() : (List<Map<String, Object>>) value;
+    return value;
   }
 }
