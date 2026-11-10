@@ -6,10 +6,11 @@ Este documento define as entidades de negócio, os estados do fluxo do veículo 
 
 ## 1. Máquina de Estados do Veículo (O Washflow)
 
-O ciclo de vida do atendimento é controlado pelo campo `status`; a lavagem pode ser pausada e retomada antes de seguir para `PRONTO`. A ordenação da fila do pátio é baseada estritamente no campo `atualizado_em` das tabelas de serviço.
+O ciclo de vida do atendimento é controlado pelo campo `status`; a lavagem pode ser pausada e retomada antes de seguir para `PRONTO`. Antes da lavagem (`AGENDADO` ou `AGUARDANDO_PATIO`) o gerente pode cancelar o atendimento (`CANCELADO`). A ordenação da fila do pátio é baseada estritamente no campo `atualizado_em` das tabelas de serviço.
 
 [ AGENDADO ] ➔ [ AGUARDANDO_PATIO ] ➔ [ EM_LAVAGEM ] ⇄ [ PAUSADA ]
                                                    ➔ [ PRONTO ] ➔ [ FINALIZADO ]
+[ AGENDADO | AGUARDANDO_PATIO ] ➔ [ CANCELADO ]
 
 ---
 
@@ -70,6 +71,7 @@ A tabela central que dita o fluxo físico e financeiro do lava-jato.
 * `lavagem_concluida_em`: TIMESTAMP (Conclusão real da lavagem, usado em relatórios)
 * `previsao_entrega`: TIMESTAMP (opcional, combinada na entrada)
 * `observacoes`: VARCHAR(500) (opcional)
+* `cancelado_em`, `cancelado_por` (-> `usuarios.id`), `motivo_cancelamento` (`CUSTOMER_GAVE_UP`, `NO_SHOW`, `REGISTERED_BY_MISTAKE`, `OTHER`) e `descricao_cancelamento` (VARCHAR(200), obrigatória para `OTHER`): preenchidos ao cancelar (V5)
 
 ### 2.5 Tabela: `pagamentos`
 Registra o recebimento manual no balcão, no momento em que o gerente finaliza o atendimento.
@@ -129,7 +131,7 @@ O login exige telefone e senha (mínimo de 8 caracteres); o nome só é exigido 
 |---|---|
 | `CLIENTE` | Cadastrar/listar seus veículos, agendar e consultar seus próprios atendimentos |
 | `LAVADOR` | Consultar fila, iniciar e concluir lavagens atribuídas a si |
-| `GERENTE` | Consultar o pátio e a agenda, registrar entradas pela placa, receber veículos, registrar pagamento e finalizar atendimentos, cadastrar lavadores, alterar perfis e ativar/desativar contas |
+| `GERENTE` | Consultar o pátio e a agenda, registrar entradas pela placa, receber veículos, cancelar atendimentos antes da lavagem, registrar pagamento e finalizar atendimentos, cadastrar lavadores, alterar perfis e ativar/desativar contas |
 
 O painel do gerente lista contas e permite cadastrar lavadores com senha inicial (mínimo de 8 caracteres). A senha é persistida somente como hash BCrypt e deve ser entregue diretamente ao colaborador. Um gerente pode alterar contas entre `CLIENTE`, `LAVADOR` e `GERENTE`, inclusive o próprio perfil; ao alterar o próprio perfil, precisa autenticar novamente pela tela do novo perfil. Contas podem ser desativadas sem exclusão dos dados históricos. A desativação é aplicada no login e em cada request autenticada; lavadores com atendimentos `EM_LAVAGEM` ou `PAUSADA` não podem ser desativados nem mudar de perfil até que esses atendimentos sejam resolvidos.
 
@@ -148,6 +150,7 @@ Endpoints operacionais:
 * Caixa (`/api/cash-transactions`), categorias de despesa (`/api/expense-categories`) e checklist/fotos de atendimento são exclusivos do gerente.
 * `PATCH /api/service-orders/{id}/pause`: pausa uma lavagem atribuída ao lavador; exige motivo (`LUNCH`, `RESTROOM`, `OTHER`) e descrição para `OTHER`.
 * `PATCH /api/service-orders/{id}/resume`: retoma a lavagem pausada pelo próprio lavador.
+* `PATCH /api/service-orders/{id}/cancel` (gerente): cancela atendimento `AGENDADO` ou `AGUARDANDO_PATIO` com `reason` (`CUSTOMER_GAVE_UP`, `NO_SHOW`, `REGISTERED_BY_MISTAKE`, `OTHER`) e `description` (obrigatória para `OTHER`); depois disso, 409. O atendimento não é apagado: sai do pátio, libera a vaga da hora e a placa pode entrar de novo; continua na agenda e no ticket como cancelado.
 * `PATCH /api/service-orders/{id}/finalize`: recebe `paymentMethod`; em uma transação, muda o status para `FINALIZADO`, registra o pagamento pelo preço do catálogo e credita a comissão.
 * `GET /api/operations/report?from=YYYY-MM-DD&to=YYYY-MM-DD`: relatório do gerente por data Manaus, com faturamento, comissões, serviços, pagamentos, pausas e tempo médio de lavagem (descontadas as pausas); intervalo máximo de 366 dias.
 * `GET /api/users`: lista as contas para o gerente.

@@ -1,5 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
+import com.washflow.data.protocols.db.CancelServiceOrderRepository;
 import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.protocols.db.CreateServiceOrderRepository;
 import com.washflow.data.protocols.db.FinalizeServiceOrderRepository;
@@ -46,6 +47,7 @@ public class ServiceOrderJdbiRepository
         FinalizeServiceOrderRepository,
         PauseServiceOrderRepository,
         ResumeServiceOrderRepository,
+        CancelServiceOrderRepository,
         LoadWaitingQueueRepository,
         LoadYardOverviewRepository,
         LoadWashingByWasherRepository,
@@ -119,7 +121,8 @@ public class ServiceOrderJdbiRepository
 
   private static final String COUNT_SCHEDULED_BETWEEN_SQL =
       "SELECT COUNT(*) FROM atendimentos WHERE estabelecimento_id = :tenant"
-          + " AND data_agendamento >= :start AND data_agendamento < :end";
+          + " AND data_agendamento >= :start AND data_agendamento < :end"
+          + " AND status <> 'CANCELADO'";
 
   // Transaction-scoped advisory lock keyed by lava-jato + slot start (see createWithinCapacity).
   private static final String SLOT_LOCK_SQL =
@@ -136,7 +139,7 @@ public class ServiceOrderJdbiRepository
   private static final String YARD_OVERVIEW_SQL =
       SELECT_WITH_DETAILS
           + """
-      WHERE a.status <> 'FINALIZADO' AND a.estabelecimento_id = :tenant
+      WHERE a.status NOT IN ('FINALIZADO', 'CANCELADO') AND a.estabelecimento_id = :tenant
       ORDER BY
         CASE a.status
           WHEN 'EM_LAVAGEM' THEN 0
@@ -388,6 +391,31 @@ public class ServiceOrderJdbiRepository
           }
           return true;
         });
+  }
+
+  // Compare-and-set like every transition: only orders that never reached washing are cancelled,
+  // so a manager racing a washer who just started the car gets a 409 instead of a lost wash.
+  @Override
+  public boolean cancel(UUID orderId, UUID managerId, String reason, String description) {
+    return jdbi.withHandle(
+            handle ->
+                handle
+                    .createUpdate(
+                        """
+                        UPDATE atendimentos
+                        SET status = 'CANCELADO', atualizado_em = :now, cancelado_em = :now,
+                            cancelado_por = :managerId, motivo_cancelamento = :reason,
+                            descricao_cancelamento = :description
+                        WHERE id = :id AND status IN ('AGENDADO', 'AGUARDANDO_PATIO')
+                          AND estabelecimento_id = :tenant
+                        """)
+                    .bind("now", Instant.now())
+                    .bind("managerId", managerId)
+                    .bind("reason", reason)
+                    .bind("description", description)
+                    .bind("id", orderId)
+                    .execute())
+        == 1;
   }
 
   @Override

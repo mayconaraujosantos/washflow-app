@@ -71,7 +71,7 @@ public final class RoutePermissionMatcher {
 
       case HTTP_PATCH ->
           path.matches("/api/users/[^/]+/(profile|active|email)")
-              || path.matches("/api/service-orders/[^/]+/(check-in|finalize)");
+              || path.matches("/api/service-orders/[^/]+/(check-in|finalize|cancel)");
 
       case "PUT" -> path.matches(CASH_TRANSACTIONS + "/[^/]+") || path.equals("/api/establishment");
 

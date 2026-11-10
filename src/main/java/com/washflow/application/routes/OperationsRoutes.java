@@ -6,6 +6,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
+import com.washflow.application.factories.controllers.CancelServiceOrderControllerFactory;
 import com.washflow.application.factories.controllers.GetOperationsReportControllerFactory;
 import com.washflow.application.factories.controllers.GetWaitingQueueControllerFactory;
 import com.washflow.application.factories.controllers.GetWashingByWasherControllerFactory;
@@ -37,6 +38,7 @@ public final class OperationsRoutes {
     registerAgenda(jdbi);
     registerPause(jdbi);
     registerResume(jdbi);
+    registerCancel(jdbi);
     registerQueue(jdbi);
     registerYard(jdbi);
     registerReport(jdbi);
@@ -131,6 +133,25 @@ public final class OperationsRoutes {
     patch(
         SERVICE_ORDER_BY_ID + "/resume",
         JavalinRouteAdapter.adapt(ResumeServiceOrderControllerFactory.make(jdbi)));
+  }
+
+  @OpenApi(
+      path = SERVICE_ORDER_BY_ID + "/cancel",
+      methods = HttpMethod.PATCH,
+      summary = "Manager cancels an order that never reached washing, recording the reason",
+      tags = {"Operations"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(status = "200", description = "Service order cancelled"),
+        @OpenApiResponse(status = "400", description = "Invalid cancellation reason"),
+        @OpenApiResponse(
+            status = "409",
+            description = "Service order is no longer scheduled or waiting in the yard")
+      })
+  private static void registerCancel(Jdbi jdbi) {
+    patch(
+        SERVICE_ORDER_BY_ID + "/cancel",
+        JavalinRouteAdapter.adapt(CancelServiceOrderControllerFactory.make(jdbi)));
   }
 
   @OpenApi(
