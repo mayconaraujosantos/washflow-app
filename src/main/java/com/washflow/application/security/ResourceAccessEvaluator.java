@@ -34,44 +34,34 @@ public final class ResourceAccessEvaluator {
       UUID userId,
       UserProfile profile,
       Jdbi jdbi) {
-    // Managers reach every resource of their own lava-jato (TenantResourceGuard checks which one);
-    // the platform administrator only reaches /api/admin routes.
     if (profile == UserProfile.MANAGER || profile == UserProfile.ADMIN) {
       return true;
     }
 
-    // A customer's own vehicles or service orders: the customer id in the path must be the
-    // caller's.
     if (isCustomerResourcePath(path)) {
       return pathCustomerId(path).equals(userId.toString());
     }
 
-    // Create vehicle: check customerId in body
     if (isCreateVehicle(method, path)) {
       return bodyValue(body, CUSTOMER_ID).equals(userId.toString());
     }
 
-    // Create service order: check vehicle belongs to customer
     if (isCreateServiceOrder(method, path)) {
       return vehicleBelongsToCustomer(body, userId, jdbi);
     }
 
-    // Start wash: check washerId in body matches user
     if (isStartWash(method, path)) {
       return bodyValue(body, "washerId").equals(userId.toString());
     }
 
-    // Washer actions (complete, pause, resume): check service order assigned to washer
     if (isWasherAction(method, path)) {
       return hasAssignedServiceOrder(path, userId, jdbi);
     }
 
-    // Update user profile: check managerId in body
     if (isUpdateUserProfile(method, path)) {
       return bodyValue(body, "managerId").equals(userId.toString());
     }
 
-    // Get service order: check order belongs to customer's vehicle
     if (isGetServiceOrder(method, path)) {
       return serviceOrderBelongsToCustomer(path, userId, jdbi);
     }

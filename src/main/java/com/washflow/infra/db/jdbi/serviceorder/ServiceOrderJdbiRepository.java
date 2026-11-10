@@ -368,8 +368,6 @@ public class ServiceOrderJdbiRepository
         == 1;
   }
 
-  // The status compare-and-set (FINALIZADO -> ESTORNADO) makes a double click refund only once;
-  // the amount always comes from the recorded payment, never from the request.
   @Override
   public Optional<ServiceOrderRefund> refund(
       UUID orderId,

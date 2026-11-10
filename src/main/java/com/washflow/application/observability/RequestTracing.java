@@ -26,7 +26,6 @@ public final class RequestTracing {
 
   public static final String HEADER = "X-Request-Id";
   private static final Logger ACCESS = LoggerFactory.getLogger("http");
-  private static final Logger ERRORS = LoggerFactory.getLogger(RequestTracing.class);
   private static final Pattern VALID_ID = Pattern.compile("[A-Za-z0-9-]{8,64}");
   private static final SecureRandom RANDOM = new SecureRandom();
   // Probes polled by the platform every few seconds: kept out of the INFO log.

@@ -9,7 +9,7 @@ public final class ContactRules {
   // local@label.label.tld - labels can't be empty or contain dots, so each character has one
   // place to match and the check is linear (no backtracking).
   private static final Pattern EMAIL =
-      Pattern.compile("^[^@\\s]{1,64}@(?:[^@\\s.]+\\.)+[^@\\s.]{2,}$");
+          Pattern.compile("^[^@\\s]{1,64}@(?:[^@\\s.]+\\.){1,8}[^@\\s.]{2,}$");
   private static final int MAX_EMAIL = 254;
 
   private ContactRules() {}
