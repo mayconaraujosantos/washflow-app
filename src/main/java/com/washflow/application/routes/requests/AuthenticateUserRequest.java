@@ -1,4 +1,6 @@
-package com.washflow.presentation.controllers.user;
+package com.washflow.application.routes.requests;
+
+import com.washflow.presentation.controllers.user.AuthenticateUserController;
 
 /**
  * Documents the JSON body {@link AuthenticateUserController} expects. Not used at runtime - the

@@ -11,6 +11,7 @@ import com.washflow.application.modules.ScheduleModule;
 import com.washflow.application.modules.ServiceOrderModule;
 import com.washflow.application.modules.VehicleModule;
 import com.washflow.application.modules.YardModule;
+import com.washflow.application.routes.requests.PauseServiceOrderRequest;
 import com.washflow.domain.entities.finance.OperationsReport;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
@@ -19,6 +20,7 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import org.jdbi.v3.core.Jdbi;
 
@@ -101,6 +103,8 @@ public final class OperationsRoutes {
       summary = "Pause an active wash, recording the reason",
       tags = {"Operations"},
       pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      requestBody =
+          @OpenApiRequestBody(content = @OpenApiContent(from = PauseServiceOrderRequest.class)),
       responses = {
         @OpenApiResponse(status = "200", description = "Wash paused"),
         @OpenApiResponse(status = "400", description = "Invalid pause reason"),

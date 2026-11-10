@@ -1,4 +1,6 @@
-package com.washflow.presentation.controllers.schedule;
+package com.washflow.application.routes.requests;
+
+import com.washflow.presentation.controllers.schedule.ScheduleServiceOrderController;
 
 /**
  * Documents the JSON body {@link ScheduleServiceOrderController} expects. Not used at runtime - the

@@ -1,3 +1,3 @@
-package com.washflow.presentation.controllers.serviceorder;
+package com.washflow.application.routes.requests;
 
 public record PauseServiceOrderRequest(String reason, String description) {}

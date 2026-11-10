@@ -1,4 +1,6 @@
-package com.washflow.presentation.controllers.vehicle;
+package com.washflow.application.routes.requests;
+
+import com.washflow.presentation.controllers.vehicle.CreateVehicleController;
 
 /**
  * Documents the JSON body {@link CreateVehicleController} expects. Not used at runtime - the

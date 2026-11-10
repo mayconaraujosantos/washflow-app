@@ -1,4 +1,6 @@
-package com.washflow.presentation.controllers.serviceorder;
+package com.washflow.application.routes.requests;
+
+import com.washflow.presentation.controllers.serviceorder.StartServiceOrderController;
 
 /**
  * Documents the JSON body {@link StartServiceOrderController} expects. Not used at runtime - the

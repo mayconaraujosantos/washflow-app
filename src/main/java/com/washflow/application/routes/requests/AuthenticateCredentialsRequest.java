@@ -1,3 +1,3 @@
-package com.washflow.presentation.controllers.user;
+package com.washflow.application.routes.requests;
 
 public record AuthenticateCredentialsRequest(String phone, String password) {}
