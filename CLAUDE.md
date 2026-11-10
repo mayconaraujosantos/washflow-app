@@ -182,6 +182,13 @@ Cliques duplos, reenvios após timeout e duas pessoas agindo ao mesmo tempo não
 * **`Idempotency-Key`** (tabela `chaves_idempotencia`): todo `POST` autenticado que traz o cabeçalho grava a primeira resposta de sucesso por 24 horas, por usuário; o reenvio com a mesma chave devolve a mesma resposta (cabeçalho `Idempotent-Replayed: true`) sem executar de novo. Mesma chave com outro conteúdo → 422; mesma chave enquanto a primeira ainda roda → 409; falhas liberam a chave. O PWA (`FetchHttpClient`) envia a chave em todo POST autenticado, reaproveita a requisição idêntica em andamento e mantém a chave para o reenvio após uma falha.
 * Testes: `ConcurrencyIntegrationTest` (corridas reais no PostgreSQL embutido), `IdempotencyGuardTest`, `JdbiIdempotencyStoreIntegrationTest`; contra um servidor rodando, `scripts/probe_real_world.py`.
 
+### Auditoria
+* Toda alteração autenticada que dá certo (`POST`, `PUT`, `PATCH`, `DELETE` com 2xx) é gravada pelo `AuditTrail` na tabela `auditoria` (V4): lava-jato (NULL para o administrador da plataforma), usuário, perfil, método, rota (`/api/cash-transactions/{id}`), caminho real, status, corpo da requisição e horário. Endpoints novos entram automaticamente.
+* O corpo é guardado com senhas, PINs, tokens, códigos e imagens trocados por `***`, cortado em 2000 caracteres; corpo que não é JSON não é guardado.
+* Roda dentro do `IdempotencyGuard` (reenvio repetido não grava duas vezes) e fora da transação da operação: se a gravação falhar, a operação vale e o erro vai para o log.
+* `auditoria` é somente inserção: um trigger recusa `UPDATE` e `DELETE`.
+* `GET /api/audit?from=YYYY-MM-DD&to=YYYY-MM-DD` (gerente): registros do próprio lava-jato por data Manaus, mais recentes primeiro, com o nome do autor; intervalo máximo de 92 dias.
+
 ### Observabilidade
 * Logs em stdout (Logback, `src/main/resources/logback.xml`, `LOG_LEVEL`), uma linha `logger=http` por requisição com `request_id`, rota, status, duração, usuário e motivo do erro (4xx em WARN, 5xx em ERROR com stack trace).
 * Cada requisição tem um ID (`X-Request-Id`), devolvido também como `requestId` nos corpos de erro (`HttpHelper.errorBody`); o app mostra o código nas falhas 5xx.

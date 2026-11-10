@@ -56,6 +56,7 @@ public final class RoutePermissionMatcher {
           path.matches("/api/operations/(report|yard|agenda|vehicles)")
               || path.equals("/api/users")
               || path.equals("/api/sales")
+              || path.equals("/api/audit")
               || isFeatureResource(path)
               || path.equals(CASH_TRANSACTIONS + "/report");
 

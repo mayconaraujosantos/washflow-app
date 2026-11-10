@@ -11,6 +11,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 class RoutePermissionMatcherTest {
 
   @Test
+  void onlyManagersReadTheAuditTrail() {
+    assertEquals(UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile("GET", "/api/audit"));
+  }
+
+  @Test
   void returnsCustomerForCreateVehicle() {
     assertEquals(
         UserProfile.CUSTOMER, RoutePermissionMatcher.requiredProfile("POST", "/api/vehicles"));
