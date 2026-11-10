@@ -6,7 +6,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.usecases.establishment.EstablishmentFactory;
+import com.washflow.application.modules.EstablishmentModule;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.establishment.EstablishmentListing;
 import com.washflow.domain.entities.establishment.EstablishmentSummary;
@@ -27,7 +27,7 @@ public final class PlatformRoutes {
   private PlatformRoutes() {}
 
   public static void register(Jdbi jdbi, AppConfig appConfig) {
-    ManagePlatform platform = EstablishmentFactory.platform(jdbi);
+    ManagePlatform platform = EstablishmentModule.platform(jdbi);
     registerSignIn(platform, appConfig);
     registerDirectory(platform);
     registerList(platform);

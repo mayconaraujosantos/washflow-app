@@ -4,10 +4,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.sale.CreateSaleControllerFactory;
-import com.washflow.application.factories.controllers.sale.ListSaleRefundsControllerFactory;
-import com.washflow.application.factories.controllers.sale.ListSalesControllerFactory;
-import com.washflow.application.factories.controllers.sale.RefundSaleControllerFactory;
+import com.washflow.application.modules.SaleModule;
 import com.washflow.domain.entities.sale.Sale;
 import com.washflow.domain.entities.sale.SaleRefund;
 import io.javalin.openapi.HttpMethod;
@@ -42,7 +39,7 @@ public final class SaleRoutes {
         @OpenApiResponse(status = "404", description = "Service or vehicle not found")
       })
   private static void registerCreate(Jdbi jdbi) {
-    post(BASE_PATH, JavalinRouteAdapter.adapt(CreateSaleControllerFactory.make(jdbi)));
+    post(BASE_PATH, JavalinRouteAdapter.adapt(SaleModule.createSaleController(jdbi)));
   }
 
   @OpenApi(
@@ -60,7 +57,7 @@ public final class SaleRoutes {
         @OpenApiResponse(status = "400", description = "Invalid range or type")
       })
   private static void registerList(Jdbi jdbi) {
-    get(BASE_PATH, JavalinRouteAdapter.adapt(ListSalesControllerFactory.make(jdbi)));
+    get(BASE_PATH, JavalinRouteAdapter.adapt(SaleModule.listSalesController(jdbi)));
   }
 
   @OpenApi(
@@ -80,7 +77,7 @@ public final class SaleRoutes {
   private static void registerRefund(Jdbi jdbi) {
     post(
         BASE_PATH + "/{id}/refunds",
-        JavalinRouteAdapter.adapt(RefundSaleControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(SaleModule.refundSaleController(jdbi)));
   }
 
   @OpenApi(
@@ -99,6 +96,6 @@ public final class SaleRoutes {
   private static void registerRefundList(Jdbi jdbi) {
     get(
         BASE_PATH + "/refunds",
-        JavalinRouteAdapter.adapt(ListSaleRefundsControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(SaleModule.listSaleRefundsController(jdbi)));
   }
 }

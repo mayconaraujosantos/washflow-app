@@ -3,8 +3,7 @@ package com.washflow.application.routes;
 import static io.javalin.apibuilder.ApiBuilder.get;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.system.HealthControllerFactory;
-import com.washflow.application.factories.controllers.system.HelloControllerFactory;
+import com.washflow.application.modules.SystemModule;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiResponse;
@@ -26,7 +25,7 @@ public final class SystemRoutes {
       summary = "Liveness and database connectivity check",
       responses = @OpenApiResponse(status = "200"))
   private static void registerHealth(Jdbi jdbi) {
-    get("/api/health", JavalinRouteAdapter.adapt(HealthControllerFactory.make(jdbi)));
+    get("/api/health", JavalinRouteAdapter.adapt(SystemModule.healthController(jdbi)));
   }
 
   @OpenApi(
@@ -35,6 +34,6 @@ public final class SystemRoutes {
       summary = "Sample greeting endpoint",
       responses = @OpenApiResponse(status = "200"))
   private static void registerHello() {
-    get("/api/hello", JavalinRouteAdapter.adapt(HelloControllerFactory.make()));
+    get("/api/hello", JavalinRouteAdapter.adapt(SystemModule.helloController()));
   }
 }

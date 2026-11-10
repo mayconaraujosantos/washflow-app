@@ -6,18 +6,8 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.finance.CreateCashTransactionControllerFactory;
-import com.washflow.application.factories.controllers.finance.CreateExpenseCategoryControllerFactory;
-import com.washflow.application.factories.controllers.finance.DeleteCashTransactionControllerFactory;
-import com.washflow.application.factories.controllers.finance.GetCashTransactionReportControllerFactory;
-import com.washflow.application.factories.controllers.finance.ListCashTransactionsControllerFactory;
-import com.washflow.application.factories.controllers.finance.ListExpenseCategoriesControllerFactory;
-import com.washflow.application.factories.controllers.finance.UpdateCashTransactionControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.DeletePhotoControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.GetChecklistsControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.GetPhotosControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.SaveChecklistControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.SavePhotoControllerFactory;
+import com.washflow.application.modules.FinanceModule;
+import com.washflow.application.modules.ServiceOrderModule;
 import com.washflow.domain.entities.finance.CashTransaction;
 import com.washflow.domain.entities.finance.ExpenseCategory;
 import com.washflow.domain.entities.finance.OperationsReport;
@@ -63,7 +53,7 @@ public final class FeatureRoutes {
   private static void registerSaveChecklist(Jdbi jdbi) {
     post(
         SERVICE_ORDER_BY_ID + "/checklist",
-        JavalinRouteAdapter.adapt(SaveChecklistControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.saveChecklistController(jdbi)));
   }
 
   @OpenApi(
@@ -81,7 +71,7 @@ public final class FeatureRoutes {
   private static void registerGetChecklists(Jdbi jdbi) {
     get(
         SERVICE_ORDER_BY_ID + "/checklist",
-        JavalinRouteAdapter.adapt(GetChecklistsControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.getChecklistsController(jdbi)));
   }
 
   private static void registerChecklists(Jdbi jdbi) {
@@ -105,7 +95,7 @@ public final class FeatureRoutes {
   private static void registerSavePhoto(Jdbi jdbi) {
     post(
         SERVICE_ORDER_BY_ID + "/photos",
-        JavalinRouteAdapter.adapt(SavePhotoControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.savePhotoController(jdbi)));
   }
 
   @OpenApi(
@@ -123,7 +113,7 @@ public final class FeatureRoutes {
   private static void registerGetPhotos(Jdbi jdbi) {
     get(
         SERVICE_ORDER_BY_ID + "/photos",
-        JavalinRouteAdapter.adapt(GetPhotosControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.getPhotosController(jdbi)));
   }
 
   @OpenApi(
@@ -143,7 +133,7 @@ public final class FeatureRoutes {
   private static void registerDeletePhoto(Jdbi jdbi) {
     delete(
         SERVICE_ORDER_BY_ID + "/photos/{photoId}",
-        JavalinRouteAdapter.adapt(DeletePhotoControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.deletePhotoController(jdbi)));
   }
 
   private static void registerPhotos(Jdbi jdbi) {
@@ -166,7 +156,7 @@ public final class FeatureRoutes {
   private static void registerCreateCashTransaction(Jdbi jdbi) {
     post(
         CASH_TRANSACTIONS,
-        JavalinRouteAdapter.adapt(CreateCashTransactionControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.createCashTransactionController(jdbi)));
   }
 
   @OpenApi(
@@ -181,7 +171,7 @@ public final class FeatureRoutes {
   private static void registerListCashTransactions(Jdbi jdbi) {
     get(
         CASH_TRANSACTIONS,
-        JavalinRouteAdapter.adapt(ListCashTransactionsControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.listCashTransactionsController(jdbi)));
   }
 
   @OpenApi(
@@ -196,7 +186,7 @@ public final class FeatureRoutes {
   private static void registerGetCashTransactionReport(Jdbi jdbi) {
     get(
         CASH_TRANSACTIONS + "/report",
-        JavalinRouteAdapter.adapt(GetCashTransactionReportControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.getCashTransactionReportController(jdbi)));
   }
 
   @OpenApi(
@@ -213,7 +203,7 @@ public final class FeatureRoutes {
   private static void registerUpdateCashTransaction(Jdbi jdbi) {
     put(
         CASH_TRANSACTIONS + "/{id}",
-        JavalinRouteAdapter.adapt(UpdateCashTransactionControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.updateCashTransactionController(jdbi)));
   }
 
   @OpenApi(
@@ -230,7 +220,7 @@ public final class FeatureRoutes {
   private static void registerDeleteCashTransaction(Jdbi jdbi) {
     delete(
         CASH_TRANSACTIONS + "/{id}",
-        JavalinRouteAdapter.adapt(DeleteCashTransactionControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.deleteCashTransactionController(jdbi)));
   }
 
   private static void registerCashTransactions(Jdbi jdbi) {
@@ -255,7 +245,7 @@ public final class FeatureRoutes {
   private static void registerCreateExpenseCategory(Jdbi jdbi) {
     post(
         EXPENSE_CATEGORIES,
-        JavalinRouteAdapter.adapt(CreateExpenseCategoryControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.createExpenseCategoryController(jdbi)));
   }
 
   @OpenApi(
@@ -269,7 +259,7 @@ public final class FeatureRoutes {
   private static void registerListExpenseCategories(Jdbi jdbi) {
     get(
         EXPENSE_CATEGORIES,
-        JavalinRouteAdapter.adapt(ListExpenseCategoriesControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.listExpenseCategoriesController(jdbi)));
   }
 
   private static void registerExpenseCategories(Jdbi jdbi) {

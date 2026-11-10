@@ -6,17 +6,11 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.finance.GetOperationsReportControllerFactory;
-import com.washflow.application.factories.controllers.schedule.ListAgendaControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.CancelServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.PauseServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.RefundServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.serviceorder.ResumeServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.vehicle.SearchVehiclesControllerFactory;
-import com.washflow.application.factories.controllers.yard.GetWaitingQueueControllerFactory;
-import com.washflow.application.factories.controllers.yard.GetWashingByWasherControllerFactory;
-import com.washflow.application.factories.controllers.yard.GetYardOverviewControllerFactory;
-import com.washflow.application.factories.controllers.yard.RegisterVehicleEntryControllerFactory;
+import com.washflow.application.modules.FinanceModule;
+import com.washflow.application.modules.ScheduleModule;
+import com.washflow.application.modules.ServiceOrderModule;
+import com.washflow.application.modules.VehicleModule;
+import com.washflow.application.modules.YardModule;
 import com.washflow.domain.entities.finance.OperationsReport;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
@@ -64,7 +58,7 @@ public final class OperationsRoutes {
   private static void registerEntry(Jdbi jdbi, AppConfig appConfig) {
     post(
         "/api/operations/entries",
-        JavalinRouteAdapter.adapt(RegisterVehicleEntryControllerFactory.make(jdbi, appConfig)));
+        JavalinRouteAdapter.adapt(YardModule.registerVehicleEntryController(jdbi, appConfig)));
   }
 
   @OpenApi(
@@ -79,7 +73,7 @@ public final class OperationsRoutes {
   private static void registerVehicleSearch(Jdbi jdbi) {
     get(
         "/api/operations/vehicles",
-        JavalinRouteAdapter.adapt(SearchVehiclesControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(VehicleModule.searchVehiclesController(jdbi)));
   }
 
   @OpenApi(
@@ -98,7 +92,7 @@ public final class OperationsRoutes {
   private static void registerAgenda(Jdbi jdbi) {
     get(
         "/api/operations/agenda",
-        JavalinRouteAdapter.adapt(ListAgendaControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ScheduleModule.listAgendaController(jdbi)));
   }
 
   @OpenApi(
@@ -117,7 +111,7 @@ public final class OperationsRoutes {
   private static void registerPause(Jdbi jdbi) {
     patch(
         SERVICE_ORDER_BY_ID + "/pause",
-        JavalinRouteAdapter.adapt(PauseServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.pauseServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -135,7 +129,7 @@ public final class OperationsRoutes {
   private static void registerResume(Jdbi jdbi) {
     patch(
         SERVICE_ORDER_BY_ID + "/resume",
-        JavalinRouteAdapter.adapt(ResumeServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.resumeServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -154,7 +148,7 @@ public final class OperationsRoutes {
   private static void registerCancel(Jdbi jdbi) {
     patch(
         SERVICE_ORDER_BY_ID + "/cancel",
-        JavalinRouteAdapter.adapt(CancelServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.cancelServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -175,7 +169,7 @@ public final class OperationsRoutes {
   private static void registerRefund(Jdbi jdbi) {
     patch(
         SERVICE_ORDER_BY_ID + "/refund",
-        JavalinRouteAdapter.adapt(RefundServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.refundServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -189,7 +183,7 @@ public final class OperationsRoutes {
   private static void registerQueue(Jdbi jdbi) {
     get(
         "/api/operations/queue",
-        JavalinRouteAdapter.adapt(GetWaitingQueueControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(YardModule.getWaitingQueueController(jdbi)));
   }
 
   @OpenApi(
@@ -203,7 +197,7 @@ public final class OperationsRoutes {
   private static void registerYard(Jdbi jdbi) {
     get(
         "/api/operations/yard",
-        JavalinRouteAdapter.adapt(GetYardOverviewControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(YardModule.getYardOverviewController(jdbi)));
   }
 
   @OpenApi(
@@ -218,7 +212,7 @@ public final class OperationsRoutes {
   private static void registerReport(Jdbi jdbi) {
     get(
         "/api/operations/report",
-        JavalinRouteAdapter.adapt(GetOperationsReportControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.getOperationsReportController(jdbi)));
   }
 
   @OpenApi(
@@ -232,6 +226,6 @@ public final class OperationsRoutes {
   private static void registerMyOrders(Jdbi jdbi) {
     get(
         "/api/operations/my-orders",
-        JavalinRouteAdapter.adapt(GetWashingByWasherControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(YardModule.getWashingByWasherController(jdbi)));
   }
 }

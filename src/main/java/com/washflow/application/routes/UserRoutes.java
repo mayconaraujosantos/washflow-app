@@ -6,13 +6,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.user.AuthenticateCustomerControllerFactory;
-import com.washflow.application.factories.controllers.user.AuthenticateManagerControllerFactory;
-import com.washflow.application.factories.controllers.user.AuthenticateWasherControllerFactory;
-import com.washflow.application.factories.controllers.user.CreateWasherControllerFactory;
-import com.washflow.application.factories.controllers.user.ListUsersControllerFactory;
-import com.washflow.application.factories.controllers.user.UpdateUserActiveControllerFactory;
-import com.washflow.application.factories.controllers.user.UpdateUserProfileControllerFactory;
+import com.washflow.application.modules.UserModule;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthenticatedSession;
 import com.washflow.domain.entities.user.User;
@@ -65,7 +59,7 @@ public final class UserRoutes {
     post(
         "/api/auth/customers",
         JavalinRouteAdapter.adaptAuthenticated(
-            AuthenticateCustomerControllerFactory.make(jdbi, appConfig), tokenService));
+            UserModule.authenticateCustomerController(jdbi, appConfig), tokenService));
   }
 
   @OpenApi(
@@ -94,7 +88,7 @@ public final class UserRoutes {
     post(
         "/api/auth/washers",
         JavalinRouteAdapter.adaptAuthenticated(
-            AuthenticateWasherControllerFactory.make(jdbi, appConfig), tokenService));
+            UserModule.authenticateWasherController(jdbi, appConfig), tokenService));
   }
 
   @OpenApi(
@@ -123,7 +117,7 @@ public final class UserRoutes {
     post(
         "/api/auth/managers",
         JavalinRouteAdapter.adaptAuthenticated(
-            AuthenticateManagerControllerFactory.make(jdbi, appConfig), tokenService));
+            UserModule.authenticateManagerController(jdbi, appConfig), tokenService));
   }
 
   @OpenApi(
@@ -144,7 +138,7 @@ public final class UserRoutes {
   private static void registerUpdateProfile(Jdbi jdbi) {
     patch(
         USERS_BASE_PATH + "/{id}/profile",
-        JavalinRouteAdapter.adapt(UpdateUserProfileControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(UserModule.updateUserProfileController(jdbi)));
   }
 
   private static void registerManagerUserAdministration(Jdbi jdbi) {
@@ -164,7 +158,7 @@ public final class UserRoutes {
         @OpenApiResponse(status = "403", description = "Requester is not a manager")
       })
   private static void registerListUsers(Jdbi jdbi) {
-    get(USERS_BASE_PATH, JavalinRouteAdapter.adapt(ListUsersControllerFactory.make(jdbi)));
+    get(USERS_BASE_PATH, JavalinRouteAdapter.adapt(UserModule.listUsersController(jdbi)));
   }
 
   @OpenApi(
@@ -182,7 +176,7 @@ public final class UserRoutes {
         @OpenApiResponse(status = "409", description = "Phone is already registered")
       })
   private static void registerCreateWasher(Jdbi jdbi) {
-    post(USERS_BASE_PATH, JavalinRouteAdapter.adapt(CreateWasherControllerFactory.make(jdbi)));
+    post(USERS_BASE_PATH, JavalinRouteAdapter.adapt(UserModule.createWasherController(jdbi)));
   }
 
   @OpenApi(
@@ -204,7 +198,7 @@ public final class UserRoutes {
   private static void registerUpdateUserActive(Jdbi jdbi) {
     patch(
         USERS_BASE_PATH + "/{id}/active",
-        JavalinRouteAdapter.adapt(UpdateUserActiveControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(UserModule.updateUserActiveController(jdbi)));
   }
 
   public record CreateWasherRequest(String name, String phone, String password) {}
