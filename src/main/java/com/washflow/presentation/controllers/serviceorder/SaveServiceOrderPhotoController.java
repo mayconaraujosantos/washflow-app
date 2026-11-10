@@ -11,11 +11,11 @@ import com.washflow.presentation.protocols.HttpResponse;
 import java.util.Map;
 import java.util.UUID;
 
-public class SavePhotoController implements Controller {
+public class SaveServiceOrderPhotoController implements Controller {
 
   private final SaveServiceOrderPhoto saveServiceOrderPhoto;
 
-  public SavePhotoController(SaveServiceOrderPhoto saveServiceOrderPhoto) {
+  public SaveServiceOrderPhotoController(SaveServiceOrderPhoto saveServiceOrderPhoto) {
     this.saveServiceOrderPhoto = saveServiceOrderPhoto;
   }
 

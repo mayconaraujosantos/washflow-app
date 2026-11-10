@@ -16,16 +16,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class DeletePhotoControllerTest {
+class DeleteServiceOrderPhotoControllerTest {
 
   @Mock private DeleteServiceOrderPhoto deleteServiceOrderPhoto;
 
-  private DeletePhotoController sut;
+  private DeleteServiceOrderPhotoController sut;
   private UUID photoId;
 
   @BeforeEach
   void setUp() {
-    sut = new DeletePhotoController(deleteServiceOrderPhoto);
+    sut = new DeleteServiceOrderPhotoController(deleteServiceOrderPhoto);
     photoId = UUID.randomUUID();
   }
 

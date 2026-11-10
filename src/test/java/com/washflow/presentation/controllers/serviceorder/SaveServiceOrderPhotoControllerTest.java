@@ -22,17 +22,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SavePhotoControllerTest {
+class SaveServiceOrderPhotoControllerTest {
 
   @Mock private SaveServiceOrderPhoto saveServiceOrderPhoto;
 
-  private SavePhotoController sut;
+  private SaveServiceOrderPhotoController sut;
   private UUID serviceOrderId;
   private UUID createdBy;
 
   @BeforeEach
   void setUp() {
-    sut = new SavePhotoController(saveServiceOrderPhoto);
+    sut = new SaveServiceOrderPhotoController(saveServiceOrderPhoto);
     serviceOrderId = UUID.randomUUID();
     createdBy = UUID.randomUUID();
   }

@@ -26,17 +26,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SaveChecklistControllerTest {
+class SaveServiceOrderChecklistControllerTest {
 
   @Mock private SaveServiceOrderChecklist saveServiceOrderChecklist;
 
-  private SaveChecklistController sut;
+  private SaveServiceOrderChecklistController sut;
   private UUID serviceOrderId;
   private UUID createdBy;
 
   @BeforeEach
   void setUp() {
-    sut = new SaveChecklistController(saveServiceOrderChecklist);
+    sut = new SaveServiceOrderChecklistController(saveServiceOrderChecklist);
     serviceOrderId = UUID.randomUUID();
     createdBy = UUID.randomUUID();
   }

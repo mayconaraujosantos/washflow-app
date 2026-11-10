@@ -13,11 +13,12 @@ import java.util.UUID;
  * Parses the service order ID from the path and delegates to {@code ListServiceOrderChecklists}.
  * Framework-agnostic — depends only on HttpRequest/HttpResponse and the UseCase interface.
  */
-public class GetChecklistsController implements Controller {
+public class ListServiceOrderChecklistsController implements Controller {
 
   private final ListServiceOrderChecklists listServiceOrderChecklists;
 
-  public GetChecklistsController(ListServiceOrderChecklists listServiceOrderChecklists) {
+  public ListServiceOrderChecklistsController(
+      ListServiceOrderChecklists listServiceOrderChecklists) {
     this.listServiceOrderChecklists = listServiceOrderChecklists;
   }
 

@@ -20,11 +20,11 @@ import java.util.UUID;
  * <p>The {@code createdBy} UUID is expected in the request body under the key {@code "createdBy"},
  * injected by {@code JavalinRouteAdapter} from the authenticated user's claims.
  */
-public class SaveChecklistController implements Controller {
+public class SaveServiceOrderChecklistController implements Controller {
 
   private final SaveServiceOrderChecklist saveServiceOrderChecklist;
 
-  public SaveChecklistController(SaveServiceOrderChecklist saveServiceOrderChecklist) {
+  public SaveServiceOrderChecklistController(SaveServiceOrderChecklist saveServiceOrderChecklist) {
     this.saveServiceOrderChecklist = saveServiceOrderChecklist;
   }
 

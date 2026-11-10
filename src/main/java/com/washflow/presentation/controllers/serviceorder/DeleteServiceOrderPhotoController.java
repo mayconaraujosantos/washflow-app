@@ -7,11 +7,11 @@ import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.UUID;
 
-public class DeletePhotoController implements Controller {
+public class DeleteServiceOrderPhotoController implements Controller {
 
   private final DeleteServiceOrderPhoto deleteServiceOrderPhoto;
 
-  public DeletePhotoController(DeleteServiceOrderPhoto deleteServiceOrderPhoto) {
+  public DeleteServiceOrderPhotoController(DeleteServiceOrderPhoto deleteServiceOrderPhoto) {
     this.deleteServiceOrderPhoto = deleteServiceOrderPhoto;
   }
 

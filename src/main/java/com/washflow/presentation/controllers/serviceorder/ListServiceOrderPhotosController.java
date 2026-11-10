@@ -9,11 +9,11 @@ import com.washflow.presentation.protocols.HttpResponse;
 import java.util.List;
 import java.util.UUID;
 
-public class GetPhotosController implements Controller {
+public class ListServiceOrderPhotosController implements Controller {
 
   private final ListServiceOrderPhotos listServiceOrderPhotos;
 
-  public GetPhotosController(ListServiceOrderPhotos listServiceOrderPhotos) {
+  public ListServiceOrderPhotosController(ListServiceOrderPhotos listServiceOrderPhotos) {
     this.listServiceOrderPhotos = listServiceOrderPhotos;
   }
 

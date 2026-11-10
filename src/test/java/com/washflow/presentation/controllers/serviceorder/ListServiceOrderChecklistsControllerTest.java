@@ -21,16 +21,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class GetChecklistsControllerTest {
+class ListServiceOrderChecklistsControllerTest {
 
   @Mock private ListServiceOrderChecklists listServiceOrderChecklists;
 
-  private GetChecklistsController sut;
+  private ListServiceOrderChecklistsController sut;
   private UUID serviceOrderId;
 
   @BeforeEach
   void setUp() {
-    sut = new GetChecklistsController(listServiceOrderChecklists);
+    sut = new ListServiceOrderChecklistsController(listServiceOrderChecklists);
     serviceOrderId = UUID.randomUUID();
   }
 
