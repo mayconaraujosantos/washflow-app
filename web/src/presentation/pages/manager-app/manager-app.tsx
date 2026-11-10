@@ -14,6 +14,7 @@ import {
 import { SideMenu } from '@/presentation/components/ui/app-chrome'
 import { errorMessage, firstName } from '@/presentation/helpers/format'
 import { AgendaScreen } from './agenda-screen'
+import { AuditScreen } from './audit-screen'
 import { CashScreen, ReportScreen, TeamScreen } from './back-office-screens'
 import { EntryScreen } from './entry-screen'
 import { ManagerHome } from './manager-home'
@@ -168,6 +169,7 @@ export function ManagerApp({
           <Route path="equipe" element={<TeamScreen />} />
           <Route path="relatorios" element={<ReportScreen />} />
           <Route path="estabelecimento" element={<SettingsScreen />} />
+          <Route path="auditoria" element={<AuditScreen />} />
           <Route path="*" element={<Navigate to="/gerente" replace />} />
         </Routes>
         {flash && (
@@ -187,6 +189,11 @@ export function ManagerApp({
             { label: 'Início', icon: 'home', to: '/gerente' },
             { label: 'Caixa e despesas', icon: 'money', to: '/gerente/caixa' },
             { label: 'Relatórios', icon: 'chart', to: '/gerente/relatorios' },
+            {
+              label: 'Histórico de alterações',
+              icon: 'list',
+              to: '/gerente/auditoria',
+            },
             {
               label: 'Equipe e acessos',
               icon: 'manager',

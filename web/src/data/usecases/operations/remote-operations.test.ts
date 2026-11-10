@@ -46,6 +46,16 @@ describe('RemoteOperations', () => {
     })
   })
 
+  it('loads the audit trail for a date range', async () => {
+    await operations.loadAudit('2026-11-01', '2026-11-10')
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/audit?from=2026-11-01&to=2026-11-10',
+      method: 'get',
+      body: undefined,
+    })
+  })
+
   it('creates and lists sales', async () => {
     const sale = {
       type: 'QUICK_SALE' as const,

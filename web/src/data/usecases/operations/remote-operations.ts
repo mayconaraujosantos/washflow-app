@@ -1,4 +1,5 @@
 import { HttpClient } from '@/data/protocols/http/http-client'
+import { AuditEntryModel } from '@/domain/models/audit-entry-model'
 import { ServiceOrderModel } from '@/domain/models/service-order-model'
 import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
@@ -167,6 +168,13 @@ export class RemoteOperations implements Operations {
     if (type) query.set('type', type)
     return this.request(`/api/sales?${query.toString()}`, 'get') as Promise<
       SaleModel[]
+    >
+  }
+
+  loadAudit(from: string, to: string): Promise<AuditEntryModel[]> {
+    const query = new URLSearchParams({ from, to })
+    return this.request(`/api/audit?${query.toString()}`, 'get') as Promise<
+      AuditEntryModel[]
     >
   }
 

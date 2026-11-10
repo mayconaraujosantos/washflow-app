@@ -1,3 +1,4 @@
+import { AuditEntryModel } from '@/domain/models/audit-entry-model'
 import { ServiceOrderModel } from '@/domain/models/service-order-model'
 import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
@@ -69,6 +70,7 @@ export interface Operations {
   loadAgenda: (from: string, to: string) => Promise<ServiceOrderModel[]>
   createSale: (params: CreateSaleParams) => Promise<SaleModel>
   listSales: (from: string, to: string, type?: SaleType) => Promise<SaleModel[]>
+  loadAudit: (from: string, to: string) => Promise<AuditEntryModel[]>
   createServicePrice: (params: {
     name: string
     price: number
