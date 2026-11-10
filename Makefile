@@ -241,6 +241,9 @@ cluster-up:
 		-f https://github.com/argoproj/argo-workflows/releases/download/v3.7.2/quick-start-minimal.yaml
 	kubectl -n argo rollout status deploy/workflow-controller --timeout=180s
 	kubectl -n argo rollout status deploy/argo-server --timeout=180s
+	@# The quick-start's MinIO is unused (see infra/argo-workflows/artifact-repository.yaml)
+	@# and its image is no longer pullable: keep it off instead of in ImagePullBackOff.
+	kubectl -n argo scale deploy/minio --replicas=0
 	@echo "==> GitOps root Application + Workflow templates"
 	kubectl apply -f infra/gitops/bootstrap/root.yaml
 	kubectl apply -n argo -f infra/argo-workflows/
