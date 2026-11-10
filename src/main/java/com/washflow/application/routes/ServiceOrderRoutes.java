@@ -14,9 +14,9 @@ import com.washflow.application.factories.controllers.serviceorder.FinalizeServi
 import com.washflow.application.factories.controllers.serviceorder.GetServiceOrderByIdControllerFactory;
 import com.washflow.application.factories.controllers.serviceorder.StartServiceOrderControllerFactory;
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.presentation.controllers.finalizeserviceorder.FinalizeServiceOrderRequest;
-import com.washflow.presentation.controllers.scheduleserviceorder.ScheduleServiceOrderRequest;
-import com.washflow.presentation.controllers.startserviceorder.StartServiceOrderRequest;
+import com.washflow.presentation.controllers.schedule.ScheduleServiceOrderRequest;
+import com.washflow.presentation.controllers.serviceorder.FinalizeServiceOrderRequest;
+import com.washflow.presentation.controllers.serviceorder.StartServiceOrderRequest;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

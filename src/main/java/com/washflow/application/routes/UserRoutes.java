@@ -16,9 +16,9 @@ import com.washflow.application.factories.controllers.user.UpdateUserProfileCont
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthenticatedSession;
 import com.washflow.domain.entities.User;
-import com.washflow.presentation.controllers.authenticateuser.AuthenticateCredentialsRequest;
-import com.washflow.presentation.controllers.authenticateuser.AuthenticateUserRequest;
-import com.washflow.presentation.controllers.updateuserprofile.UpdateUserProfileRequest;
+import com.washflow.presentation.controllers.user.AuthenticateCredentialsRequest;
+import com.washflow.presentation.controllers.user.AuthenticateUserRequest;
+import com.washflow.presentation.controllers.user.UpdateUserProfileRequest;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

@@ -11,7 +11,7 @@ import com.washflow.domain.entities.TicketView;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
 import com.washflow.domain.usecases.user.WasherBadge;
-import com.washflow.presentation.controllers.access.AccessControllers;
+import com.washflow.presentation.controllers.customer.AccessControllers;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

@@ -1,7 +1,7 @@
 package com.washflow.application.factories.controllers.serviceorder;
 
 import com.washflow.application.factories.usecases.serviceorder.StartServiceOrderFactory;
-import com.washflow.presentation.controllers.startserviceorder.StartServiceOrderController;
+import com.washflow.presentation.controllers.serviceorder.StartServiceOrderController;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.validation.protocols.Validation;
 import com.washflow.validation.validators.RequiredFieldValidation;

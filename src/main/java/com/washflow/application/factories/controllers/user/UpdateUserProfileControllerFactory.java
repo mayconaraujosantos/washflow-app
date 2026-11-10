@@ -1,7 +1,7 @@
 package com.washflow.application.factories.controllers.user;
 
 import com.washflow.application.factories.usecases.user.UpdateUserProfileFactory;
-import com.washflow.presentation.controllers.updateuserprofile.UpdateUserProfileController;
+import com.washflow.presentation.controllers.user.UpdateUserProfileController;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.validation.protocols.Validation;
 import com.washflow.validation.validators.RequiredFieldValidation;

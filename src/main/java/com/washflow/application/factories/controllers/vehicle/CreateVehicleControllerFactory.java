@@ -1,7 +1,7 @@
 package com.washflow.application.factories.controllers.vehicle;
 
 import com.washflow.application.factories.usecases.vehicle.CreateVehicleFactory;
-import com.washflow.presentation.controllers.createvehicle.CreateVehicleController;
+import com.washflow.presentation.controllers.vehicle.CreateVehicleController;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.validation.protocols.Validation;
 import com.washflow.validation.validators.RequiredFieldValidation;

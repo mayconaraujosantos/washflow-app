@@ -1,7 +1,7 @@
 package com.washflow.application.factories.controllers.schedule;
 
 import com.washflow.application.factories.usecases.schedule.ListAgendaFactory;
-import com.washflow.presentation.controllers.listagenda.ListAgendaController;
+import com.washflow.presentation.controllers.schedule.ListAgendaController;
 import com.washflow.presentation.protocols.Controller;
 import org.jdbi.v3.core.Jdbi;
 

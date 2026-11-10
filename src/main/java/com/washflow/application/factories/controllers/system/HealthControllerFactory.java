@@ -1,7 +1,7 @@
 package com.washflow.application.factories.controllers.system;
 
 import com.washflow.infra.db.jdbi.DatabaseHealthJdbiRepository;
-import com.washflow.presentation.controllers.health.HealthController;
+import com.washflow.presentation.controllers.system.HealthController;
 import com.washflow.presentation.protocols.Controller;
 import org.jdbi.v3.core.Jdbi;
 

@@ -1,7 +1,7 @@
 package com.washflow.application.factories.controllers.yard;
 
 import com.washflow.application.factories.usecases.yard.GetYardOverviewFactory;
-import com.washflow.presentation.controllers.getyardoverview.GetYardOverviewController;
+import com.washflow.presentation.controllers.yard.GetYardOverviewController;
 import com.washflow.presentation.protocols.Controller;
 import org.jdbi.v3.core.Jdbi;
 

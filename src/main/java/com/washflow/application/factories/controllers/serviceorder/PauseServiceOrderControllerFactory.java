@@ -1,7 +1,7 @@
 package com.washflow.application.factories.controllers.serviceorder;
 
 import com.washflow.application.factories.usecases.serviceorder.PauseServiceOrderFactory;
-import com.washflow.presentation.controllers.pauseserviceorder.PauseServiceOrderController;
+import com.washflow.presentation.controllers.serviceorder.PauseServiceOrderController;
 import com.washflow.presentation.protocols.Controller;
 import org.jdbi.v3.core.Jdbi;
 

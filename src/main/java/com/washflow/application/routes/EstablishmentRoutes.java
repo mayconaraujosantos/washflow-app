@@ -17,7 +17,7 @@ import com.washflow.infra.db.jdbi.UserJdbiRepository;
 import com.washflow.presentation.controllers.establishment.EstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupEstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupStatusController;
-import com.washflow.presentation.controllers.updateuseremail.UpdateUserEmailController;
+import com.washflow.presentation.controllers.user.UpdateUserEmailController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

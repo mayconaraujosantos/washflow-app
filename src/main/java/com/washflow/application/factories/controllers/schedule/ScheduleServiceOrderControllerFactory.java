@@ -2,7 +2,7 @@ package com.washflow.application.factories.controllers.schedule;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.factories.usecases.schedule.ScheduleServiceOrderFactory;
-import com.washflow.presentation.controllers.scheduleserviceorder.ScheduleServiceOrderController;
+import com.washflow.presentation.controllers.schedule.ScheduleServiceOrderController;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.validation.protocols.Validation;
 import com.washflow.validation.validators.RequiredFieldValidation;

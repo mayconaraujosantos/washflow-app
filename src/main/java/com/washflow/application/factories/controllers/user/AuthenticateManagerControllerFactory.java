@@ -3,7 +3,7 @@ package com.washflow.application.factories.controllers.user;
 import com.washflow.application.AppConfig;
 import com.washflow.application.factories.usecases.user.AuthenticateUserFactory;
 import com.washflow.domain.entities.UserProfile;
-import com.washflow.presentation.controllers.authenticateuser.AuthenticateUserController;
+import com.washflow.presentation.controllers.user.AuthenticateUserController;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.validation.protocols.Validation;
 import com.washflow.validation.validators.AnyRequiredFieldValidation;

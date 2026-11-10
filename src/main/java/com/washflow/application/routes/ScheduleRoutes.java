@@ -8,7 +8,7 @@ import com.washflow.application.factories.usecases.establishment.EstablishmentHo
 import com.washflow.data.usecases.schedule.DbScheduleAvailability;
 import com.washflow.domain.usecases.schedule.ScheduleAvailability;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
-import com.washflow.presentation.controllers.scheduleavailability.ScheduleAvailabilityController;
+import com.washflow.presentation.controllers.schedule.ScheduleAvailabilityController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
