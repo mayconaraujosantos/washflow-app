@@ -201,6 +201,27 @@ describe('RemoteOperations', () => {
     })
   })
 
+  it('refunds part of a sale and lists sale refunds by date', async () => {
+    const refund = {
+      method: 'PIX' as const,
+      amount: 12.5,
+      reason: 'WRONG_CHARGE' as const,
+    }
+    await operations.refundSale('sale-1', refund)
+    await operations.listSaleRefunds('2026-11-10', '2026-11-10')
+
+    expect(request).toHaveBeenNthCalledWith(1, {
+      url: 'https://washflow.test/api/sales/sale-1/refunds',
+      method: 'post',
+      body: refund,
+    })
+    expect(request).toHaveBeenNthCalledWith(2, {
+      url: 'https://washflow.test/api/sales/refunds?from=2026-11-10&to=2026-11-10',
+      method: 'get',
+      body: undefined,
+    })
+  })
+
   it('calls the resume endpoint', async () => {
     await operations.resume('order-1')
 

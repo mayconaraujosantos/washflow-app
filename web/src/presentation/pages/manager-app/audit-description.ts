@@ -7,6 +7,7 @@ const ACTIONS: Record<string, string> = {
   'POST /api/expense-categories': 'Criou uma categoria de despesa',
   'POST /api/services': 'Cadastrou um produto ou serviço',
   'POST /api/sales': 'Registrou uma venda ou orçamento',
+  'POST /api/sales/{id}/refunds': 'Estornou uma venda (total ou parte)',
   'POST /api/operations/entries': 'Registrou a entrada de um veículo',
   'PATCH /api/service-orders/{id}/check-in': 'Recebeu um veículo agendado',
   'PATCH /api/service-orders/{id}/cancel': 'Cancelou um atendimento',

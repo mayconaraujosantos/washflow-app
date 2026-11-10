@@ -8,7 +8,11 @@ import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { UserModel, UserProfile } from '@/domain/models/user-model'
 import { VehicleLookupModel } from '@/domain/models/vehicle-lookup-model'
-import { SaleModel, SaleType } from '@/domain/models/sale-model'
+import {
+  SaleModel,
+  SaleRefundModel,
+  SaleType,
+} from '@/domain/models/sale-model'
 import {
   CreateSaleParams,
   Operations,
@@ -16,6 +20,7 @@ import {
   PauseReason,
   PaymentMethod,
   RefundParams,
+  SaleRefundParams,
   RegisterEntryParams,
 } from '@/domain/usecases/operations'
 
@@ -200,6 +205,22 @@ export class RemoteOperations implements Operations {
     return this.request(`/api/sales?${query.toString()}`, 'get') as Promise<
       SaleModel[]
     >
+  }
+
+  refundSale(saleId: string, params: SaleRefundParams): Promise<SaleModel> {
+    return this.request(
+      `/api/sales/${saleId}/refunds`,
+      'post',
+      params,
+    ) as Promise<SaleModel>
+  }
+
+  listSaleRefunds(from: string, to: string): Promise<SaleRefundModel[]> {
+    const query = new URLSearchParams({ from, to })
+    return this.request(
+      `/api/sales/refunds?${query.toString()}`,
+      'get',
+    ) as Promise<SaleRefundModel[]>
   }
 
   loadAudit(from: string, to: string): Promise<AuditEntryModel[]> {

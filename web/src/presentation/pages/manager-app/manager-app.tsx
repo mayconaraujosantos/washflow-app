@@ -16,6 +16,7 @@ import { errorMessage, firstName } from '@/presentation/helpers/format'
 import { AgendaScreen } from './agenda-screen'
 import { AuditScreen } from './audit-screen'
 import { CashScreen, ReportScreen, TeamScreen } from './back-office-screens'
+import { SalesScreen } from './sales-screen'
 import { EntryScreen } from './entry-screen'
 import { ManagerHome } from './manager-home'
 import {
@@ -166,6 +167,7 @@ export function ManagerApp({
           <Route path="venda" element={<SaleScreen type="QUICK_SALE" />} />
           <Route path="orcamento" element={<SaleScreen type="BUDGET" />} />
           <Route path="caixa" element={<CashScreen />} />
+          <Route path="vendas" element={<SalesScreen />} />
           <Route path="equipe" element={<TeamScreen />} />
           <Route path="relatorios" element={<ReportScreen />} />
           <Route path="estabelecimento" element={<SettingsScreen />} />
@@ -188,6 +190,7 @@ export function ManagerApp({
           items={[
             { label: 'Início', icon: 'home', to: '/gerente' },
             { label: 'Caixa e despesas', icon: 'money', to: '/gerente/caixa' },
+            { label: 'Vendas realizadas', icon: 'cart', to: '/gerente/vendas' },
             { label: 'Relatórios', icon: 'chart', to: '/gerente/relatorios' },
             {
               label: 'Histórico de alterações',

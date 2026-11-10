@@ -159,7 +159,7 @@ Endpoints operacionais:
 * `POST /api/sales`: registra venda rápida ou orçamento (`type` = `QUICK_SALE` ou `BUDGET`, `items` com `servicePriceId` e `quantity`, `discount`, `payments` com `method` e `amount`). Preços vêm do catálogo; desconto entre zero e o subtotal; pagamentos não excedem o total. A resposta traz `paidAmount` e `outstandingAmount`.
 * `GET /api/sales?from=YYYY-MM-DD&to=YYYY-MM-DD[&type=]`: vendas/orçamentos por data Manaus de criação, com `refunds` e `refundedAmount`.
 * `POST /api/sales/{id}/refunds` (gerente): estorna `amount` (até 2 casas) na forma `method`, com `reason` e `description`; acima do que a forma ainda tem → 409 ("Pix só tem R$ 20,00 para estornar nesta venda"), orçamento → 409. A venda fica travada (`FOR UPDATE`) durante a conta, então estornos simultâneos nunca passam do pago. Responde a venda atualizada.
-* `GET /api/sales/refunds?from=&to=` (gerente): estornos de venda pela data do estorno (usado no caixa do dia).
+* `GET /api/sales/refunds?from=&to=` (gerente): estornos de venda pela data do estorno. A tela "Vendas realizadas" (`/gerente/vendas`) lista as vendas com o botão "Estornar"; o "Caixa do dia" desconta os estornos feitos no dia (atendimentos e vendas, de qualquer data).
 * `POST /api/services`: o gerente cadastra produto ou serviço no catálogo (`name`, `price`, `washerCommission`). Somente `GET /api/services` é público.
 * Caixa (`/api/cash-transactions`), categorias de despesa (`/api/expense-categories`) e checklist/fotos de atendimento são exclusivos do gerente.
 * `PATCH /api/service-orders/{id}/pause`: pausa uma lavagem atribuída ao lavador; exige motivo (`LUNCH`, `RESTROOM`, `OTHER`) e descrição para `OTHER`.

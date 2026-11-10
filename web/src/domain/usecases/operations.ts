@@ -7,12 +7,22 @@ import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { UserModel, UserProfile } from '@/domain/models/user-model'
 import { VehicleLookupModel } from '@/domain/models/vehicle-lookup-model'
-import { SaleModel, SaleType } from '@/domain/models/sale-model'
+import {
+  SaleModel,
+  SaleRefundModel,
+  SaleType,
+} from '@/domain/models/sale-model'
 
 export type PaymentMethod = 'CASH' | 'PIX' | 'DEBIT_CARD' | 'CREDIT_CARD'
 export type PauseReason = 'LUNCH' | 'RESTROOM' | 'OTHER'
 export type RefundReason =
   'CUSTOMER_COMPLAINT' | 'WRONG_CHARGE' | 'SERVICE_NOT_DONE' | 'OTHER'
+export type SaleRefundParams = {
+  method: PaymentMethod
+  amount: number
+  reason: RefundReason
+  description?: string
+}
 export type RefundParams = {
   reason: RefundReason
   description?: string
@@ -93,6 +103,8 @@ export interface Operations {
   loadAgenda: (from: string, to: string) => Promise<ServiceOrderModel[]>
   createSale: (params: CreateSaleParams) => Promise<SaleModel>
   listSales: (from: string, to: string, type?: SaleType) => Promise<SaleModel[]>
+  refundSale: (saleId: string, params: SaleRefundParams) => Promise<SaleModel>
+  listSaleRefunds: (from: string, to: string) => Promise<SaleRefundModel[]>
   loadAudit: (from: string, to: string) => Promise<AuditEntryModel[]>
   createServicePrice: (params: {
     name: string
