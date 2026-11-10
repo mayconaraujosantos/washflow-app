@@ -218,3 +218,27 @@ Cliques duplos, reenvios após timeout e duas pessoas agindo ao mesmo tempo não
 * O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido. Em instalações novas, use o assistente `/configurar` (com `SETUP_CODE` em produção) e crie os lava-jatos pelo painel `/admin`.
 * Contas preexistentes sem `senha_hash` não podem entrar em produção até que sua senha seja configurada por um processo administrativo seguro. Apenas ambiente de desenvolvimento permite reivindicar uma conta sem hash no primeiro login.
 * A senha comprova acesso à conta após o cadastro, mas o telefone só é verificado no login por código de WhatsApp. O envio real exige integrar um provedor de WhatsApp em `AccessFactory.otpSender` (hoje só existe o canal `log`, de desenvolvimento).
+
+---
+
+## 5. Organização do código por agregado
+
+As camadas da Clean Architecture (`domain`, `data`, `application`, `infra`, `presentation`) são divididas por agregado, não por operação. Arquivo novo entra no agregado a que pertence:
+
+| Agregado | O que reúne |
+|---|---|
+| `serviceorder` | ciclo de vida do atendimento: entrada no status, lavagem, pausa, finalização, cancelamento, estorno, checklist e fotos |
+| `schedule` | agenda, disponibilidade e agendamento |
+| `yard` | pátio: entrada pela placa, fila de espera e lavagens em andamento |
+| `sale` | venda rápida, orçamento e estorno de venda |
+| `cash` | caixa, lançamentos, categorias de despesa e relatório do caixa |
+| `vehicle` | veículos, busca e vínculo com o cliente |
+| `user` | contas, equipe, login, perfil, e-mail e status ativo |
+| `establishment` | lava-jato (tenant), configuração inicial e plataforma |
+| `customer` | visão do cliente: login sem senha, seus atendimentos e ticket |
+| `reporting` | relatório operacional |
+| `pricing` | catálogo de serviços e preços |
+| `access` | credenciais de acesso (crachá do lavador) e segredos dos fluxos de acesso |
+| `shared` | o que mais de um agregado usa (`ContactRules`, `SchedulingRules`, saúde do banco, catálogo nas portas de persistência) |
+
+Pacotes: `domain/usecases/<agregado>`, `domain/errors/<agregado>` (mais `auth` e `common`), `data/usecases/<agregado>`, `data/protocols/db/<agregado>`, `application/factories/{controllers,usecases}/<agregado>` (mais `system` para health/hello). Os controllers continuam em `presentation/controllers/<operação>/`, um pacote por caso de uso, e os testes espelham o pacote da classe testada. O plano completo está em `docs/refactor-by-aggregate.md`.
