@@ -17,7 +17,7 @@ import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.ServicePrice;
 import com.washflow.domain.entities.Vehicle;
-import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
+import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;

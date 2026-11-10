@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.scheduleserviceorder;
 
-import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
+import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;

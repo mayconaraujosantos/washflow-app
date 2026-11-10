@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.CashTransaction.PartialUpdate;
 import com.washflow.domain.entities.CashTransaction.TransactionType;
-import com.washflow.domain.usecases.cash.UpdateCashTransaction;
+import com.washflow.domain.usecases.finance.UpdateCashTransaction;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.math.BigDecimal;

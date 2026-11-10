@@ -231,14 +231,12 @@ As camadas da Clean Architecture (`domain`, `data`, `application`, `infra`, `pre
 | `schedule` | agenda, disponibilidade e agendamento |
 | `yard` | pátio: entrada pela placa, fila de espera e lavagens em andamento |
 | `sale` | venda rápida, orçamento e estorno de venda |
-| `cash` | caixa, lançamentos, categorias de despesa e relatório do caixa |
+| `finance` | caixa, lançamentos, categorias de despesa, relatório do caixa e relatório operacional |
 | `vehicle` | veículos, busca e vínculo com o cliente |
-| `user` | contas, equipe, login, perfil, e-mail e status ativo |
+| `user` | contas, equipe, login, crachá do lavador, perfil, e-mail e status ativo |
 | `establishment` | lava-jato (tenant), configuração inicial e plataforma |
-| `customer` | visão do cliente: login sem senha, seus atendimentos e ticket |
-| `reporting` | relatório operacional |
+| `customer` | visão do cliente: login sem senha (código e Google), seus atendimentos e ticket |
 | `pricing` | catálogo de serviços e preços |
-| `access` | credenciais de acesso (crachá do lavador) e segredos dos fluxos de acesso |
-| `shared` | o que mais de um agregado usa (`ContactRules`, `SchedulingRules`, saúde do banco, catálogo nas portas de persistência) |
+| `shared` | o que mais de um agregado usa (`ContactRules`, `SchedulingRules`, `Secrets`, saúde do banco, catálogo nas portas de persistência) |
 
-Pacotes: `domain/usecases/<agregado>`, `domain/errors/<agregado>` (mais `auth` e `common`), `data/usecases/<agregado>`, `data/protocols/db/<agregado>`, `application/factories/{controllers,usecases}/<agregado>` (mais `system` para health/hello). Os controllers continuam em `presentation/controllers/<operação>/`, um pacote por caso de uso, e os testes espelham o pacote da classe testada. O plano completo está em `docs/refactor-by-aggregate.md`.
+Evite agregado com uma classe só: junte ao agregado mais próximo. Pacotes: `domain/usecases/<agregado>`, `domain/errors/<agregado>` (mais `auth` e `common`), `data/usecases/<agregado>`, `data/protocols/db/<agregado>`, `application/factories/{controllers,usecases}/<agregado>` (mais `system` para health/hello). Os controllers continuam em `presentation/controllers/<operação>/`, um pacote por caso de uso, e os testes espelham o pacote da classe testada. O plano completo está em `docs/refactor-by-aggregate.md`.

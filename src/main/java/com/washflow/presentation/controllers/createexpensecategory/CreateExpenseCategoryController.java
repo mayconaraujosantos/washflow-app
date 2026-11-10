@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.createexpensecategory;
 
-import com.washflow.domain.usecases.cash.CreateExpenseCategory;
+import com.washflow.domain.usecases.finance.CreateExpenseCategory;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

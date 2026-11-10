@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.customer;
 
-import com.washflow.data.protocols.db.access.TicketRepository;
-import com.washflow.data.usecases.access.Secrets;
+import com.washflow.data.protocols.db.customer.TicketRepository;
+import com.washflow.data.usecases.shared.Secrets;
 import com.washflow.domain.entities.TicketView;
 import com.washflow.domain.errors.common.TicketNotFoundError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;

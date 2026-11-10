@@ -1,15 +1,15 @@
 package com.washflow.data.usecases.customer;
 
 import com.washflow.data.protocols.TokenHasher;
-import com.washflow.data.protocols.db.access.CustomerIdentityRepository;
-import com.washflow.data.protocols.db.access.OtpRepository;
+import com.washflow.data.protocols.db.customer.CustomerIdentityRepository;
+import com.washflow.data.protocols.db.customer.OtpRepository;
 import com.washflow.data.protocols.db.user.CreateUserRepository;
 import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.identity.GoogleTokenVerifier;
 import com.washflow.data.protocols.messaging.OtpSender;
-import com.washflow.data.usecases.access.Secrets;
 import com.washflow.data.usecases.shared.ContactRules;
+import com.washflow.data.usecases.shared.Secrets;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.auth.GoogleLoginUnavailableError;

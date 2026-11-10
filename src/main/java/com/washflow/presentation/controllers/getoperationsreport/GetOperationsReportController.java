@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.getoperationsreport;
 
 import com.washflow.domain.entities.OperationsReport;
-import com.washflow.domain.usecases.reporting.GetOperationsReport;
+import com.washflow.domain.usecases.finance.GetOperationsReport;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

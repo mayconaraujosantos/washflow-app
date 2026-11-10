@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.deletecashtransaction;
 
-import com.washflow.domain.usecases.cash.DeleteCashTransaction;
+import com.washflow.domain.usecases.finance.DeleteCashTransaction;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

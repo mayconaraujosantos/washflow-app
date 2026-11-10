@@ -5,12 +5,12 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.usecases.access.AccessFactory;
+import com.washflow.application.factories.usecases.customer.AccessFactory;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.TicketView;
-import com.washflow.domain.usecases.access.WasherBadge;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
+import com.washflow.domain.usecases.user.WasherBadge;
 import com.washflow.presentation.controllers.access.AccessControllers;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;

@@ -6,7 +6,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.reporting.GetOperationsReportControllerFactory;
+import com.washflow.application.factories.controllers.finance.GetOperationsReportControllerFactory;
 import com.washflow.application.factories.controllers.schedule.ListAgendaControllerFactory;
 import com.washflow.application.factories.controllers.serviceorder.CancelServiceOrderControllerFactory;
 import com.washflow.application.factories.controllers.serviceorder.PauseServiceOrderControllerFactory;

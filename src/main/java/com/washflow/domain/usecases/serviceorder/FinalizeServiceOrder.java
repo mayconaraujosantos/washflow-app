@@ -2,7 +2,7 @@ package com.washflow.domain.usecases.serviceorder;
 
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
+import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import java.util.UUID;

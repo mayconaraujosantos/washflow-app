@@ -1,2 +1,4 @@
-/** Rules shared by several aggregates: contact normalization and scheduling rules. */
+/**
+ * Rules shared by several aggregates: contact normalization, scheduling rules and random secrets.
+ */
 package com.washflow.data.usecases.shared;

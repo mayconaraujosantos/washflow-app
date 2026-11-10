@@ -1,5 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
+import com.washflow.data.protocols.db.finance.LoadOperationsReportRepository;
 import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.protocols.db.schedule.LoadServiceOrdersScheduledBetweenRepository;
 import com.washflow.data.protocols.db.serviceorder.CancelServiceOrderRepository;
@@ -11,7 +12,6 @@ import com.washflow.data.protocols.db.serviceorder.PauseServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.RefundServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.ResumeServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.UpdateServiceOrderStatusRepository;
-import com.washflow.data.protocols.db.shared.LoadOperationsReportRepository;
 import com.washflow.data.protocols.db.yard.LoadWaitingQueueRepository;
 import com.washflow.data.protocols.db.yard.LoadWashingByWasherRepository;
 import com.washflow.data.protocols.db.yard.LoadYardOverviewRepository;
