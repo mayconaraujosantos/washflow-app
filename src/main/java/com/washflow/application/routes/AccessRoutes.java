@@ -5,7 +5,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.usecases.AccessFactory;
+import com.washflow.application.factories.usecases.access.AccessFactory;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.TicketView;
 import com.washflow.domain.usecases.access.WasherBadge;

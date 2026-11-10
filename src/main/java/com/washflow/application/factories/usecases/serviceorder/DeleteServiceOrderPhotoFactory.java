@@ -1,0 +1,16 @@
+package com.washflow.application.factories.usecases.serviceorder;
+
+import com.washflow.data.usecases.serviceorder.DbDeleteServiceOrderPhoto;
+import com.washflow.domain.usecases.serviceorder.DeleteServiceOrderPhoto;
+import com.washflow.infra.db.jdbi.PhotoJdbiRepository;
+import org.jdbi.v3.core.Jdbi;
+
+public final class DeleteServiceOrderPhotoFactory {
+
+  private DeleteServiceOrderPhotoFactory() {}
+
+  public static DeleteServiceOrderPhoto make(Jdbi jdbi) {
+    PhotoJdbiRepository repository = new PhotoJdbiRepository(jdbi);
+    return new DbDeleteServiceOrderPhoto(repository);
+  }
+}
