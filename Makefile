@@ -51,7 +51,7 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help install dev dev-backend dev-frontend build run start test test-backup lint format generate-auth-secret seed-test-users load-seed load-test \
-	coverage sonar stop ip clean db-up db-down db-logs e2e e2e-ci \
+	coverage sonar stop ip clean db-up db-down db-logs e2e e2e-ci hooks \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
 	argocd-port-forward argo-install argo-port-forward argo-ui-service ci deploy-dev deploy-prod
@@ -209,6 +209,13 @@ db-down:
 
 db-logs:
 	docker-compose logs -f postgres
+
+## Versioned git hooks (.githooks): pre-push runs the fast checks (formatting,
+## compilation, lint, types) so a broken build is caught before it reaches
+## develop/main. Once per clone.
+hooks:
+	git config core.hooksPath .githooks
+	@echo "Git hooks enabled (.githooks). Skip once with: git push --no-verify"
 
 ## End-to-end journey (web/e2e, Playwright): two lava-jatos set up from
 ## scratch, managers, washers (PIN and badge QR) and customers (app and
