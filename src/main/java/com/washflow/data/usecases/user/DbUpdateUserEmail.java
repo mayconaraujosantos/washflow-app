@@ -4,7 +4,7 @@ import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
 import com.washflow.data.protocols.db.user.UpdateUserEmailRepository;
 import com.washflow.data.usecases.shared.ContactRules;
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.user.UpdateUserEmail;

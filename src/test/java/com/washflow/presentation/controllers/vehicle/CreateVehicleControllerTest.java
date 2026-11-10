@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.Vehicle;
+import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
 import com.washflow.domain.usecases.vehicle.CreateVehicle;

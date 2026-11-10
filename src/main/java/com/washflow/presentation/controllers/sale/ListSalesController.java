@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.sale;
 
-import com.washflow.domain.entities.SaleType;
+import com.washflow.domain.entities.sale.SaleType;
 import com.washflow.domain.usecases.sale.ListSales;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

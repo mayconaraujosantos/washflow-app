@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.customer;
 
-import com.washflow.domain.entities.TicketView;
+import com.washflow.domain.entities.serviceorder.TicketView;
 import java.util.Optional;
 import java.util.UUID;
 

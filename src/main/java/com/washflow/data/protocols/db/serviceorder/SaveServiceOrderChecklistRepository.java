@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrderChecklist;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist;
 
 public interface SaveServiceOrderChecklistRepository {
 

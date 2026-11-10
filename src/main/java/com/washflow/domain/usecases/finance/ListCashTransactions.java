@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.finance;
 
-import com.washflow.domain.entities.CashTransaction;
+import com.washflow.domain.entities.finance.CashTransaction;
 import java.time.LocalDate;
 import java.util.List;
 

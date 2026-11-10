@@ -7,7 +7,7 @@ import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.factories.usecases.customer.AccessFactory;
 import com.washflow.application.security.AuthTokenService;
-import com.washflow.domain.entities.TicketView;
+import com.washflow.domain.entities.serviceorder.TicketView;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
 import com.washflow.domain.usecases.user.WasherBadge;

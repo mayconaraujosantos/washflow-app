@@ -6,8 +6,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.Sale;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.sale.SaleNotFoundError;
 import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import com.washflow.domain.usecases.sale.RefundSale;

@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.yard;
 
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import java.util.List;
 
 /** Port for loading the yard overview of service orders. */

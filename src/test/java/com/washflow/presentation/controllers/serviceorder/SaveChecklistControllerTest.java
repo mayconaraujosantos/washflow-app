@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.ServiceOrderChecklist;
-import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistItem;
-import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistType;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistItem;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistType;
 import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderChecklist;
 import com.washflow.presentation.protocols.HttpRequest;

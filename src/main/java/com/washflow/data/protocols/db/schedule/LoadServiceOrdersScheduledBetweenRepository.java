@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.schedule;
 
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import java.time.Instant;
 import java.util.List;
 

@@ -6,8 +6,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderPhotoRepository;
-import com.washflow.domain.entities.ServiceOrderPhoto;
-import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
+import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto;
+import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto.PhotoType;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;

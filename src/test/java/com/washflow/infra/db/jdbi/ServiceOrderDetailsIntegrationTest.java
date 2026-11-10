@@ -3,8 +3,8 @@ package com.washflow.infra.db.jdbi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

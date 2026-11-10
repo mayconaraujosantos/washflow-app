@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.customer;
 
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.user.User;
 import java.util.Optional;
 import java.util.UUID;
 

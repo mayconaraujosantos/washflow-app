@@ -14,8 +14,8 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.protocols.db.establishment.PlatformRepository;
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
 import com.washflow.domain.errors.establishment.InvalidSetupCodeError;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;

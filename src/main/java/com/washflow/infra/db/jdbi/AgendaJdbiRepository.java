@@ -2,7 +2,7 @@ package com.washflow.infra.db.jdbi;
 
 import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.protocols.db.schedule.LoadServiceOrdersScheduledBetweenRepository;
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import java.time.Instant;
 import java.util.List;
 import org.jdbi.v3.core.Jdbi;

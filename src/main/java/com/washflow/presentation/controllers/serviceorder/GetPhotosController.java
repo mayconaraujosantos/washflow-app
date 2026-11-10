@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrderPhoto;
+import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto;
 import com.washflow.domain.usecases.serviceorder.ListServiceOrderPhotos;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

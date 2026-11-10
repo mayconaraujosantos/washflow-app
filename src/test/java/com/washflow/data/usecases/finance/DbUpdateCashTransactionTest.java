@@ -6,9 +6,9 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.finance.LoadCashTransactionRepository;
 import com.washflow.data.protocols.db.finance.UpdateCashTransactionRepository;
-import com.washflow.domain.entities.CashTransaction;
-import com.washflow.domain.entities.CashTransaction.PartialUpdate;
-import com.washflow.domain.entities.CashTransaction.TransactionType;
+import com.washflow.domain.entities.finance.CashTransaction;
+import com.washflow.domain.entities.finance.CashTransaction.PartialUpdate;
+import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;

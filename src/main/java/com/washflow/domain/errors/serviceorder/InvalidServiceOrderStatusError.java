@@ -1,6 +1,6 @@
 package com.washflow.domain.errors.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 
 public class InvalidServiceOrderStatusError extends Exception {
 

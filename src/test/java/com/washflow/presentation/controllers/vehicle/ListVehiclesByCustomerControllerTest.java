@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.Vehicle;
+import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.usecases.vehicle.ListVehiclesByCustomer;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

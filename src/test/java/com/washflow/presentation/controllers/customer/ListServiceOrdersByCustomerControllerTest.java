@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.usecases.customer.ListServiceOrdersByCustomer;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

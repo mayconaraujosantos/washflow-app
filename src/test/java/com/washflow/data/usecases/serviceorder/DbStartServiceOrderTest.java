@@ -8,8 +8,8 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
 import com.washflow.data.protocols.db.serviceorder.UpdateServiceOrderStatusRepository;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.serviceorder.StartServiceOrder;

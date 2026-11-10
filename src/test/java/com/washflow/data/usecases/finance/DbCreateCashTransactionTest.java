@@ -9,8 +9,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.finance.SaveCashTransactionRepository;
-import com.washflow.domain.entities.CashTransaction;
-import com.washflow.domain.entities.CashTransaction.TransactionType;
+import com.washflow.domain.entities.finance.CashTransaction;
+import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
 import com.washflow.domain.errors.finance.InvalidTransactionTypeError;
 import com.washflow.domain.usecases.finance.CreateCashTransaction;
 import java.math.BigDecimal;

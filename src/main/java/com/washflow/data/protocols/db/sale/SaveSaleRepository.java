@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.sale;
 
-import com.washflow.domain.entities.Sale;
+import com.washflow.domain.entities.sale.Sale;
 
 public interface SaveSaleRepository {
 

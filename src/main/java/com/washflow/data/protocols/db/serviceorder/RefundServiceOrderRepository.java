@@ -1,7 +1,7 @@
 package com.washflow.data.protocols.db.serviceorder;
 
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.ServiceOrderRefund;
+import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import java.util.Optional;
 import java.util.UUID;
 

@@ -1,6 +1,6 @@
 package com.washflow.application.security;
 
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import java.util.Optional;
 import java.util.UUID;
 

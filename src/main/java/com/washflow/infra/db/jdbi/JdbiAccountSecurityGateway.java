@@ -1,7 +1,7 @@
 package com.washflow.infra.db.jdbi;
 
 import com.washflow.application.security.AccountSecurityGateway;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import java.util.Optional;
 import java.util.UUID;
 import org.jdbi.v3.core.Jdbi;

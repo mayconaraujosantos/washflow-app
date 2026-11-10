@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.ExpenseCategory;
+import com.washflow.domain.entities.finance.ExpenseCategory;
 import com.washflow.domain.usecases.finance.CreateExpenseCategory;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

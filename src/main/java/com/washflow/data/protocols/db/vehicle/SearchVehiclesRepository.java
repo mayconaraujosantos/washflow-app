@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.vehicle;
 
-import com.washflow.domain.entities.VehicleLookup;
+import com.washflow.domain.entities.vehicle.VehicleLookup;
 import java.util.List;
 
 public interface SearchVehiclesRepository {

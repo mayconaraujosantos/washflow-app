@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.sale.LoadSalesRepository;
-import com.washflow.domain.entities.SaleRefund;
+import com.washflow.domain.entities.sale.SaleRefund;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;

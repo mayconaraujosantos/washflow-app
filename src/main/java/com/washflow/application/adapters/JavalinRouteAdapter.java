@@ -2,7 +2,7 @@ package com.washflow.application.adapters;
 
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthenticatedSession;
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.user.User;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

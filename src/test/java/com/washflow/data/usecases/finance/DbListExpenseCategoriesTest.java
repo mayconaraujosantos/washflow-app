@@ -5,7 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.finance.LoadExpenseCategoryRepository;
-import com.washflow.domain.entities.ExpenseCategory;
+import com.washflow.domain.entities.finance.ExpenseCategory;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;

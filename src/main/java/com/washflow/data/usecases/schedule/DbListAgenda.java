@@ -2,7 +2,7 @@ package com.washflow.data.usecases.schedule;
 
 import com.washflow.data.protocols.db.schedule.LoadServiceOrdersScheduledBetweenRepository;
 import com.washflow.data.usecases.shared.SchedulingRules;
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.usecases.schedule.ListAgenda;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

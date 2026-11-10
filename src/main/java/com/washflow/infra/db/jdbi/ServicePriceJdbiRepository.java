@@ -3,7 +3,7 @@ package com.washflow.infra.db.jdbi;
 import com.washflow.data.protocols.db.shared.CreateServicePriceRepository;
 import com.washflow.data.protocols.db.shared.LoadAllServicePricesRepository;
 import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
-import com.washflow.domain.entities.ServicePrice;
+import com.washflow.domain.entities.pricing.ServicePrice;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;

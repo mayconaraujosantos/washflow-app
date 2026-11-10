@@ -2,15 +2,15 @@ package com.washflow.infra.db.jdbi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.washflow.domain.entities.OperationsReport;
-import com.washflow.domain.entities.OperationsReport.ReasonCount;
-import com.washflow.domain.entities.OperationsReport.RefundBreakdown;
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.Sale;
-import com.washflow.domain.entities.SaleItem;
-import com.washflow.domain.entities.SalePayment;
-import com.washflow.domain.entities.SaleRefund;
-import com.washflow.domain.entities.SaleType;
+import com.washflow.domain.entities.finance.OperationsReport;
+import com.washflow.domain.entities.finance.OperationsReport.ReasonCount;
+import com.washflow.domain.entities.finance.OperationsReport.RefundBreakdown;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleItem;
+import com.washflow.domain.entities.sale.SalePayment;
+import com.washflow.domain.entities.sale.SaleRefund;
+import com.washflow.domain.entities.sale.SaleType;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;

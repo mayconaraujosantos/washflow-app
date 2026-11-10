@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.establishment;
 
-import com.washflow.domain.entities.Establishment;
+import com.washflow.domain.entities.establishment.Establishment;
 
 public interface EstablishmentRepository {
 

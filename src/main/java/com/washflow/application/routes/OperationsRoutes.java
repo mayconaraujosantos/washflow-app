@@ -17,10 +17,10 @@ import com.washflow.application.factories.controllers.yard.GetWaitingQueueContro
 import com.washflow.application.factories.controllers.yard.GetWashingByWasherControllerFactory;
 import com.washflow.application.factories.controllers.yard.GetYardOverviewControllerFactory;
 import com.washflow.application.factories.controllers.yard.RegisterVehicleEntryControllerFactory;
-import com.washflow.domain.entities.OperationsReport;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderRefund;
-import com.washflow.domain.entities.VehicleLookup;
+import com.washflow.domain.entities.finance.OperationsReport;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
+import com.washflow.domain.entities.vehicle.VehicleLookup;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

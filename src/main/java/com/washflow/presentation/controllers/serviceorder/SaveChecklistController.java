@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistItem;
-import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistType;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistItem;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistType;
 import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderChecklist;
 import com.washflow.presentation.helpers.HttpHelper;

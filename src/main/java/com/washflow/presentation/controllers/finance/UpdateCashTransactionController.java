@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.finance;
 
-import com.washflow.domain.entities.CashTransaction;
-import com.washflow.domain.entities.CashTransaction.TransactionType;
+import com.washflow.domain.entities.finance.CashTransaction;
+import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
 import com.washflow.domain.usecases.finance.UpdateCashTransaction;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

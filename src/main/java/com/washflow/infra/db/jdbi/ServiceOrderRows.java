@@ -1,7 +1,7 @@
 package com.washflow.infra.db.jdbi;
 
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;

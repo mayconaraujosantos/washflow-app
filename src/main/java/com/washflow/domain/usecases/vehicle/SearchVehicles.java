@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.vehicle;
 
-import com.washflow.domain.entities.VehicleLookup;
+import com.washflow.domain.entities.vehicle.VehicleLookup;
 import java.util.List;
 
 /** Finds vehicles by plate prefix, owner name or phone for the manager's entry form. */

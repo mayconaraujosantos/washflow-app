@@ -1,11 +1,11 @@
 package com.washflow.infra.db.jdbi;
 
 import com.washflow.data.protocols.db.establishment.PlatformRepository;
-import com.washflow.domain.entities.Establishment;
-import com.washflow.domain.entities.EstablishmentListing;
-import com.washflow.domain.entities.EstablishmentSummary;
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.establishment.Establishment;
+import com.washflow.domain.entities.establishment.EstablishmentListing;
+import com.washflow.domain.entities.establishment.EstablishmentSummary;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.user;
 
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.user.User;
 import java.util.List;
 
 /** Port for loading all users. */

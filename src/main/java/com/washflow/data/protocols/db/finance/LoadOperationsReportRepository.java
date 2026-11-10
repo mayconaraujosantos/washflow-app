@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.finance;
 
-import com.washflow.domain.entities.OperationsReport;
+import com.washflow.domain.entities.finance.OperationsReport;
 import java.time.LocalDate;
 
 /** Port for loading an operations report for a date range. */

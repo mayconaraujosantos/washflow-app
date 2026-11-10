@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.finance;
 
 import com.washflow.data.protocols.db.finance.LoadOperationsReportRepository;
-import com.washflow.domain.entities.OperationsReport;
+import com.washflow.domain.entities.finance.OperationsReport;
 import com.washflow.domain.usecases.finance.GetOperationsReport;
 import java.time.temporal.ChronoUnit;
 

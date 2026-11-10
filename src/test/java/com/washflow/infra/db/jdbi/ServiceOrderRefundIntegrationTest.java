@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.domain.entities.OperationsReport;
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.ServiceOrderRefund;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.finance.OperationsReport;
+import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;

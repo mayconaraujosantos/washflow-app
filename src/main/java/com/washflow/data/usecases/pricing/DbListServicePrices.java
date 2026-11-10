@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.pricing;
 
 import com.washflow.data.protocols.db.shared.LoadAllServicePricesRepository;
-import com.washflow.domain.entities.ServicePrice;
+import com.washflow.domain.entities.pricing.ServicePrice;
 import com.washflow.domain.usecases.pricing.ListServicePrices;
 import java.util.List;
 

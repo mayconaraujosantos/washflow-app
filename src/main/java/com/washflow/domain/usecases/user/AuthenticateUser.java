@@ -1,7 +1,7 @@
 package com.washflow.domain.usecases.user;
 
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.ManagerSelfRegistrationNotAllowedError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;

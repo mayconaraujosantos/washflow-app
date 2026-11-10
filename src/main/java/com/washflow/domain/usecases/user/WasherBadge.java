@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.user;
 
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.user.AccountLockedError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.UserNotFoundError;

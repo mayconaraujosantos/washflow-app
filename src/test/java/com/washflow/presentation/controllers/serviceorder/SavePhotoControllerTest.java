@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.ServiceOrderPhoto;
-import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
+import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto;
+import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto.PhotoType;
 import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderPhoto;
 import com.washflow.presentation.protocols.HttpRequest;

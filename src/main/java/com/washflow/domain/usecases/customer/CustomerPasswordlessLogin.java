@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.customer;
 
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.auth.GoogleLoginUnavailableError;
 import com.washflow.domain.errors.auth.InvalidOtpError;
 import com.washflow.domain.errors.auth.OtpTooSoonError;

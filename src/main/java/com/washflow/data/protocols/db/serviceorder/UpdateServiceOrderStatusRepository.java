@@ -1,7 +1,7 @@
 package com.washflow.data.protocols.db.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import java.util.Optional;
 import java.util.UUID;
 

@@ -1,8 +1,8 @@
 package com.washflow.data.protocols.db.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServicePayment;
-import com.washflow.domain.entities.WasherCommission;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServicePayment;
+import com.washflow.domain.entities.serviceorder.WasherCommission;
 import java.util.Optional;
 
 public interface FinalizeServiceOrderRepository {

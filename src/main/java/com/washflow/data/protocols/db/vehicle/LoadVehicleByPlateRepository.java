@@ -1,6 +1,6 @@
 package com.washflow.data.protocols.db.vehicle;
 
-import com.washflow.domain.entities.Vehicle;
+import com.washflow.domain.entities.vehicle.Vehicle;
 import java.util.Optional;
 
 public interface LoadVehicleByPlateRepository {

@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.yard;
 
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import java.util.List;
 
 /**

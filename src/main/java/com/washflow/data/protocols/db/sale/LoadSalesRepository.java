@@ -1,8 +1,8 @@
 package com.washflow.data.protocols.db.sale;
 
-import com.washflow.domain.entities.Sale;
-import com.washflow.domain.entities.SaleRefund;
-import com.washflow.domain.entities.SaleType;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleRefund;
+import com.washflow.domain.entities.sale.SaleType;
 import java.time.Instant;
 import java.util.List;
 

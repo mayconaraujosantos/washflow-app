@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.sale;
 
-import com.washflow.domain.entities.PaymentMethod;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.sale.SaleNotFoundError;
 import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import com.washflow.domain.usecases.sale.RefundSale;

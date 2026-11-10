@@ -1,8 +1,8 @@
 package com.washflow.domain.usecases.establishment;
 
-import com.washflow.domain.entities.EstablishmentListing;
-import com.washflow.domain.entities.EstablishmentSummary;
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.establishment.EstablishmentListing;
+import com.washflow.domain.entities.establishment.EstablishmentSummary;
+import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.establishment.EstablishmentNotFoundError;
 import com.washflow.domain.errors.establishment.EstablishmentSlugTakenError;
 import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;

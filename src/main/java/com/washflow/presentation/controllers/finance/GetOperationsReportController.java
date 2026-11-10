@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.finance;
 
-import com.washflow.domain.entities.OperationsReport;
+import com.washflow.domain.entities.finance.OperationsReport;
 import com.washflow.domain.usecases.finance.GetOperationsReport;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

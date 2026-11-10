@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.SaleRefund;
+import com.washflow.domain.entities.sale.SaleRefund;
 import com.washflow.domain.usecases.sale.ListSales;
 import com.washflow.presentation.protocols.HttpRequest;
 import java.time.LocalDate;

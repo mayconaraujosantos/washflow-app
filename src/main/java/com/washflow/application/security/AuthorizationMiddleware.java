@@ -1,7 +1,7 @@
 package com.washflow.application.security;
 
 import com.washflow.data.tenancy.TenantContext;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
 import java.util.Map;

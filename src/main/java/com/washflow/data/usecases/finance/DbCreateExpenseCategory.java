@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.finance;
 
 import com.washflow.data.protocols.db.finance.SaveExpenseCategoryRepository;
-import com.washflow.domain.entities.ExpenseCategory;
+import com.washflow.domain.entities.finance.ExpenseCategory;
 import com.washflow.domain.usecases.finance.CreateExpenseCategory;
 import java.time.Instant;
 import java.util.UUID;

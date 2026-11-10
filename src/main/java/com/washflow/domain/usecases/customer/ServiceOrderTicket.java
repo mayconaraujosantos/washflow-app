@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.customer;
 
-import com.washflow.domain.entities.TicketView;
+import com.washflow.domain.entities.serviceorder.TicketView;
 import com.washflow.domain.errors.common.TicketNotFoundError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import java.util.UUID;

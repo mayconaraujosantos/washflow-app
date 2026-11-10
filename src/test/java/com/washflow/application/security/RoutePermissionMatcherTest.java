@@ -3,7 +3,7 @@ package com.washflow.application.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

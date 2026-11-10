@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.user.UpdateUserActive;

@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.yard;
 
 import com.washflow.data.protocols.db.yard.LoadWaitingQueueRepository;
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.usecases.yard.GetWaitingQueue;
 import java.util.List;
 

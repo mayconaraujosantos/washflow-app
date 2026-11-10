@@ -1,6 +1,6 @@
 package com.washflow.domain.errors.user;
 
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 
 /**
  * The phone number was already claimed by a different profile - e.g. a phone that registered

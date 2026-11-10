@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.establishment;
 
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
 import com.washflow.domain.errors.establishment.InvalidSetupCodeError;
 

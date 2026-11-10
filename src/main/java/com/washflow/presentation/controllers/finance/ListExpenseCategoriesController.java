@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.finance;
 
-import com.washflow.domain.entities.ExpenseCategory;
+import com.washflow.domain.entities.finance.ExpenseCategory;
 import com.washflow.domain.usecases.finance.ListExpenseCategories;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

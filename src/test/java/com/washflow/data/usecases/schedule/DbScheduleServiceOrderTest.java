@@ -13,10 +13,10 @@ import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRang
 import com.washflow.data.protocols.db.serviceorder.CreateServiceOrderRepository;
 import com.washflow.data.protocols.db.shared.LoadServicePriceByIdRepository;
 import com.washflow.data.protocols.db.vehicle.LoadVehicleByIdRepository;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.entities.ServicePrice;
-import com.washflow.domain.entities.Vehicle;
+import com.washflow.domain.entities.pricing.ServicePrice;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;

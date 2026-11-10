@@ -8,8 +8,8 @@ import com.washflow.application.factories.controllers.sale.CreateSaleControllerF
 import com.washflow.application.factories.controllers.sale.ListSaleRefundsControllerFactory;
 import com.washflow.application.factories.controllers.sale.ListSalesControllerFactory;
 import com.washflow.application.factories.controllers.sale.RefundSaleControllerFactory;
-import com.washflow.domain.entities.Sale;
-import com.washflow.domain.entities.SaleRefund;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleRefund;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

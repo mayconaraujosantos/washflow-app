@@ -1,8 +1,8 @@
 package com.washflow.domain.usecases.sale;
 
-import com.washflow.domain.entities.Sale;
-import com.washflow.domain.entities.SaleRefund;
-import com.washflow.domain.entities.SaleType;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleRefund;
+import com.washflow.domain.entities.sale.SaleType;
 import java.time.LocalDate;
 import java.util.List;
 

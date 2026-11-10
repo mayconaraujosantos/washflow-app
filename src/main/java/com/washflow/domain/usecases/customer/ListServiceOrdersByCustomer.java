@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.customer;
 
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.List;
 import java.util.UUID;

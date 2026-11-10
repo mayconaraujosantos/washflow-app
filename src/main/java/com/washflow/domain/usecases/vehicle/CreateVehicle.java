@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.vehicle;
 
-import com.washflow.domain.entities.Vehicle;
+import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
 import java.util.UUID;

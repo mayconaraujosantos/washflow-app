@@ -15,7 +15,7 @@ import com.washflow.application.factories.controllers.user.UpdateUserActiveContr
 import com.washflow.application.factories.controllers.user.UpdateUserProfileControllerFactory;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthenticatedSession;
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.user.User;
 import com.washflow.presentation.controllers.user.AuthenticateCredentialsRequest;
 import com.washflow.presentation.controllers.user.AuthenticateUserRequest;
 import com.washflow.presentation.controllers.user.UpdateUserProfileRequest;

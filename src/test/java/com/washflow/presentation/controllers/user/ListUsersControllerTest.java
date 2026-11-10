@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.usecases.user.ListUsers;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

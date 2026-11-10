@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.CashTransaction;
-import com.washflow.domain.entities.CashTransaction.PartialUpdate;
-import com.washflow.domain.entities.CashTransaction.TransactionType;
+import com.washflow.domain.entities.finance.CashTransaction;
+import com.washflow.domain.entities.finance.CashTransaction.PartialUpdate;
+import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
 import com.washflow.domain.usecases.finance.UpdateCashTransaction;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

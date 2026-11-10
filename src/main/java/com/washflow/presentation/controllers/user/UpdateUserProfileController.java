@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.user;
 
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.common.ForbiddenError;
 import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import com.washflow.domain.errors.user.UserNotFoundError;

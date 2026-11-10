@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrderChecklist;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist;
 import com.washflow.domain.usecases.serviceorder.ListServiceOrderChecklists;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;

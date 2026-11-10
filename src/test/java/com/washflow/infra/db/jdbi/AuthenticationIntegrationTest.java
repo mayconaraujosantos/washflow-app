@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.user.DbAuthenticateUser;
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.usecases.user.AuthenticateUser;
 import com.washflow.infra.security.BCryptPasswordHasher;

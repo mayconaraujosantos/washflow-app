@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.serviceorder;
 
-import com.washflow.domain.entities.PaymentMethod;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;

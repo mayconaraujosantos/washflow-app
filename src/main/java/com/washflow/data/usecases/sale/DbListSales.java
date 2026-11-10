@@ -2,8 +2,8 @@ package com.washflow.data.usecases.sale;
 
 import com.washflow.data.protocols.db.sale.LoadSalesRepository;
 import com.washflow.data.usecases.shared.SchedulingRules;
-import com.washflow.domain.entities.Sale;
-import com.washflow.domain.entities.SaleRefund;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleRefund;
 import com.washflow.domain.usecases.sale.ListSales;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;

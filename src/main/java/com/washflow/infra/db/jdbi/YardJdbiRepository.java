@@ -3,7 +3,7 @@ package com.washflow.infra.db.jdbi;
 import com.washflow.data.protocols.db.yard.LoadWaitingQueueRepository;
 import com.washflow.data.protocols.db.yard.LoadWashingByWasherRepository;
 import com.washflow.data.protocols.db.yard.LoadYardOverviewRepository;
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import java.util.List;
 import java.util.UUID;
 import org.jdbi.v3.core.Jdbi;

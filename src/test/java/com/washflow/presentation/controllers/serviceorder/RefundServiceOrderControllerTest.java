@@ -7,8 +7,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.ServiceOrderRefund;
+import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
 import com.washflow.domain.usecases.serviceorder.RefundServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;

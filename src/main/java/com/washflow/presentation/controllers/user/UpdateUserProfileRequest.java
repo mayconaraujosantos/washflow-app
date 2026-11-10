@@ -6,7 +6,7 @@ package com.washflow.presentation.controllers.user;
  * exists purely so {@code @OpenApiRequestBody} has a concrete class to derive a schema from.
  *
  * <p>{@code newProfile} is one of {@code CUSTOMER}, {@code WASHER}, {@code MANAGER} - {@link
- * com.washflow.domain.entities.UserProfile}'s Java-side names, the same convention {@code
+ * com.washflow.domain.entities.user.UserProfile}'s Java-side names, the same convention {@code
  * ServiceOrder.status()} already serializes with.
  */
 public record UpdateUserProfileRequest(String managerId, String newProfile) {}

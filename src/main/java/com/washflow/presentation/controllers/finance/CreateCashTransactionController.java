@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.finance;
 
-import com.washflow.domain.entities.CashTransaction.TransactionType;
+import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
 import com.washflow.domain.errors.finance.InvalidTransactionTypeError;
 import com.washflow.domain.usecases.finance.CreateCashTransaction;
 import com.washflow.presentation.helpers.HttpHelper;

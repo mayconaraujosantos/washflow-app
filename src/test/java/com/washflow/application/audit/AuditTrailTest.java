@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.data.tenancy.TenantContext;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import io.javalin.http.Context;
 import java.time.Clock;
 import java.time.Instant;

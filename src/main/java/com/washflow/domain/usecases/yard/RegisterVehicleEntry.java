@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.yard;
 
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
@@ -13,9 +13,9 @@ import java.time.Instant;
  * The manager opens a service order at the counter, identified by the vehicle's plate. The vehicle
  * (and its walk-in contact) is created on the fly when the plate is new. Without {@code
  * scheduledAt} the car is already in the shop and goes straight to {@link
- * com.washflow.domain.entities.ServiceOrderStatus#WAITING_IN_YARD}; with it, the order is {@link
- * com.washflow.domain.entities.ServiceOrderStatus#SCHEDULED} under the same business-hours and
- * capacity rules customers follow.
+ * com.washflow.domain.entities.serviceorder.ServiceOrderStatus#WAITING_IN_YARD}; with it, the order
+ * is {@link com.washflow.domain.entities.serviceorder.ServiceOrderStatus#SCHEDULED} under the same
+ * business-hours and capacity rules customers follow.
  */
 public interface RegisterVehicleEntry {
 

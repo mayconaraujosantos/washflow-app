@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrderChecklist;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist;
 import java.util.List;
 import java.util.UUID;
 

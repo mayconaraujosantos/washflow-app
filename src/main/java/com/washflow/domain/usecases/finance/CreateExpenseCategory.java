@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.finance;
 
-import com.washflow.domain.entities.ExpenseCategory;
+import com.washflow.domain.entities.finance.ExpenseCategory;
 
 public interface CreateExpenseCategory {
 

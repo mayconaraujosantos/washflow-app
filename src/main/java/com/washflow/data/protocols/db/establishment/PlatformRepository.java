@@ -1,9 +1,9 @@
 package com.washflow.data.protocols.db.establishment;
 
-import com.washflow.domain.entities.Establishment;
-import com.washflow.domain.entities.EstablishmentListing;
-import com.washflow.domain.entities.EstablishmentSummary;
-import com.washflow.domain.entities.User;
+import com.washflow.domain.entities.establishment.Establishment;
+import com.washflow.domain.entities.establishment.EstablishmentListing;
+import com.washflow.domain.entities.establishment.EstablishmentSummary;
+import com.washflow.domain.entities.user.User;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

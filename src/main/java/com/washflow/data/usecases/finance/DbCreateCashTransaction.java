@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.finance;
 
 import com.washflow.data.protocols.db.finance.SaveCashTransactionRepository;
-import com.washflow.domain.entities.CashTransaction;
+import com.washflow.domain.entities.finance.CashTransaction;
 import com.washflow.domain.errors.finance.InvalidTransactionTypeError;
 import com.washflow.domain.usecases.finance.CreateCashTransaction;
 import java.time.Instant;

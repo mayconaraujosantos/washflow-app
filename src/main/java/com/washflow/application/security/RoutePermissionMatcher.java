@@ -1,6 +1,6 @@
 package com.washflow.application.security;
 
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 
 /**
  * Encapsulates the route-to-profile mapping logic that determines which user role is required to

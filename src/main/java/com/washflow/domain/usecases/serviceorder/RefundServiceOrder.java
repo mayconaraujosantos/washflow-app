@@ -1,7 +1,7 @@
 package com.washflow.domain.usecases.serviceorder;
 
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.ServiceOrderRefund;
+import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
 import java.util.UUID;
 

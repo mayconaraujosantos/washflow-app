@@ -10,9 +10,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.sale.RefundSaleRepository;
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.Sale;
-import com.washflow.domain.entities.SaleRefund;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleRefund;
+import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.usecases.sale.RefundSale;
 import java.math.BigDecimal;
 import java.time.Clock;

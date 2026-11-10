@@ -1,12 +1,12 @@
 package com.washflow.infra.db.jdbi;
 
 import com.washflow.data.protocols.db.finance.LoadOperationsReportRepository;
-import com.washflow.domain.entities.OperationsReport;
-import com.washflow.domain.entities.OperationsReport.PauseBreakdown;
-import com.washflow.domain.entities.OperationsReport.PaymentBreakdown;
-import com.washflow.domain.entities.OperationsReport.ReasonCount;
-import com.washflow.domain.entities.OperationsReport.RefundBreakdown;
-import com.washflow.domain.entities.OperationsReport.ServiceBreakdown;
+import com.washflow.domain.entities.finance.OperationsReport;
+import com.washflow.domain.entities.finance.OperationsReport.PauseBreakdown;
+import com.washflow.domain.entities.finance.OperationsReport.PaymentBreakdown;
+import com.washflow.domain.entities.finance.OperationsReport.ReasonCount;
+import com.washflow.domain.entities.finance.OperationsReport.RefundBreakdown;
+import com.washflow.domain.entities.finance.OperationsReport.ServiceBreakdown;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;

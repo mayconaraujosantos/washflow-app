@@ -3,7 +3,7 @@ package com.washflow.data.usecases.shared;
 import com.washflow.data.protocols.db.schedule.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.protocols.db.serviceorder.CreateServiceOrderRepository;
 import com.washflow.data.usecases.schedule.DbScheduleServiceOrder;
-import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;

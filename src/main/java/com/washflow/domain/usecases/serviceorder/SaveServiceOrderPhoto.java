@@ -1,7 +1,7 @@
 package com.washflow.domain.usecases.serviceorder;
 
-import com.washflow.domain.entities.ServiceOrderPhoto;
-import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
+import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto;
+import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto.PhotoType;
 import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
 import java.util.UUID;
 
