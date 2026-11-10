@@ -134,8 +134,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
                     return true;
                   }));
     } catch (DuplicateKeyError error) {
-      if (error.is("uq_administradores_singleton")
-          || error.is("uq_administradores_email")) {
+      if (error.is("uq_administradores_singleton") || error.is("uq_administradores_email")) {
         return false;
       }
       throw error;
@@ -236,29 +235,29 @@ public class PlatformJdbiRepository implements PlatformRepository {
   private static void seedCatalog(Handle handle, UUID establishmentId) {
     for (Object[] service : STARTER_SERVICES) {
       try (var update =
-                   handle.createUpdate(
-                           "INSERT INTO servicos_preco (estabelecimento_id, nome, preco, comissao_lavador)"
-                                   + " VALUES (:tenant, :name, :price, :commission)")) {
+          handle.createUpdate(
+              "INSERT INTO servicos_preco (estabelecimento_id, nome, preco, comissao_lavador)"
+                  + " VALUES (:tenant, :name, :price, :commission)")) {
         update
-                .bind(TENANT, establishmentId)
-                .bind("name", (String) service[0])
-                .bind("price", new BigDecimal((String) service[1]))
-                .bind("commission", new BigDecimal((String) service[2]))
-                .execute();
+            .bind(TENANT, establishmentId)
+            .bind("name", (String) service[0])
+            .bind("price", new BigDecimal((String) service[1]))
+            .bind("commission", new BigDecimal((String) service[2]))
+            .execute();
       }
     }
     for (String[] category : STARTER_EXPENSE_CATEGORIES) {
       try (var update =
-                   handle.createUpdate(
-                           "INSERT INTO expense_category (id, estabelecimento_id, nome, cor, criado_em)"
-                                   + " VALUES (:id, :tenant, :name, :color, :now)")) {
+          handle.createUpdate(
+              "INSERT INTO expense_category (id, estabelecimento_id, nome, cor, criado_em)"
+                  + " VALUES (:id, :tenant, :name, :color, :now)")) {
         update
-                .bind("id", UUID.randomUUID())
-                .bind(TENANT, establishmentId)
-                .bind("name", category[0])
-                .bind("color", category[1])
-                .bind("now", Instant.now())
-                .execute();
+            .bind("id", UUID.randomUUID())
+            .bind(TENANT, establishmentId)
+            .bind("name", category[0])
+            .bind("color", category[1])
+            .bind("now", Instant.now())
+            .execute();
       }
     }
   }

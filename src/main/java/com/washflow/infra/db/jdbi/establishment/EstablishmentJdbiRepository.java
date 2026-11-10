@@ -54,7 +54,7 @@ public class EstablishmentJdbiRepository implements EstablishmentRepository {
   }
 
   private static Establishment select(Handle handle) {
-    try(var query = handle.createQuery(SELECT_SQL)) {
+    try (var query = handle.createQuery(SELECT_SQL)) {
       return query.map((rs, ctx) -> map(rs)).one();
     }
   }

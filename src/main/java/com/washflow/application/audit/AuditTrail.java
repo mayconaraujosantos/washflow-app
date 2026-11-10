@@ -11,7 +11,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -38,8 +37,8 @@ public final class AuditTrail {
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
   private static final Set<String> CHANGES = Set.of("POST", "PUT", "PATCH", "DELETE");
   private static final Pattern SECRET_KEY =
-          Pattern.compile(
-                  "(?i)password|senha|pin|token|secret|code|codigo|credential|image|photo|foto|signature|assinatura");
+      Pattern.compile(
+          "(?i)password|senha|pin|token|secret|code|codigo|credential|image|photo|foto|signature|assinatura");
   private static final ObjectMapper JSON = new ObjectMapper();
 
   private final AuditStore store;
@@ -95,7 +94,7 @@ public final class AuditTrail {
       List<String> names = new ArrayList<>();
       object.fieldNames().forEachRemaining(names::add);
       for (String name : names) {
-        if (SECRET_KEY.matcher(name.toLowerCase(Locale.ROOT)).matches()) {
+        if (SECRET_KEY.matcher(name).find()) {
           object.put(name, "***");
         } else {
           mask(object.get(name));
