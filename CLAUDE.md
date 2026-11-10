@@ -40,7 +40,7 @@ Uma instalação atende vários lava-jatos. Cada um é criado pelo administrador
 
 Todas as tabelas operacionais (`usuarios`, `veiculos`, `servicos_preco`, `atendimentos`, `vendas`, `cash_transaction`, `expense_category`, `codigos_acesso`) têm `estabelecimento_id` (Chave Estrangeira -> `estabelecimentos.id`); as demais pertencem ao lava-jato pelo atendimento ou pela venda. Telefone, placa e conta Google são únicos **dentro** do lava-jato; `usuarios.email` continua único na plataforma (o e-mail diz de qual lava-jato é o gerente). `administradores` (`id`, `nome`, `email` único, `senha_hash`) guarda o administrador da plataforma, que não pertence a nenhum lava-jato.
 
-`usuarios.email` (único, minúsculo) é o login da gestão. `usuarios.pin_hash` (BCrypt), `cracha_hash` (HMAC do token do QR), `pin_tentativas` / `pin_bloqueado_ate` guardam o crachá do lavador; `google_sub` liga a conta Google do cliente. `atendimentos.ticket_token` é o link público do ticket e `codigos_acesso` guarda os códigos de WhatsApp (só o hash).
+`usuarios.email` (único, minúsculo) é o login da gestão. `usuarios.pin_hash` (BCrypt), `cracha_hash` (HMAC do token do QR), `pin_tentativas` / `pin_bloqueado_ate` guardam o crachá do lavador; `google_sub` liga a conta Google do cliente. `atendimentos.ticket_token` é o link público do ticket e `codigos_acesso` guarda os códigos de WhatsApp (só o hash). `usuarios.email_recuperacao` (V10) é o e-mail do cliente para códigos de troca de senha (não é único: o cliente tem uma conta por lava-jato); `codigos_senha` guarda o código pendente de cada conta (só o hash HMAC, 10 minutos, 5 tentativas).
 
 ### 2.2 Tabela: `veiculos`
 Vincula os carros aos seus respectivos donos (clientes).
@@ -173,6 +173,8 @@ Endpoints operacionais:
 * `PATCH /api/users/{id}/profile`: altera o perfil para `CUSTOMER`, `WASHER` ou `MANAGER`.
 * `PATCH /api/users/{id}/active`: recebe `{"active": false}` para desativar ou `true` para reativar a conta.
 * `PATCH /api/users/{id}/password` (gerente): recebe `password` (mínimo 8) e define a nova senha de um cliente ou lavador do próprio lava-jato que perdeu a sua; conta de gerente → 403 (quem redefine é o administrador). Na tela "Equipe e acessos", botão "Redefinir senha"; o "Esqueci a senha" do cliente orienta a pedir a nova senha no balcão.
+* "Esqueci a senha" por e-mail (públicos): `POST /api/auth/customers/password-reset` (`phone`, dentro do lava-jato) e `POST /api/auth/managers/password-reset` (`email` de acesso) enviam um código de 6 dígitos — para o `email_recuperacao` do cliente (ou o e-mail da conta Google) e para o e-mail de login do gerente — e respondem 202 `{expiresInSeconds}` igual exista a conta ou não (reenvio só após 60 s, em silêncio). `.../password-reset/confirm` (`code`, `password` com mínimo 8) troca a senha: 200, ou 401 para código errado/expirado (contado pelo `LoginThrottle`, que zera o bloqueio do login ao trocar). Sem SMTP: 503. `GET /api/auth/options` informa `emailCode`.
+* `GET`/`PATCH /api/customers/{id}/recovery-email` (o próprio cliente): `{email}` da tela "Meus dados" (`/cliente/dados`, ícone de pessoa no topo do painel); o cadastro também aceita o e-mail, opcional.
 
 O cliente mantém o painel aberto com atualização automática a cada 3 segundos. Quando o status é `PRONTO`, o painel mostra uma orientação persistente para retirada enquanto o atendimento não for finalizado. Não há envio de push com o app fechado.
 
@@ -187,10 +189,10 @@ O cliente mantém o painel aberto com atualização automática a cada 3 segundo
 * O gerente entra com e-mail e senha (`POST /api/auth/managers` com `email` ou, para contas antigas, `phone`). `PATCH /api/users/{id}/email` define o e-mail de acesso.
 
 ### Acesso por perfil
-* **Gerente:** e-mail + senha (contas antigas ainda entram pelo telefone).
+* **Gerente:** e-mail + senha (contas antigas ainda entram pelo telefone). "Esqueci a senha" no login envia o código ao e-mail de acesso; sem SMTP, o administrador redefine pelo painel.
 * **Lavador:** crachá emitido pelo gerente (`POST /api/users/{id}/badge`, mostrado uma única vez): telefone + PIN de 6 dígitos (`POST /api/auth/washers/pin`; 5 erros bloqueiam por 15 minutos; o mesmo telefone pode ter crachá em mais de um lava-jato e cada PIN abre a sua conta) ou leitura do QR do crachá (`POST /api/auth/washers/badge`; o QR abre `/login/lavador?cracha=...`). Gerar de novo invalida o crachá anterior. A senha do lavador passou a ser opcional.
 * **Cliente presencial:** o gerente gera o ticket do atendimento (`POST /api/service-orders/{id}/ticket`), entregue por QR, link ou WhatsApp; `GET /api/tickets/{token}` e a página `/ticket/:token` mostram veículo, serviço e andamento sem login e sem dados do cliente.
-* **Cliente com conta:** telefone + senha, código de 6 dígitos por WhatsApp (`POST /api/auth/customers/otp` e `/otp/verify`; vale 10 minutos, 5 tentativas, reenvio após 60 s; o link `/entrar/whatsapp?telefone=...&codigo=...` funciona como magic link) ou Google (`POST /api/auth/customers/google`). Telefone/conta Google novos viram conta de cliente; contas da equipe nunca entram por esses caminhos. `GET /api/auth/options` informa o que está habilitado (`OTP_CHANNEL`, `GOOGLE_CLIENT_ID`).
+* **Cliente com conta:** telefone + senha, código de 6 dígitos por WhatsApp (`POST /api/auth/customers/otp` e `/otp/verify`; vale 10 minutos, 5 tentativas, reenvio após 60 s; o link `/entrar/whatsapp?telefone=...&codigo=...` funciona como magic link) ou Google (`POST /api/auth/customers/google`). Telefone/conta Google novos viram conta de cliente; contas da equipe nunca entram por esses caminhos. `GET /api/auth/options` informa o que está habilitado (`OTP_CHANNEL`, `GOOGLE_CLIENT_ID`). "Esqueci a senha" envia o código ao e-mail de "Meus dados"; sem e-mail cadastrado, o gerente define uma nova senha no balcão.
 
 ### Concorrência e idempotência
 Cliques duplos, reenvios após timeout e duas pessoas agindo ao mesmo tempo não podem duplicar nada (histórico em `docs/testes-mundo-real.md`):
@@ -220,7 +222,7 @@ Cliques duplos, reenvios após timeout e duas pessoas agindo ao mesmo tempo não
 * Login por senha ou PIN (`/api/auth/customers`, `/washers`, `/washers/pin`, `/managers`, `/admins`) é limitado pelo `LoginThrottle`: 5 erros (401) na mesma conta (rota + lava-jato + telefone/e-mail) ou 30 erros do mesmo IP (último salto do `X-Forwarded-For`) bloqueiam por 15 minutos com 429 e `Retry-After`; um login certo zera a conta. Contadores em memória, por réplica.
 * O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido. Em instalações novas, use o assistente `/configurar` (com `SETUP_CODE` em produção) e crie os lava-jatos pelo painel `/admin`.
 * Contas preexistentes sem `senha_hash` não podem entrar em produção até que sua senha seja configurada por um processo administrativo seguro. Apenas ambiente de desenvolvimento permite reivindicar uma conta sem hash no primeiro login.
-* A senha comprova acesso à conta após o cadastro, mas o telefone só é verificado no login por código de WhatsApp. O envio real exige integrar um provedor de WhatsApp em `AccessFactory.otpSender` (hoje só existe o canal `log`, de desenvolvimento).
+* A senha comprova acesso à conta após o cadastro, mas o telefone só é verificado no login por código de WhatsApp. O envio real exige integrar um provedor de WhatsApp em `AccessFactory.otpSender` (hoje só existe o canal `log`, de desenvolvimento). E-mails (códigos de troca de senha) saem por SMTP genérico (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS`; `UserModule.emailSender`): sem `SMTP_HOST`, desenvolvimento escreve o e-mail no log e produção esconde a opção.
 
 ---
 

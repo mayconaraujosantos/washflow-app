@@ -24,7 +24,26 @@ public record AppConfig(
     String otpChannel,
     String googleClientId,
     String publicAppUrl,
-    String metricsToken) {
+    String metricsToken,
+    Smtp smtp) {
+
+  /**
+   * Outgoing e-mail (password-reset codes). Without SMTP_HOST, development writes the codes to the
+   * log and production offers no e-mail reset. Works with any SMTP relay: Brevo, Resend, Amazon
+   * SES, Gmail (app password)...
+   */
+  public record Smtp(
+      String host, int port, String username, String password, String from, boolean startTls) {
+
+    public boolean configured() {
+      return !host.isBlank();
+    }
+
+    @Override
+    public String toString() {
+      return "Smtp[host=" + host + ", port=" + port + ", from=" + from + ", password=[redacted]]";
+    }
+  }
 
   private static final int DEFAULT_PORT = 7000;
   private static final int DEFAULT_MAX_VEHICLES_PER_HOUR = 3;
@@ -85,7 +104,20 @@ public record AppConfig(
             value(processEnv, dotenvValues, useDotenv, "GOOGLE_CLIENT_ID", ""),
             value(processEnv, dotenvValues, useDotenv, "APP_PUBLIC_URL", ""),
             // Bearer token for GET /api/metrics; empty keeps the endpoint off.
-            value(processEnv, dotenvValues, useDotenv, "METRICS_TOKEN", ""));
+            value(processEnv, dotenvValues, useDotenv, "METRICS_TOKEN", ""),
+            new Smtp(
+                value(processEnv, dotenvValues, useDotenv, "SMTP_HOST", ""),
+                parsePort(
+                    value(processEnv, dotenvValues, useDotenv, "SMTP_PORT", "587"), "SMTP_PORT"),
+                value(processEnv, dotenvValues, useDotenv, "SMTP_USERNAME", ""),
+                value(processEnv, dotenvValues, useDotenv, "SMTP_PASSWORD", ""),
+                value(processEnv, dotenvValues, useDotenv, "SMTP_FROM", ""),
+                !"false"
+                    .equalsIgnoreCase(
+                        value(processEnv, dotenvValues, useDotenv, "SMTP_STARTTLS", "true"))));
+    if (config.smtp().configured() && config.smtp().from().isBlank()) {
+      throw new IllegalStateException("SMTP_HOST requires SMTP_FROM (the sender address)");
+    }
 
     if (isProduction(environment)
         && config.databaseUrl().isBlank()

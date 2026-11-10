@@ -1,3 +1,4 @@
+import { makeRemoteAccess } from '@/main/factories/usecases/make-remote-access'
 import { makeRemoteEstablishment } from '@/main/factories/usecases/make-remote-establishment'
 import { CustomerDashboard } from '@/presentation/pages/customer-dashboard/customer-dashboard'
 import { makeRemoteCreateVehicle } from '@/main/factories/usecases/make-remote-create-vehicle'
@@ -15,6 +16,7 @@ export const makeCustomerDashboardPage = () => {
       scheduleServiceOrder={makeRemoteScheduleServiceOrder()}
       listServiceOrdersByCustomer={makeRemoteListServiceOrdersByCustomer()}
       establishment={makeRemoteEstablishment()}
+      access={makeRemoteAccess()}
     />
   )
 }

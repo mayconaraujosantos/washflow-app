@@ -105,6 +105,31 @@ class LoginThrottleTest {
   }
 
   @Test
+  void wrongResetCodesCountAndANewPasswordUnlocksTheLogin() throws Exception {
+    String confirm = "/api/auth/customers/password-reset/confirm";
+    String ana = "{\"phone\":\"(92) 99123-4567\"}";
+    for (int i = 0; i < LoginThrottle.MAX_ACCOUNT_FAILURES; i++) {
+      throttle.handle("POST", login(CUSTOMERS, "1.1.1.1", ana, 401), this::signIn);
+    }
+    Context locked = login(CUSTOMERS, "1.1.1.1", ana, 200);
+    throttle.handle("POST", locked, this::signIn);
+    verify(locked).status(429);
+
+    throttle.handle("POST", login(confirm, "1.1.1.1", ana, 200), this::signIn);
+
+    Context afterReset = login(CUSTOMERS, "1.1.1.1", ana, 200);
+    throttle.handle("POST", afterReset, this::signIn);
+    verify(afterReset, never()).status(429);
+
+    for (int i = 0; i < LoginThrottle.MAX_ACCOUNT_FAILURES; i++) {
+      throttle.handle("POST", login(confirm, "2.2.2.2", ana, 401), this::signIn);
+    }
+    Context guessing = login(confirm, "2.2.2.2", ana, 200);
+    throttle.handle("POST", guessing, this::signIn);
+    verify(guessing).status(429);
+  }
+
+  @Test
   void oneIpGuessingManyAccountsIsBlocked() throws Exception {
     for (int i = 0; i < LoginThrottle.MAX_IP_FAILURES; i++) {
       throttle.handle(
