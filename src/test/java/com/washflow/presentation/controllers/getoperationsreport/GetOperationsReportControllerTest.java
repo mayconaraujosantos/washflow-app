@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.washflow.domain.entities.OperationsReport;
 import com.washflow.domain.usecases.reporting.GetOperationsReport;
-import com.washflow.infra.db.jdbi.OperationsReport;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.math.BigDecimal;

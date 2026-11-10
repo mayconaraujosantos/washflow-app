@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.domain.entities;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

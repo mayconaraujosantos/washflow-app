@@ -20,9 +20,9 @@ import com.washflow.application.factories.controllers.serviceorder.SaveChecklist
 import com.washflow.application.factories.controllers.serviceorder.SavePhotoControllerFactory;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.ExpenseCategory;
+import com.washflow.domain.entities.OperationsReport;
 import com.washflow.domain.entities.ServiceOrderChecklist;
 import com.washflow.domain.entities.ServiceOrderPhoto;
-import com.washflow.infra.db.jdbi.OperationsReport;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

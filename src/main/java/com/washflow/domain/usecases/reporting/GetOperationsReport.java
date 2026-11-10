@@ -1,6 +1,6 @@
 package com.washflow.domain.usecases.reporting;
 
-import com.washflow.infra.db.jdbi.OperationsReport;
+import com.washflow.domain.entities.OperationsReport;
 import java.time.LocalDate;
 
 /**

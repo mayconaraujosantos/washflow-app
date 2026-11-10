@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.washflow.domain.entities.OperationsReport;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrderRefund;
 import com.washflow.domain.entities.ServiceOrderStatus;
