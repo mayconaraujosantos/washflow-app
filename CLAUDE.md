@@ -212,9 +212,11 @@ Cliques duplos, reenvios após timeout e duas pessoas agindo ao mesmo tempo não
 * Cada requisição tem um ID (`X-Request-Id`), devolvido também como `requestId` nos corpos de erro (`HttpHelper.errorBody`); o app mostra o código nas falhas 5xx.
 * `GET /api/metrics`: métricas Prometheus (HTTP por rota, pool Hikari, JVM), exige `Authorization: Bearer METRICS_TOKEN`; sem a variável, responde 404.
 * `POST /api/client-errors` (público, limitado a 20 por minuto por IP): erros do navegador enviados pelo `ErrorReporter` e pelo `ErrorBoundary` do PWA.
+* Toda resposta (API, PWA e arquivos estáticos) leva `SecurityHeaders`: HSTS, CSP (só o próprio app e o Google Identity Services; imagens `data:`), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` e `Permissions-Policy` (câmera só para o leitor de QR). `/swagger` fica sem CSP por causa dos scripts inline.
 
 ### Bootstrap e limites de autenticação
 * Em produção, configure `AUTH_TOKEN_SECRET` (mínimo 32 caracteres).
+* Login por senha ou PIN (`/api/auth/customers`, `/washers`, `/washers/pin`, `/managers`, `/admins`) é limitado pelo `LoginThrottle`: 5 erros (401) na mesma conta (rota + lava-jato + telefone/e-mail) ou 30 erros do mesmo IP (último salto do `X-Forwarded-For`) bloqueiam por 15 minutos com 429 e `Retry-After`; um login certo zera a conta. Contadores em memória, por réplica.
 * O gerente inicial sem senha pode ser ativado uma única vez com `BOOTSTRAP_MANAGER_PHONE` e `BOOTSTRAP_MANAGER_PASSWORD`; após definir a senha, o login usa o hash BCrypt persistido. Em instalações novas, use o assistente `/configurar` (com `SETUP_CODE` em produção) e crie os lava-jatos pelo painel `/admin`.
 * Contas preexistentes sem `senha_hash` não podem entrar em produção até que sua senha seja configurada por um processo administrativo seguro. Apenas ambiente de desenvolvimento permite reivindicar uma conta sem hash no primeiro login.
 * A senha comprova acesso à conta após o cadastro, mas o telefone só é verificado no login por código de WhatsApp. O envio real exige integrar um provedor de WhatsApp em `AccessFactory.otpSender` (hoje só existe o canal `log`, de desenvolvimento).

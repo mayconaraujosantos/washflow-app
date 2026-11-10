@@ -50,7 +50,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev dev-backend dev-frontend build run start test lint format generate-auth-secret seed-test-users load-seed load-test \
+.PHONY: help install dev dev-backend dev-frontend build run start test test-backup lint format generate-auth-secret seed-test-users load-seed load-test \
 	coverage sonar stop ip clean db-up db-down db-logs \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
@@ -72,6 +72,7 @@ help:
 	@echo "  make load-test  Peak-day load test with a hosting plan's limits"
 	@echo "                 (PROFILE=render-starter, HOLD=5m; PROFILES=\"a b\" runs several)."
 	@echo "  make test      Run the backend test suite (+ JaCoCo coverage report)."
+	@echo "  make test-backup  Back up, drop and restore a throwaway Postgres (db-backup scripts)."
 	@echo "  make lint      Lint + check formatting for both frontend (ESLint/Prettier)"
 	@echo "                 and backend (Spotless)."
 	@echo "  make format    Auto-format frontend (Prettier) and backend (Spotless)."
@@ -148,6 +149,9 @@ start: run
 
 test:
 	$(GRADLE) test --console=plain
+
+test-backup:
+	CONTAINER_RUNTIME=$(DOCKER) sh scripts/test-db-backup.sh
 
 lint:
 	cd web && bun run lint && bun run format:check

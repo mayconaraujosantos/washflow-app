@@ -2,6 +2,7 @@ package com.washflow.application;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.washflow.application.adapters.SecurityHeaders;
 import com.washflow.application.adapters.SpaFallbackHandler;
 import com.washflow.application.adapters.StaticCachePolicy;
 import com.washflow.application.audit.AuditTrail;
@@ -24,6 +25,7 @@ import com.washflow.application.routes.VehicleRoutes;
 import com.washflow.application.security.AccountSecurityGateway;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthorizationMiddleware;
+import com.washflow.application.security.LoginThrottle;
 import com.washflow.infra.db.jdbi.JdbiAuditStore;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import com.washflow.infra.db.jdbi.JdbiIdempotencyStore;
@@ -52,6 +54,7 @@ public class Application {
         new IdempotencyGuard(new JdbiIdempotencyStore(jdbi), Clock.systemUTC());
     JdbiAuditStore auditStore = new JdbiAuditStore(jdbi);
     AuditTrail auditTrail = new AuditTrail(auditStore, Clock.systemUTC());
+    LoginThrottle loginThrottle = new LoginThrottle(Clock.systemUTC());
 
     Javalin app =
         Javalin.create(
@@ -66,21 +69,27 @@ public class Application {
                               endpoint.method.name(),
                               endpoint.path,
                               ctx,
-                              () -> {
-                                if (authorizationMiddleware.authorize(ctx)) {
-                                  // Idempotency-Key: a resent POST replays its first success.
-                                  // Inside it, so a replayed retry is audited once.
-                                  idempotency.handle(
+                              () ->
+                                  // Sign-in routes: lock an account or IP after repeated 401s.
+                                  loginThrottle.handle(
                                       endpoint.method.name(),
                                       ctx,
-                                      () ->
-                                          auditTrail.handle(
+                                      () -> {
+                                        if (authorizationMiddleware.authorize(ctx)) {
+                                          // Idempotency-Key: a resent POST replays its first
+                                          // success. Inside it, so a replayed retry is audited
+                                          // once.
+                                          idempotency.handle(
                                               endpoint.method.name(),
-                                              endpoint.path,
                                               ctx,
-                                              () -> endpoint.handler.handle(ctx)));
-                                }
-                              }));
+                                              () ->
+                                                  auditTrail.handle(
+                                                      endpoint.method.name(),
+                                                      endpoint.path,
+                                                      ctx,
+                                                      () -> endpoint.handler.handle(ctx)));
+                                        }
+                                      })));
               // Without JavaTimeModule, java.time.Instant fields (e.g.
               // ServiceOrder's) blow up serialization with an
               // InvalidDefinitionException; without disabling
@@ -119,6 +128,9 @@ public class Application {
               addStaticFiles(
                   config, StaticCachePolicy::isHashedAsset, StaticCachePolicy.HASHED_ASSET_HEADERS);
               addStaticFiles(config, StaticCachePolicy::isOtherStatic, Map.of());
+
+              // HSTS, CSP, nosniff, frame and referrer rules on every response.
+              config.routes.before(SecurityHeaders::apply);
 
               config.routes.apiBuilder(
                   () -> {
