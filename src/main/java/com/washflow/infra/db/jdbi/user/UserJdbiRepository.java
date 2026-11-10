@@ -37,6 +37,28 @@ public class UserJdbiRepository
         LoadUserByEmailRepository,
         UpdateUserEmailRepository {
 
+  private static final String CREATE_INSERT_SQL =
+      """
+      INSERT INTO usuarios
+        (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
+         criado_em, ativo)
+      VALUES
+        (:id, :tenant, :name, :phone, :email, :passwordHash, :profile,
+         :createdAt, :active)
+      """;
+
+  private static final String UPDATE_ACTIVE_SELECT_SQL =
+      """
+      SELECT COUNT(*) FROM atendimentos
+      WHERE lavador_id = :userId AND status IN ('EM_LAVAGEM', 'PAUSADA')
+      """;
+
+  private static final String UPDATE_PROFILE_SELECT_SQL =
+      """
+      SELECT COUNT(*) FROM atendimentos
+      WHERE lavador_id = :userId AND status IN ('EM_LAVAGEM', 'PAUSADA')
+      """;
+
   private static final String PHONE = "phone";
   private static final String EMAIL = "email";
   private static final String WHERE_ID = " WHERE id = :id";
@@ -73,15 +95,7 @@ public class UserJdbiRepository
             jdbi.useHandle(
                 handle ->
                     handle
-                        .createUpdate(
-                            """
-                    INSERT INTO usuarios
-                      (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
-                       criado_em, ativo)
-                    VALUES
-                      (:id, :tenant, :name, :phone, :email, :passwordHash, :profile,
-                       :createdAt, :active)
-                    """)
+                        .createUpdate(CREATE_INSERT_SQL)
                         .bind("id", user.id())
                         .bind("name", user.name())
                         .bind(PHONE, user.phone())
@@ -171,11 +185,7 @@ public class UserJdbiRepository
             if (UserProfile.WASHER.dbValue().equals(profile)) {
               boolean hasActiveWashes =
                   handle
-                          .createQuery(
-                              """
-                              SELECT COUNT(*) FROM atendimentos
-                              WHERE lavador_id = :userId AND status IN ('EM_LAVAGEM', 'PAUSADA')
-                              """)
+                          .createQuery(UPDATE_ACTIVE_SELECT_SQL)
                           .bind("userId", id)
                           .mapTo(Integer.class)
                           .one()
@@ -219,11 +229,7 @@ public class UserJdbiRepository
           if (profile != UserProfile.WASHER) {
             boolean hasActiveWashes =
                 handle
-                        .createQuery(
-                            """
-                            SELECT COUNT(*) FROM atendimentos
-                            WHERE lavador_id = :userId AND status IN ('EM_LAVAGEM', 'PAUSADA')
-                            """)
+                        .createQuery(UPDATE_PROFILE_SELECT_SQL)
                         .bind("userId", id)
                         .mapTo(Integer.class)
                         .one()

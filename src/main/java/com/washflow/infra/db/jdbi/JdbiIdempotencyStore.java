@@ -13,6 +13,41 @@ import org.jdbi.v3.core.Jdbi;
  */
 public class JdbiIdempotencyStore implements IdempotencyStore {
 
+  private static final String CLAIM_INSERT_SQL =
+      """
+      INSERT INTO chaves_idempotencia
+        (usuario_id, chave, estabelecimento_id, metodo, rota, hash_requisicao,
+         criado_em)
+      VALUES (:userId, :key, CAST(:establishmentId AS UUID), :method, :route, :hash, :now)
+      ON CONFLICT (usuario_id, chave) DO NOTHING
+      """;
+
+  private static final String CLAIM_UPDATE_SQL =
+      """
+      UPDATE chaves_idempotencia SET criado_em = :now
+      WHERE usuario_id = :userId AND chave = :key AND status_resposta IS NULL
+        AND hash_requisicao = :hash AND criado_em < :stale
+      """;
+
+  private static final String CLAIM_SELECT_SQL =
+      """
+      SELECT hash_requisicao, status_resposta, corpo_resposta
+      FROM chaves_idempotencia WHERE usuario_id = :userId AND chave = :key
+      """;
+
+  private static final String COMPLETE_UPDATE_SQL =
+      """
+      UPDATE chaves_idempotencia
+      SET status_resposta = :status, corpo_resposta = :body
+      WHERE usuario_id = :userId AND chave = :key
+      """;
+
+  private static final String RELEASE_DELETE_SQL =
+      """
+      DELETE FROM chaves_idempotencia
+      WHERE usuario_id = :userId AND chave = :key AND status_resposta IS NULL
+      """;
+
   private static final String USER_ID = "userId";
 
   static final Duration RETENTION = Duration.ofHours(24);
@@ -42,14 +77,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
               .execute();
           int inserted =
               handle
-                  .createUpdate(
-                      """
-                      INSERT INTO chaves_idempotencia
-                        (usuario_id, chave, estabelecimento_id, metodo, rota, hash_requisicao,
-                         criado_em)
-                      VALUES (:userId, :key, CAST(:establishmentId AS UUID), :method, :route, :hash, :now)
-                      ON CONFLICT (usuario_id, chave) DO NOTHING
-                      """)
+                  .createUpdate(CLAIM_INSERT_SQL)
                   .bind(USER_ID, userId)
                   .bind("key", key)
                   .bind("establishmentId", establishmentId)
@@ -63,12 +91,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
           }
           int takenOver =
               handle
-                  .createUpdate(
-                      """
-                      UPDATE chaves_idempotencia SET criado_em = :now
-                      WHERE usuario_id = :userId AND chave = :key AND status_resposta IS NULL
-                        AND hash_requisicao = :hash AND criado_em < :stale
-                      """)
+                  .createUpdate(CLAIM_UPDATE_SQL)
                   .bind(USER_ID, userId)
                   .bind("key", key)
                   .bind("hash", requestHash)
@@ -80,11 +103,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
           }
           Optional<Claim> existing =
               handle
-                  .createQuery(
-                      """
-                      SELECT hash_requisicao, status_resposta, corpo_resposta
-                      FROM chaves_idempotencia WHERE usuario_id = :userId AND chave = :key
-                      """)
+                  .createQuery(CLAIM_SELECT_SQL)
                   .bind(USER_ID, userId)
                   .bind("key", key)
                   .map(
@@ -106,12 +125,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate(
-                    """
-                    UPDATE chaves_idempotencia
-                    SET status_resposta = :status, corpo_resposta = :body
-                    WHERE usuario_id = :userId AND chave = :key
-                    """)
+                .createUpdate(COMPLETE_UPDATE_SQL)
                 .bind("status", status)
                 .bind("body", body)
                 .bind(USER_ID, userId)
@@ -124,11 +138,7 @@ public class JdbiIdempotencyStore implements IdempotencyStore {
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate(
-                    """
-                    DELETE FROM chaves_idempotencia
-                    WHERE usuario_id = :userId AND chave = :key AND status_resposta IS NULL
-                    """)
+                .createUpdate(RELEASE_DELETE_SQL)
                 .bind(USER_ID, userId)
                 .bind("key", key)
                 .execute());

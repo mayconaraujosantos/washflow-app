@@ -19,6 +19,44 @@ import org.jdbi.v3.core.Jdbi;
 
 public class PlatformJdbiRepository implements PlatformRepository {
 
+  private static final String CREATE_FIRST_ADMIN_INSERT_SQL =
+      """
+      INSERT INTO administradores (id, nome, email, senha_hash, criado_em)
+      VALUES (:id, :name, :email, :hash, :createdAt)
+      """;
+
+  private static final String EMAIL_IN_USE_SELECT_SQL =
+      """
+      SELECT (SELECT COUNT(*) FROM usuarios WHERE email = :email)
+           + (SELECT COUNT(*) FROM administradores WHERE email = :email)
+      """;
+
+  private static final String CREATE_ESTABLISHMENT_INSERT_ESTABELECIMENTOS_SQL =
+      """
+      INSERT INTO estabelecimentos
+        (id, slug, nome, hora_abertura, hora_fechamento, abre_domingo,
+         max_veiculos_hora, ativo, criado_em, atualizado_em)
+      VALUES (:id, :slug, :name, :opening, :closing, :sunday, :capacity, TRUE,
+              :now, :now)
+      """;
+
+  private static final String CREATE_ESTABLISHMENT_INSERT_USUARIOS_SQL =
+      """
+      INSERT INTO usuarios
+        (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
+         criado_em, ativo)
+      VALUES (:id, :tenant, :name, :phone, :email, :hash, 'GERENTE', :createdAt, TRUE)
+      """;
+
+  private static final String SEARCH_ACTIVE_SELECT_SQL =
+      """
+      SELECT slug, nome FROM estabelecimentos
+      WHERE ativo = TRUE
+        AND (LOWER(nome) LIKE :pattern ESCAPE '!' OR slug LIKE :pattern ESCAPE '!')
+      ORDER BY nome
+      LIMIT :limit
+      """;
+
   private static final String EMAIL = "email";
   private static final String TENANT = "tenant";
 
@@ -78,11 +116,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
             return false;
           }
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO administradores (id, nome, email, senha_hash, criado_em)
-                  VALUES (:id, :name, :email, :hash, :createdAt)
-                  """)
+              .createUpdate(CREATE_FIRST_ADMIN_INSERT_SQL)
               .bind("id", admin.id())
               .bind("name", admin.name())
               .bind(EMAIL, admin.email())
@@ -142,11 +176,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
     return jdbi.withHandle(
         handle ->
             handle
-                    .createQuery(
-                        """
-                        SELECT (SELECT COUNT(*) FROM usuarios WHERE email = :email)
-                             + (SELECT COUNT(*) FROM administradores WHERE email = :email)
-                        """)
+                    .createQuery(EMAIL_IN_USE_SELECT_SQL)
                     .bind(EMAIL, email)
                     .mapTo(Integer.class)
                     .one()
@@ -159,14 +189,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
     return jdbi.inTransaction(
         handle -> {
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO estabelecimentos
-                    (id, slug, nome, hora_abertura, hora_fechamento, abre_domingo,
-                     max_veiculos_hora, ativo, criado_em, atualizado_em)
-                  VALUES (:id, :slug, :name, :opening, :closing, :sunday, :capacity, TRUE,
-                          :now, :now)
-                  """)
+              .createUpdate(CREATE_ESTABLISHMENT_INSERT_ESTABELECIMENTOS_SQL)
               .bind("id", id)
               .bind("slug", slug)
               .bind("name", settings.name())
@@ -177,13 +200,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
               .bind("now", settings.configuredAt())
               .execute();
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO usuarios
-                    (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
-                     criado_em, ativo)
-                  VALUES (:id, :tenant, :name, :phone, :email, :hash, 'GERENTE', :createdAt, TRUE)
-                  """)
+              .createUpdate(CREATE_ESTABLISHMENT_INSERT_USUARIOS_SQL)
               .bind(TENANT, id)
               .bind("id", manager.id())
               .bind("name", manager.name())
@@ -274,14 +291,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(
-                    """
-                    SELECT slug, nome FROM estabelecimentos
-                    WHERE ativo = TRUE
-                      AND (LOWER(nome) LIKE :pattern ESCAPE '!' OR slug LIKE :pattern ESCAPE '!')
-                    ORDER BY nome
-                    LIMIT :limit
-                    """)
+                .createQuery(SEARCH_ACTIVE_SELECT_SQL)
                 .bind("pattern", pattern)
                 .bind("limit", limit)
                 .map(

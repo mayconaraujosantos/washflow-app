@@ -40,6 +40,89 @@ public class ServiceOrderJdbiRepository
         CancelServiceOrderRepository,
         RefundServiceOrderRepository {
 
+  private static final String PAUSE_WASHING_UPDATE_SQL =
+      """
+      UPDATE atendimentos
+      SET status = 'PAUSADA', atualizado_em = :now
+      WHERE id = :id AND lavador_id = :washerId AND status = 'EM_LAVAGEM'
+        AND estabelecimento_id = :tenant
+      """;
+
+  private static final String PAUSE_WASHING_INSERT_SQL =
+      """
+      INSERT INTO pausas_atendimento
+        (id, atendimento_id, lavador_id, motivo, descricao, iniciada_em)
+      VALUES (:id, :orderId, :washerId, :reason, :description, :startedAt)
+      """;
+
+  private static final String RESUME_WASHING_UPDATE_ATENDIMENTOS_SQL =
+      """
+      UPDATE atendimentos
+      SET status = 'EM_LAVAGEM', atualizado_em = :now
+      WHERE id = :id AND lavador_id = :washerId AND status = 'PAUSADA'
+        AND estabelecimento_id = :tenant
+      """;
+
+  private static final String RESUME_WASHING_UPDATE_PAUSAS_SQL =
+      """
+      UPDATE pausas_atendimento
+      SET retomada_em = :now
+      WHERE atendimento_id = :id AND lavador_id = :washerId
+        AND retomada_em IS NULL
+      """;
+
+  private static final String CANCEL_UPDATE_SQL =
+      """
+      UPDATE atendimentos
+      SET status = 'CANCELADO', atualizado_em = :now, cancelado_em = :now,
+          cancelado_por = :managerId, motivo_cancelamento = :reason,
+          descricao_cancelamento = :description
+      WHERE id = :id AND status IN ('AGENDADO', 'AGUARDANDO_PATIO')
+        AND estabelecimento_id = :tenant
+      """;
+
+  private static final String REFUND_UPDATE_SQL =
+      """
+      UPDATE atendimentos SET status = 'ESTORNADO', atualizado_em = :now
+      WHERE id = :id AND status = 'FINALIZADO' AND estabelecimento_id = :tenant
+      """;
+
+  private static final String REFUND_SELECT_SQL =
+      """
+      SELECT p.valor, p.forma_pagamento,
+             (SELECT COALESCE(SUM(c.valor), 0) FROM comissoes_lavador c
+              WHERE c.atendimento_id = p.atendimento_id) AS commission
+      FROM pagamentos p WHERE p.atendimento_id = :id
+      """;
+
+  private static final String REFUND_INSERT_SQL =
+      """
+      INSERT INTO estornos_atendimento
+        (id, estabelecimento_id, atendimento_id, valor, forma_devolucao, motivo,
+         descricao, comissao_estornada, criado_por, criado_em)
+      VALUES (:id, :tenant, :orderId, :amount, :method, :reason, :description,
+              :reversedCommission, :createdBy, :createdAt)
+      """;
+
+  private static final String FINALIZE_SALE_UPDATE_SQL =
+      """
+      UPDATE atendimentos
+      SET status = 'FINALIZADO', atualizado_em = :updatedAt
+      WHERE id = :id AND status = 'PRONTO' AND estabelecimento_id = :tenant
+      """;
+
+  private static final String FINALIZE_SALE_INSERT_PAGAMENTOS_SQL =
+      """
+      INSERT INTO pagamentos (id, atendimento_id, forma_pagamento, valor, recebido_em)
+      VALUES (:id, :serviceOrderId, :method, :amount, :receivedAt)
+      """;
+
+  private static final String FINALIZE_SALE_INSERT_COMISSOES_LAVADOR_SQL =
+      """
+      INSERT INTO comissoes_lavador (id, atendimento_id, lavador_id, valor, criado_em)
+      VALUES (:id, :serviceOrderId, :washerId, :amount, :creditedAt)
+      """;
+
   private static final String UPDATED_AT = "updatedAt";
   private static final String WASHER_ID = "washerId";
   private static final String REASON = "reason";
@@ -210,13 +293,7 @@ public class ServiceOrderJdbiRepository
           Instant now = Instant.now();
           int updated =
               handle
-                  .createUpdate(
-                      """
-                      UPDATE atendimentos
-                      SET status = 'PAUSADA', atualizado_em = :now
-                      WHERE id = :id AND lavador_id = :washerId AND status = 'EM_LAVAGEM'
-                        AND estabelecimento_id = :tenant
-                      """)
+                  .createUpdate(PAUSE_WASHING_UPDATE_SQL)
                   .bind("now", now)
                   .bind("id", orderId)
                   .bind(WASHER_ID, washerId)
@@ -225,12 +302,7 @@ public class ServiceOrderJdbiRepository
             return false;
           }
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO pausas_atendimento
-                    (id, atendimento_id, lavador_id, motivo, descricao, iniciada_em)
-                  VALUES (:id, :orderId, :washerId, :reason, :description, :startedAt)
-                  """)
+              .createUpdate(PAUSE_WASHING_INSERT_SQL)
               .bind("id", UUID.randomUUID())
               .bind("orderId", orderId)
               .bind(WASHER_ID, washerId)
@@ -253,13 +325,7 @@ public class ServiceOrderJdbiRepository
           Instant now = Instant.now();
           int updated =
               handle
-                  .createUpdate(
-                      """
-                      UPDATE atendimentos
-                      SET status = 'EM_LAVAGEM', atualizado_em = :now
-                      WHERE id = :id AND lavador_id = :washerId AND status = 'PAUSADA'
-                        AND estabelecimento_id = :tenant
-                      """)
+                  .createUpdate(RESUME_WASHING_UPDATE_ATENDIMENTOS_SQL)
                   .bind("now", now)
                   .bind("id", orderId)
                   .bind(WASHER_ID, washerId)
@@ -269,13 +335,7 @@ public class ServiceOrderJdbiRepository
           }
           int resumed =
               handle
-                  .createUpdate(
-                      """
-                      UPDATE pausas_atendimento
-                      SET retomada_em = :now
-                      WHERE atendimento_id = :id AND lavador_id = :washerId
-                        AND retomada_em IS NULL
-                      """)
+                  .createUpdate(RESUME_WASHING_UPDATE_PAUSAS_SQL)
                   .bind("now", now)
                   .bind("id", orderId)
                   .bind(WASHER_ID, washerId)
@@ -294,15 +354,7 @@ public class ServiceOrderJdbiRepository
     return jdbi.withHandle(
             handle ->
                 handle
-                    .createUpdate(
-                        """
-                        UPDATE atendimentos
-                        SET status = 'CANCELADO', atualizado_em = :now, cancelado_em = :now,
-                            cancelado_por = :managerId, motivo_cancelamento = :reason,
-                            descricao_cancelamento = :description
-                        WHERE id = :id AND status IN ('AGENDADO', 'AGUARDANDO_PATIO')
-                          AND estabelecimento_id = :tenant
-                        """)
+                    .createUpdate(CANCEL_UPDATE_SQL)
                     .bind("now", Instant.now())
                     .bind("managerId", managerId)
                     .bind(REASON, reason)
@@ -326,30 +378,12 @@ public class ServiceOrderJdbiRepository
         handle -> {
           Instant now = Instant.now();
           int updated =
-              handle
-                  .createUpdate(
-                      """
-                      UPDATE atendimentos SET status = 'ESTORNADO', atualizado_em = :now
-                      WHERE id = :id AND status = 'FINALIZADO' AND estabelecimento_id = :tenant
-                      """)
-                  .bind("now", now)
-                  .bind("id", orderId)
-                  .execute();
+              handle.createUpdate(REFUND_UPDATE_SQL).bind("now", now).bind("id", orderId).execute();
           if (updated != 1) {
             return Optional.<ServiceOrderRefund>empty();
           }
           Map<String, Object> paid =
-              handle
-                  .createQuery(
-                      """
-                      SELECT p.valor, p.forma_pagamento,
-                             (SELECT COALESCE(SUM(c.valor), 0) FROM comissoes_lavador c
-                              WHERE c.atendimento_id = p.atendimento_id) AS commission
-                      FROM pagamentos p WHERE p.atendimento_id = :id
-                      """)
-                  .bind("id", orderId)
-                  .mapToMap()
-                  .one();
+              handle.createQuery(REFUND_SELECT_SQL).bind("id", orderId).mapToMap().one();
           ServiceOrderRefund refund =
               new ServiceOrderRefund(
                   UUID.randomUUID(),
@@ -366,14 +400,7 @@ public class ServiceOrderJdbiRepository
                   managerId,
                   now);
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO estornos_atendimento
-                    (id, estabelecimento_id, atendimento_id, valor, forma_devolucao, motivo,
-                     descricao, comissao_estornada, criado_por, criado_em)
-                  VALUES (:id, :tenant, :orderId, :amount, :method, :reason, :description,
-                          :reversedCommission, :createdBy, :createdAt)
-                  """)
+              .createUpdate(REFUND_INSERT_SQL)
               .bind("id", refund.id())
               .bind("orderId", orderId)
               .bind(AMOUNT, refund.amount())
@@ -395,12 +422,7 @@ public class ServiceOrderJdbiRepository
         handle -> {
           int updated =
               handle
-                  .createUpdate(
-                      """
-                      UPDATE atendimentos
-                      SET status = 'FINALIZADO', atualizado_em = :updatedAt
-                      WHERE id = :id AND status = 'PRONTO' AND estabelecimento_id = :tenant
-                      """)
+                  .createUpdate(FINALIZE_SALE_UPDATE_SQL)
                   .bind(UPDATED_AT, payment.receivedAt())
                   .bind("id", serviceOrder.id())
                   .execute();
@@ -408,11 +430,7 @@ public class ServiceOrderJdbiRepository
             return Optional.<ServiceOrder>empty(); // finalized by a concurrent request
           }
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO pagamentos (id, atendimento_id, forma_pagamento, valor, recebido_em)
-                  VALUES (:id, :serviceOrderId, :method, :amount, :receivedAt)
-                  """)
+              .createUpdate(FINALIZE_SALE_INSERT_PAGAMENTOS_SQL)
               .bind("id", payment.id())
               .bind("serviceOrderId", payment.serviceOrderId())
               .bind("method", payment.method().name())
@@ -420,11 +438,7 @@ public class ServiceOrderJdbiRepository
               .bind("receivedAt", payment.receivedAt())
               .execute();
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO comissoes_lavador (id, atendimento_id, lavador_id, valor, criado_em)
-                  VALUES (:id, :serviceOrderId, :washerId, :amount, :creditedAt)
-                  """)
+              .createUpdate(FINALIZE_SALE_INSERT_COMISSOES_LAVADOR_SQL)
               .bind("id", commission.id())
               .bind("serviceOrderId", commission.serviceOrderId())
               .bind(WASHER_ID, commission.washerId())

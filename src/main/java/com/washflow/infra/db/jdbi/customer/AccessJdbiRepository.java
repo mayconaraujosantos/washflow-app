@@ -23,6 +23,54 @@ public class AccessJdbiRepository
         OtpRepository,
         CustomerIdentityRepository {
 
+  private static final String SAVE_BADGE_UPDATE_SQL =
+      """
+      UPDATE usuarios
+      SET pin_hash = :pinHash, cracha_hash = :badgeHash,
+          pin_tentativas = 0, pin_bloqueado_ate = NULL
+      WHERE id = :id AND estabelecimento_id = :tenant
+      """;
+
+  private static final String RECORD_PIN_FAILURE_UPDATE_SQL =
+      """
+      UPDATE usuarios
+      SET pin_tentativas = :attempts, pin_bloqueado_ate = :lockedUntil
+      WHERE id = :id
+      """;
+
+  private static final String ISSUE_UPDATE_SQL =
+      """
+      UPDATE atendimentos SET ticket_token = :token
+      WHERE id = :id AND ticket_token IS NULL AND estabelecimento_id = :tenant
+      """;
+
+  private static final String LOAD_BY_TOKEN_SELECT_SQL =
+      """
+      SELECT e.nome AS establishment, v.placa, v.modelo, s.nome AS service,
+             a.status, a.data_agendamento, a.previsao_entrega, a.atualizado_em,
+             (SELECT p.motivo FROM pausas_atendimento p
+              WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason
+      FROM atendimentos a
+      JOIN veiculos v ON v.id = a.veiculo_id
+      JOIN servicos_preco s ON s.id = a.servico_preco_id
+      JOIN estabelecimentos e ON e.id = a.estabelecimento_id
+      WHERE a.ticket_token = :token
+      """;
+
+  private static final String SAVE_INSERT_SQL =
+      """
+      INSERT INTO codigos_acesso
+        (id, estabelecimento_id, telefone, codigo_hash, tentativas, expira_em, criado_em)
+      VALUES (:id, :tenant, :phone, :hash, 0, :expiresAt, :createdAt)
+      """;
+
+  private static final String LOAD_PENDING_SELECT_SQL =
+      """
+      SELECT id, codigo_hash, tentativas, expira_em, criado_em
+      FROM codigos_acesso WHERE telefone = :phone AND estabelecimento_id = :tenant
+      ORDER BY criado_em DESC
+      """;
+
   private static final String AND_TENANT = " AND estabelecimento_id = :tenant";
   private static final String PHONE = "phone";
 
@@ -41,13 +89,7 @@ public class AccessJdbiRepository
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate(
-                    """
-                    UPDATE usuarios
-                    SET pin_hash = :pinHash, cracha_hash = :badgeHash,
-                        pin_tentativas = 0, pin_bloqueado_ate = NULL
-                    WHERE id = :id AND estabelecimento_id = :tenant
-                    """)
+                .createUpdate(SAVE_BADGE_UPDATE_SQL)
                 .bind("id", userId)
                 .bind("pinHash", pinHash)
                 .bind("badgeHash", badgeHash)
@@ -76,12 +118,7 @@ public class AccessJdbiRepository
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate(
-                    """
-                    UPDATE usuarios
-                    SET pin_tentativas = :attempts, pin_bloqueado_ate = :lockedUntil
-                    WHERE id = :id
-                    """)
+                .createUpdate(RECORD_PIN_FAILURE_UPDATE_SQL)
                 .bind("id", userId)
                 .bind("attempts", failedAttempts)
                 .bind("lockedUntil", lockedUntil)
@@ -109,11 +146,7 @@ public class AccessJdbiRepository
     return jdbi.inTransaction(
         handle -> {
           handle
-              .createUpdate(
-                  """
-                  UPDATE atendimentos SET ticket_token = :token
-                  WHERE id = :id AND ticket_token IS NULL AND estabelecimento_id = :tenant
-                  """)
+              .createUpdate(ISSUE_UPDATE_SQL)
               .bind("id", serviceOrderId)
               .bind("token", candidate)
               .execute();
@@ -130,18 +163,7 @@ public class AccessJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(
-                    """
-                    SELECT e.nome AS establishment, v.placa, v.modelo, s.nome AS service,
-                           a.status, a.data_agendamento, a.previsao_entrega, a.atualizado_em,
-                           (SELECT p.motivo FROM pausas_atendimento p
-                            WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason
-                    FROM atendimentos a
-                    JOIN veiculos v ON v.id = a.veiculo_id
-                    JOIN servicos_preco s ON s.id = a.servico_preco_id
-                    JOIN estabelecimentos e ON e.id = a.estabelecimento_id
-                    WHERE a.ticket_token = :token
-                    """)
+                .createQuery(LOAD_BY_TOKEN_SELECT_SQL)
                 .bind("token", token)
                 .map(
                     (rs, ctx) ->
@@ -169,12 +191,7 @@ public class AccessJdbiRepository
               .bind(PHONE, phone)
               .execute();
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO codigos_acesso
-                    (id, estabelecimento_id, telefone, codigo_hash, tentativas, expira_em, criado_em)
-                  VALUES (:id, :tenant, :phone, :hash, 0, :expiresAt, :createdAt)
-                  """)
+              .createUpdate(SAVE_INSERT_SQL)
               .bind("id", UUID.randomUUID())
               .bind(PHONE, phone)
               .bind("hash", codeHash)
@@ -189,12 +206,7 @@ public class AccessJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(
-                    """
-                    SELECT id, codigo_hash, tentativas, expira_em, criado_em
-                    FROM codigos_acesso WHERE telefone = :phone AND estabelecimento_id = :tenant
-                    ORDER BY criado_em DESC
-                    """)
+                .createQuery(LOAD_PENDING_SELECT_SQL)
                 .bind(PHONE, phone)
                 .map(
                     (rs, ctx) ->

@@ -28,6 +28,89 @@ import org.jdbi.v3.core.statement.StatementContext;
 public class SaleJdbiRepository
     implements SaveSaleRepository, LoadSalesRepository, RefundSaleRepository {
 
+  private static final String SAVE_INSERT_VENDAS_SQL =
+      """
+      INSERT INTO vendas
+        (id, estabelecimento_id, tipo, veiculo_id, cliente_nome, cliente_telefone,
+         subtotal, desconto, total, observacoes, criado_por, criado_em)
+      VALUES
+        (:id, :tenant, :type,
+         (SELECT v.id FROM veiculos v
+          WHERE v.id = CAST(:vehicleId AS UUID) AND v.estabelecimento_id = :tenant),
+         :customerName, :customerPhone, :subtotal, :discount,
+         :total, :notes, CAST(:createdBy AS UUID), :createdAt)
+      """;
+
+  private static final String SAVE_INSERT_VENDA_ITENS_SQL =
+      """
+      INSERT INTO venda_itens
+        (id, venda_id, servico_preco_id, descricao, quantidade, preco_unitario,
+         total)
+      VALUES (:id, :saleId, :servicePriceId, :description, :quantity, :unitPrice,
+              :total)
+      """;
+
+  private static final String SAVE_INSERT_VENDA_PAGAMENTOS_SQL =
+      """
+      INSERT INTO venda_pagamentos (id, venda_id, forma_pagamento, valor, recebido_em)
+      VALUES (:id, :saleId, :method, :amount, :receivedAt)
+      """;
+
+  private static final String LOAD_BETWEEN_AND_SQL =
+      """
+      AND criado_em >= :start AND criado_em < :end
+        AND (:type IS NULL OR tipo = :type)
+      ORDER BY criado_em DESC
+      """;
+
+  private static final String REFUND_SELECT_SQL =
+      """
+      SELECT
+        (SELECT COALESCE(SUM(valor), 0) FROM venda_pagamentos
+         WHERE venda_id = :id AND forma_pagamento = :method)
+        - (SELECT COALESCE(SUM(valor), 0) FROM venda_estornos
+           WHERE venda_id = :id AND forma_devolucao = :method)
+      """;
+
+  private static final String REJECTED_INSERT_SQL =
+      """
+      INSERT INTO venda_estornos
+        (id, estabelecimento_id, venda_id, forma_devolucao, valor, motivo,
+         descricao, criado_por, criado_em)
+      VALUES (:id, :tenant, :saleId, :method, :amount, :reason, :description,
+              :createdBy, :createdAt)
+      """;
+
+  private static final String LOAD_REFUNDS_BETWEEN_SELECT_SQL =
+      """
+      SELECT id, venda_id, forma_devolucao, valor, motivo, descricao, criado_por,
+             criado_em
+      FROM venda_estornos
+      WHERE estabelecimento_id = :tenant
+        AND criado_em >= :start AND criado_em < :end
+      ORDER BY criado_em DESC
+      """;
+
+  private static final String LOAD_REFUNDS_SELECT_SQL =
+      """
+      SELECT id, venda_id, forma_devolucao, valor, motivo, descricao, criado_por, criado_em
+      FROM venda_estornos WHERE venda_id IN (<saleIds>)
+      ORDER BY criado_em
+      """;
+
+  private static final String LOAD_ITEMS_SELECT_SQL =
+      """
+      SELECT id, venda_id, servico_preco_id, descricao, quantidade, preco_unitario, total
+      FROM venda_itens WHERE venda_id IN (<saleIds>)
+      """;
+
+  private static final String LOAD_PAYMENTS_SELECT_SQL =
+      """
+      SELECT id, venda_id, forma_pagamento, valor, recebido_em
+      FROM venda_pagamentos WHERE venda_id IN (<saleIds>)
+      ORDER BY recebido_em
+      """;
+
   private static final String TOTAL = "total";
   private static final String METHOD = "method";
   private static final String CRIADO_POR = "criado_por";
@@ -64,18 +147,7 @@ public class SaleJdbiRepository
     jdbi.useTransaction(
         handle -> {
           handle
-              .createUpdate(
-                  """
-                  INSERT INTO vendas
-                    (id, estabelecimento_id, tipo, veiculo_id, cliente_nome, cliente_telefone,
-                     subtotal, desconto, total, observacoes, criado_por, criado_em)
-                  VALUES
-                    (:id, :tenant, :type,
-                     (SELECT v.id FROM veiculos v
-                      WHERE v.id = CAST(:vehicleId AS UUID) AND v.estabelecimento_id = :tenant),
-                     :customerName, :customerPhone, :subtotal, :discount,
-                     :total, :notes, CAST(:createdBy AS UUID), :createdAt)
-                  """)
+              .createUpdate(SAVE_INSERT_VENDAS_SQL)
               .bind("id", sale.id())
               .bind("type", sale.type().dbValue())
               .bind("vehicleId", sale.vehicleId())
@@ -90,14 +162,7 @@ public class SaleJdbiRepository
               .execute();
           for (SaleItem item : sale.items()) {
             handle
-                .createUpdate(
-                    """
-                    INSERT INTO venda_itens
-                      (id, venda_id, servico_preco_id, descricao, quantidade, preco_unitario,
-                       total)
-                    VALUES (:id, :saleId, :servicePriceId, :description, :quantity, :unitPrice,
-                            :total)
-                    """)
+                .createUpdate(SAVE_INSERT_VENDA_ITENS_SQL)
                 .bind("id", item.id())
                 .bind(SALE_ID, sale.id())
                 .bind("servicePriceId", item.servicePriceId())
@@ -109,11 +174,7 @@ public class SaleJdbiRepository
           }
           for (SalePayment payment : sale.payments()) {
             handle
-                .createUpdate(
-                    """
-                    INSERT INTO venda_pagamentos (id, venda_id, forma_pagamento, valor, recebido_em)
-                    VALUES (:id, :saleId, :method, :amount, :receivedAt)
-                    """)
+                .createUpdate(SAVE_INSERT_VENDA_PAGAMENTOS_SQL)
                 .bind("id", payment.id())
                 .bind(SALE_ID, sale.id())
                 .bind(METHOD, payment.method().name())
@@ -131,13 +192,7 @@ public class SaleJdbiRepository
         handle -> {
           List<SaleRow> rows =
               handle
-                  .createQuery(
-                      SELECT_SALE
-                          + """
-                      AND criado_em >= :start AND criado_em < :end
-                        AND (:type IS NULL OR tipo = :type)
-                      ORDER BY criado_em DESC
-                      """)
+                  .createQuery(SELECT_SALE + LOAD_BETWEEN_AND_SQL)
                   .bind("start", start)
                   .bind("end", end)
                   .bind("type", type == null ? null : type.dbValue())
@@ -170,14 +225,7 @@ public class SaleJdbiRepository
             }
             BigDecimal available =
                 handle
-                    .createQuery(
-                        """
-                        SELECT
-                          (SELECT COALESCE(SUM(valor), 0) FROM venda_pagamentos
-                           WHERE venda_id = :id AND forma_pagamento = :method)
-                          - (SELECT COALESCE(SUM(valor), 0) FROM venda_estornos
-                             WHERE venda_id = :id AND forma_devolucao = :method)
-                        """)
+                    .createQuery(REFUND_SELECT_SQL)
                     .bind("id", saleId)
                     .bind(METHOD, refund.method().name())
                     .mapTo(BigDecimal.class)
@@ -192,14 +240,7 @@ public class SaleJdbiRepository
                           available)));
             }
             handle
-                .createUpdate(
-                    """
-                    INSERT INTO venda_estornos
-                      (id, estabelecimento_id, venda_id, forma_devolucao, valor, motivo,
-                       descricao, criado_por, criado_em)
-                    VALUES (:id, :tenant, :saleId, :method, :amount, :reason, :description,
-                            :createdBy, :createdAt)
-                    """)
+                .createUpdate(REJECTED_INSERT_SQL)
                 .bind("id", refund.id())
                 .bind(SALE_ID, saleId)
                 .bind(METHOD, refund.method().name())
@@ -261,15 +302,7 @@ public class SaleJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(
-                    """
-                    SELECT id, venda_id, forma_devolucao, valor, motivo, descricao, criado_por,
-                           criado_em
-                    FROM venda_estornos
-                    WHERE estabelecimento_id = :tenant
-                      AND criado_em >= :start AND criado_em < :end
-                    ORDER BY criado_em DESC
-                    """)
+                .createQuery(LOAD_REFUNDS_BETWEEN_SELECT_SQL)
                 .bind("start", start)
                 .bind("end", end)
                 .map(SaleJdbiRepository::mapRefund)
@@ -291,12 +324,7 @@ public class SaleJdbiRepository
   private static Map<UUID, List<SaleRefund>> loadRefunds(Handle handle, List<UUID> saleIds) {
     Map<UUID, List<SaleRefund>> bySale = new HashMap<>();
     handle
-        .createQuery(
-            """
-            SELECT id, venda_id, forma_devolucao, valor, motivo, descricao, criado_por, criado_em
-            FROM venda_estornos WHERE venda_id IN (<saleIds>)
-            ORDER BY criado_em
-            """)
+        .createQuery(LOAD_REFUNDS_SELECT_SQL)
         .bindList(SALE_IDS, saleIds)
         .map(
             (rs, ctx) -> {
@@ -328,11 +356,7 @@ public class SaleJdbiRepository
   private static Map<UUID, List<SaleItem>> loadItems(Handle handle, List<UUID> saleIds) {
     Map<UUID, List<SaleItem>> bySale = new HashMap<>();
     handle
-        .createQuery(
-            """
-            SELECT id, venda_id, servico_preco_id, descricao, quantidade, preco_unitario, total
-            FROM venda_itens WHERE venda_id IN (<saleIds>)
-            """)
+        .createQuery(LOAD_ITEMS_SELECT_SQL)
         .bindList(SALE_IDS, saleIds)
         .map(
             (rs, ctx) -> {
@@ -355,12 +379,7 @@ public class SaleJdbiRepository
   private static Map<UUID, List<SalePayment>> loadPayments(Handle handle, List<UUID> saleIds) {
     Map<UUID, List<SalePayment>> bySale = new HashMap<>();
     handle
-        .createQuery(
-            """
-            SELECT id, venda_id, forma_pagamento, valor, recebido_em
-            FROM venda_pagamentos WHERE venda_id IN (<saleIds>)
-            ORDER BY recebido_em
-            """)
+        .createQuery(LOAD_PAYMENTS_SELECT_SQL)
         .bindList(SALE_IDS, saleIds)
         .map(
             (rs, ctx) -> {
