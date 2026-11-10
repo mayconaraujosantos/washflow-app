@@ -46,6 +46,16 @@ describe('RemoteOperations', () => {
     })
   })
 
+  it('loads the audit trail for a date range', async () => {
+    await operations.loadAudit('2026-11-01', '2026-11-10')
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/audit?from=2026-11-01&to=2026-11-10',
+      method: 'get',
+      body: undefined,
+    })
+  })
+
   it('creates and lists sales', async () => {
     const sale = {
       type: 'QUICK_SALE' as const,
@@ -160,6 +170,55 @@ describe('RemoteOperations', () => {
       url: 'https://washflow.test/api/service-orders/order-1/pause',
       method: 'patch',
       body: { reason: 'OTHER', description: 'Repor material' },
+    })
+  })
+
+  it('cancels with the reason and description', async () => {
+    await operations.cancel('order-1', 'OTHER', 'Chuva forte')
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/service-orders/order-1/cancel',
+      method: 'patch',
+      body: { reason: 'OTHER', description: 'Chuva forte' },
+    })
+  })
+
+  it('refunds with the reason, method and commission choice', async () => {
+    await operations.refund('order-1', {
+      reason: 'WRONG_CHARGE',
+      refundMethod: 'CASH',
+      reverseCommission: true,
+    })
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/service-orders/order-1/refund',
+      method: 'patch',
+      body: {
+        reason: 'WRONG_CHARGE',
+        refundMethod: 'CASH',
+        reverseCommission: true,
+      },
+    })
+  })
+
+  it('refunds part of a sale and lists sale refunds by date', async () => {
+    const refund = {
+      method: 'PIX' as const,
+      amount: 12.5,
+      reason: 'WRONG_CHARGE' as const,
+    }
+    await operations.refundSale('sale-1', refund)
+    await operations.listSaleRefunds('2026-11-10', '2026-11-10')
+
+    expect(request).toHaveBeenNthCalledWith(1, {
+      url: 'https://washflow.test/api/sales/sale-1/refunds',
+      method: 'post',
+      body: refund,
+    })
+    expect(request).toHaveBeenNthCalledWith(2, {
+      url: 'https://washflow.test/api/sales/refunds?from=2026-11-10&to=2026-11-10',
+      method: 'get',
+      body: undefined,
     })
   })
 

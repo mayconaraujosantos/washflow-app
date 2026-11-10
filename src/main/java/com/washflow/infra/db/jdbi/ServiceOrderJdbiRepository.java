@@ -1,5 +1,6 @@
 package com.washflow.infra.db.jdbi;
 
+import com.washflow.data.protocols.db.CancelServiceOrderRepository;
 import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.protocols.db.CreateServiceOrderRepository;
 import com.washflow.data.protocols.db.FinalizeServiceOrderRepository;
@@ -11,14 +12,19 @@ import com.washflow.data.protocols.db.LoadWaitingQueueRepository;
 import com.washflow.data.protocols.db.LoadWashingByWasherRepository;
 import com.washflow.data.protocols.db.LoadYardOverviewRepository;
 import com.washflow.data.protocols.db.PauseServiceOrderRepository;
+import com.washflow.data.protocols.db.RefundServiceOrderRepository;
 import com.washflow.data.protocols.db.ResumeServiceOrderRepository;
 import com.washflow.data.protocols.db.UpdateServiceOrderStatusRepository;
+import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrder;
+import com.washflow.domain.entities.ServiceOrderRefund;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.ServicePayment;
 import com.washflow.domain.entities.WasherCommission;
 import com.washflow.infra.db.jdbi.OperationsReport.PauseBreakdown;
 import com.washflow.infra.db.jdbi.OperationsReport.PaymentBreakdown;
+import com.washflow.infra.db.jdbi.OperationsReport.ReasonCount;
+import com.washflow.infra.db.jdbi.OperationsReport.RefundBreakdown;
 import com.washflow.infra.db.jdbi.OperationsReport.ServiceBreakdown;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -46,6 +52,8 @@ public class ServiceOrderJdbiRepository
         FinalizeServiceOrderRepository,
         PauseServiceOrderRepository,
         ResumeServiceOrderRepository,
+        CancelServiceOrderRepository,
+        RefundServiceOrderRepository,
         LoadWaitingQueueRepository,
         LoadYardOverviewRepository,
         LoadWashingByWasherRepository,
@@ -119,7 +127,8 @@ public class ServiceOrderJdbiRepository
 
   private static final String COUNT_SCHEDULED_BETWEEN_SQL =
       "SELECT COUNT(*) FROM atendimentos WHERE estabelecimento_id = :tenant"
-          + " AND data_agendamento >= :start AND data_agendamento < :end";
+          + " AND data_agendamento >= :start AND data_agendamento < :end"
+          + " AND status <> 'CANCELADO'";
 
   // Transaction-scoped advisory lock keyed by lava-jato + slot start (see createWithinCapacity).
   private static final String SLOT_LOCK_SQL =
@@ -136,7 +145,7 @@ public class ServiceOrderJdbiRepository
   private static final String YARD_OVERVIEW_SQL =
       SELECT_WITH_DETAILS
           + """
-      WHERE a.status <> 'FINALIZADO' AND a.estabelecimento_id = :tenant
+      WHERE a.status NOT IN ('FINALIZADO', 'CANCELADO') AND a.estabelecimento_id = :tenant
       ORDER BY
         CASE a.status
           WHEN 'EM_LAVAGEM' THEN 0
@@ -390,6 +399,107 @@ public class ServiceOrderJdbiRepository
         });
   }
 
+  // Compare-and-set like every transition: only orders that never reached washing are cancelled,
+  // so a manager racing a washer who just started the car gets a 409 instead of a lost wash.
+  @Override
+  public boolean cancel(UUID orderId, UUID managerId, String reason, String description) {
+    return jdbi.withHandle(
+            handle ->
+                handle
+                    .createUpdate(
+                        """
+                        UPDATE atendimentos
+                        SET status = 'CANCELADO', atualizado_em = :now, cancelado_em = :now,
+                            cancelado_por = :managerId, motivo_cancelamento = :reason,
+                            descricao_cancelamento = :description
+                        WHERE id = :id AND status IN ('AGENDADO', 'AGUARDANDO_PATIO')
+                          AND estabelecimento_id = :tenant
+                        """)
+                    .bind("now", Instant.now())
+                    .bind("managerId", managerId)
+                    .bind("reason", reason)
+                    .bind("description", description)
+                    .bind("id", orderId)
+                    .execute())
+        == 1;
+  }
+
+  // The status compare-and-set (FINALIZADO -> ESTORNADO) makes a double click refund only once;
+  // the amount always comes from the recorded payment, never from the request.
+  @Override
+  public Optional<ServiceOrderRefund> refund(
+      UUID orderId,
+      UUID managerId,
+      String reason,
+      String description,
+      PaymentMethod refundMethod,
+      boolean reverseCommission) {
+    return jdbi.inTransaction(
+        handle -> {
+          Instant now = Instant.now();
+          int updated =
+              handle
+                  .createUpdate(
+                      """
+                      UPDATE atendimentos SET status = 'ESTORNADO', atualizado_em = :now
+                      WHERE id = :id AND status = 'FINALIZADO' AND estabelecimento_id = :tenant
+                      """)
+                  .bind("now", now)
+                  .bind("id", orderId)
+                  .execute();
+          if (updated != 1) {
+            return Optional.<ServiceOrderRefund>empty();
+          }
+          Map<String, Object> paid =
+              handle
+                  .createQuery(
+                      """
+                      SELECT p.valor, p.forma_pagamento,
+                             (SELECT COALESCE(SUM(c.valor), 0) FROM comissoes_lavador c
+                              WHERE c.atendimento_id = p.atendimento_id) AS commission
+                      FROM pagamentos p WHERE p.atendimento_id = :id
+                      """)
+                  .bind("id", orderId)
+                  .mapToMap()
+                  .one();
+          ServiceOrderRefund refund =
+              new ServiceOrderRefund(
+                  UUID.randomUUID(),
+                  orderId,
+                  (BigDecimal) paid.get("valor"),
+                  refundMethod != null
+                      ? refundMethod
+                      : PaymentMethod.valueOf((String) paid.get("forma_pagamento")),
+                  reason,
+                  description,
+                  reverseCommission
+                      ? ((BigDecimal) paid.get("commission")).setScale(2)
+                      : BigDecimal.ZERO.setScale(2),
+                  managerId,
+                  now);
+          handle
+              .createUpdate(
+                  """
+                  INSERT INTO estornos_atendimento
+                    (id, estabelecimento_id, atendimento_id, valor, forma_devolucao, motivo,
+                     descricao, comissao_estornada, criado_por, criado_em)
+                  VALUES (:id, :tenant, :orderId, :amount, :method, :reason, :description,
+                          :reversedCommission, :createdBy, :createdAt)
+                  """)
+              .bind("id", refund.id())
+              .bind("orderId", orderId)
+              .bind("amount", refund.amount())
+              .bind("method", refund.method().name())
+              .bind("reason", reason)
+              .bind("description", description)
+              .bind("reversedCommission", refund.reversedCommission())
+              .bind("createdBy", managerId)
+              .bind("createdAt", now)
+              .execute();
+          return Optional.of(refund);
+        });
+  }
+
   @Override
   public OperationsReport load(LocalDate from, LocalDate to) {
     return loadOperationsReport(from, to);
@@ -494,6 +604,57 @@ public class ServiceOrderJdbiRepository
           List<PauseBreakdown> pauseBreakdowns = new ArrayList<>();
           pauseCounts.forEach(
               (reason, count) -> pauseBreakdowns.add(new PauseBreakdown(reason, count)));
+          List<RefundBreakdown> refundReasons =
+              refundReasons(handle, "estornos_atendimento", start, end);
+          List<RefundBreakdown> saleRefundReasons =
+              refundReasons(handle, "venda_estornos", start, end);
+          List<ReasonCount> cancellationReasons =
+              handle
+                  .createQuery(
+                      """
+                      SELECT motivo_cancelamento, COUNT(*) AS cancelled
+                      FROM atendimentos
+                      WHERE status = 'CANCELADO'
+                        AND cancelado_em >= :start AND cancelado_em < :end
+                        AND estabelecimento_id = :tenant
+                      GROUP BY motivo_cancelamento
+                      ORDER BY COUNT(*) DESC, motivo_cancelamento
+                      """)
+                  .bind("start", start)
+                  .bind("end", end)
+                  .map(
+                      (rs, ctx) ->
+                          new ReasonCount(
+                              rs.getString("motivo_cancelamento"), rs.getInt("cancelled")))
+                  .list();
+          BigDecimal salesReceived =
+              handle
+                  .createQuery(
+                      """
+                      SELECT COALESCE(SUM(p.valor), 0)
+                      FROM venda_pagamentos p
+                      JOIN vendas v ON v.id = p.venda_id
+                      WHERE p.recebido_em >= :start AND p.recebido_em < :end
+                        AND v.estabelecimento_id = :tenant
+                      """)
+                  .bind("start", start)
+                  .bind("end", end)
+                  .mapTo(BigDecimal.class)
+                  .one();
+          BigDecimal reversedCommissions =
+              handle
+                  .createQuery(
+                      """
+                      SELECT COALESCE(SUM(comissao_estornada), 0) FROM estornos_atendimento
+                      WHERE criado_em >= :start AND criado_em < :end
+                        AND estabelecimento_id = :tenant
+                      """)
+                  .bind("start", start)
+                  .bind("end", end)
+                  .mapTo(BigDecimal.class)
+                  .one();
+          BigDecimal refunds = sum(refundReasons);
+          BigDecimal saleRefunds = sum(saleRefundReasons);
           return new OperationsReport(
               from,
               to,
@@ -503,8 +664,43 @@ public class ServiceOrderJdbiRepository
               timedOrders == 0 ? null : totalWashingMinutes / timedOrders,
               serviceBreakdowns,
               paymentBreakdowns,
-              pauseBreakdowns);
+              pauseBreakdowns,
+              refundReasons.stream().mapToInt(RefundBreakdown::count).sum(),
+              refunds,
+              reversedCommissions,
+              revenue.subtract(refunds),
+              commissions.subtract(reversedCommissions),
+              refundReasons,
+              cancellationReasons.stream().mapToInt(ReasonCount::count).sum(),
+              cancellationReasons,
+              salesReceived,
+              saleRefunds,
+              salesReceived.subtract(saleRefunds),
+              saleRefundReasons);
         });
+  }
+
+  // Refunds by reason in the period (refund date): orders' or quick sales' refund table.
+  private static List<RefundBreakdown> refundReasons(
+      Handle handle, String table, Instant start, Instant end) {
+    return handle
+        .createQuery(
+            "SELECT motivo, COUNT(*) AS refunds, SUM(valor) AS amount FROM "
+                + table
+                + " WHERE criado_em >= :start AND criado_em < :end"
+                + " AND estabelecimento_id = :tenant"
+                + " GROUP BY motivo ORDER BY COUNT(*) DESC, motivo")
+        .bind("start", start)
+        .bind("end", end)
+        .map(
+            (rs, ctx) ->
+                new RefundBreakdown(
+                    rs.getString("motivo"), rs.getInt("refunds"), rs.getBigDecimal("amount")))
+        .list();
+  }
+
+  private static BigDecimal sum(List<RefundBreakdown> reasons) {
+    return reasons.stream().map(RefundBreakdown::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   private static Instant timestamp(ResultSet rs, String column) throws SQLException {

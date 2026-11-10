@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.washflow.application.adapters.SpaFallbackHandler;
 import com.washflow.application.adapters.StaticCachePolicy;
+import com.washflow.application.audit.AuditTrail;
 import com.washflow.application.idempotency.IdempotencyGuard;
 import com.washflow.application.observability.RequestTracing;
 import com.washflow.application.routes.AccessRoutes;
+import com.washflow.application.routes.AuditRoutes;
 import com.washflow.application.routes.EstablishmentRoutes;
 import com.washflow.application.routes.FeatureRoutes;
 import com.washflow.application.routes.ObservabilityRoutes;
@@ -23,6 +25,7 @@ import com.washflow.application.security.AccountSecurityGateway;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthorizationMiddleware;
 import com.washflow.infra.db.jdbi.JdbiAccountSecurityGateway;
+import com.washflow.infra.db.jdbi.JdbiAuditStore;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import com.washflow.infra.db.jdbi.JdbiIdempotencyStore;
 import com.washflow.infra.observability.Metrics;
@@ -47,6 +50,8 @@ public class Application {
     RequestTracing tracing = new RequestTracing(Metrics.registry());
     IdempotencyGuard idempotency =
         new IdempotencyGuard(new JdbiIdempotencyStore(jdbi), Clock.systemUTC());
+    JdbiAuditStore auditStore = new JdbiAuditStore(jdbi);
+    AuditTrail auditTrail = new AuditTrail(auditStore, Clock.systemUTC());
 
     Javalin app =
         Javalin.create(
@@ -64,10 +69,16 @@ public class Application {
                               () -> {
                                 if (authorizationMiddleware.authorize(ctx)) {
                                   // Idempotency-Key: a resent POST replays its first success.
+                                  // Inside it, so a replayed retry is audited once.
                                   idempotency.handle(
                                       endpoint.method.name(),
                                       ctx,
-                                      () -> endpoint.handler.handle(ctx));
+                                      () ->
+                                          auditTrail.handle(
+                                              endpoint.method.name(),
+                                              endpoint.path,
+                                              ctx,
+                                              () -> endpoint.handler.handle(ctx)));
                                 }
                               }));
               // Without JavaTimeModule, java.time.Instant fields (e.g.
@@ -124,6 +135,7 @@ public class Application {
                     ScheduleRoutes.register(jdbi, appConfig);
                     ObservabilityRoutes.register(appConfig);
                     PlatformRoutes.register(jdbi, appConfig);
+                    AuditRoutes.register(auditStore);
                   });
 
               config.routes.error(404, SpaFallbackHandler::handle);

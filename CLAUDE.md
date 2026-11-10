@@ -6,10 +6,12 @@ Este documento define as entidades de negócio, os estados do fluxo do veículo 
 
 ## 1. Máquina de Estados do Veículo (O Washflow)
 
-O ciclo de vida do atendimento é controlado pelo campo `status`; a lavagem pode ser pausada e retomada antes de seguir para `PRONTO`. A ordenação da fila do pátio é baseada estritamente no campo `atualizado_em` das tabelas de serviço.
+O ciclo de vida do atendimento é controlado pelo campo `status`; a lavagem pode ser pausada e retomada antes de seguir para `PRONTO`. Antes da lavagem (`AGENDADO` ou `AGUARDANDO_PATIO`) o gerente pode cancelar o atendimento (`CANCELADO`); depois de finalizado, pode estornar o pagamento (`ESTORNADO`). A ordenação da fila do pátio é baseada estritamente no campo `atualizado_em` das tabelas de serviço.
 
 [ AGENDADO ] ➔ [ AGUARDANDO_PATIO ] ➔ [ EM_LAVAGEM ] ⇄ [ PAUSADA ]
                                                    ➔ [ PRONTO ] ➔ [ FINALIZADO ]
+[ AGENDADO | AGUARDANDO_PATIO ] ➔ [ CANCELADO ]
+[ FINALIZADO ] ➔ [ ESTORNADO ]
 
 ---
 
@@ -70,6 +72,7 @@ A tabela central que dita o fluxo físico e financeiro do lava-jato.
 * `lavagem_concluida_em`: TIMESTAMP (Conclusão real da lavagem, usado em relatórios)
 * `previsao_entrega`: TIMESTAMP (opcional, combinada na entrada)
 * `observacoes`: VARCHAR(500) (opcional)
+* `cancelado_em`, `cancelado_por` (-> `usuarios.id`), `motivo_cancelamento` (`CUSTOMER_GAVE_UP`, `NO_SHOW`, `REGISTERED_BY_MISTAKE`, `OTHER`) e `descricao_cancelamento` (VARCHAR(200), obrigatória para `OTHER`): preenchidos ao cancelar (V5)
 
 ### 2.5 Tabela: `pagamentos`
 Registra o recebimento manual no balcão, no momento em que o gerente finaliza o atendimento.
@@ -87,6 +90,16 @@ Registra a comissão creditada ao lavador ao finalizar o atendimento.
 * `valor`: DECIMAL(10,2)
 * `criado_em`: TIMESTAMP
 
+### 2.6.1 Tabela: `estornos_atendimento`
+Estorno total de um atendimento finalizado (V6). Somente inserção (trigger recusa `UPDATE`/`DELETE`); o pagamento e a comissão originais nunca são alterados.
+* `id`: UUID (Chave Primária); `estabelecimento_id`
+* `atendimento_id`: UUID (Chave Estrangeira única -> `atendimentos.id`): um estorno por atendimento
+* `valor`: DECIMAL(10,2) (o valor do pagamento registrado; não aceito do cliente)
+* `forma_devolucao`: `CASH`, `PIX`, `DEBIT_CARD` ou `CREDIT_CARD` (padrão: a forma do pagamento)
+* `motivo`: `CUSTOMER_COMPLAINT`, `WRONG_CHARGE`, `SERVICE_NOT_DONE` ou `OTHER`; `descricao` VARCHAR(200) obrigatória para `OTHER`
+* `comissao_estornada`: DECIMAL(10,2) (zero quando o lavador mantém a comissão)
+* `criado_por` (-> `usuarios.id`), `criado_em`: TIMESTAMP (data do estorno, usada no relatório)
+
 ### 2.7 Tabela: `pausas_atendimento`
 Mantém o histórico das pausas feitas pelo lavador durante uma lavagem.
 * `id`: UUID (Chave Primária)
@@ -96,11 +109,12 @@ Mantém o histórico das pausas feitas pelo lavador durante uma lavagem.
 * `descricao`: VARCHAR(200) (Obrigatória para `OTHER`)
 * `iniciada_em` / `retomada_em`: TIMESTAMP
 
-### 2.8 Tabelas: `vendas`, `venda_itens`, `venda_pagamentos`
+### 2.8 Tabelas: `vendas`, `venda_itens`, `venda_pagamentos`, `venda_estornos`
 Venda rápida no balcão (`tipo = 'VENDA'`) e orçamento (`tipo = 'ORCAMENTO'`), sem passar pelo pátio.
 * `vendas`: `id`, `tipo`, `veiculo_id` (opcional), `cliente_nome`, `cliente_telefone`, `subtotal`, `desconto`, `total`, `observacoes`, `criado_por`, `criado_em`
 * `venda_itens`: item do catálogo `servicos_preco` com `descricao` e `preco_unitario` congelados, `quantidade` e `total`
 * `venda_pagamentos`: pagamentos parciais e em mais de uma forma (`CASH`, `PIX`, `DEBIT_CARD`, `CREDIT_CARD`); a soma nunca passa do total
+* `venda_estornos` (V7, somente inserção): `venda_id`, `forma_devolucao`, `valor`, `motivo` (`CUSTOMER_COMPLAINT`, `WRONG_CHARGE`, `SERVICE_NOT_DONE`, `OTHER`), `descricao` (obrigatória para `OTHER`), `criado_por`, `criado_em`. Estorno total ou parcial de venda rápida (orçamento não tem); cada forma devolve no máximo o que entrou nela, menos o já estornado. Os pagamentos nunca mudam
 
 ---
 
@@ -129,7 +143,7 @@ O login exige telefone e senha (mínimo de 8 caracteres); o nome só é exigido 
 |---|---|
 | `CLIENTE` | Cadastrar/listar seus veículos, agendar e consultar seus próprios atendimentos |
 | `LAVADOR` | Consultar fila, iniciar e concluir lavagens atribuídas a si |
-| `GERENTE` | Consultar o pátio e a agenda, registrar entradas pela placa, receber veículos, registrar pagamento e finalizar atendimentos, cadastrar lavadores, alterar perfis e ativar/desativar contas |
+| `GERENTE` | Consultar o pátio e a agenda, registrar entradas pela placa, receber veículos, cancelar atendimentos antes da lavagem, registrar pagamento, estornar atendimentos finalizados e finalizar atendimentos, cadastrar lavadores, alterar perfis e ativar/desativar contas |
 
 O painel do gerente lista contas e permite cadastrar lavadores com senha inicial (mínimo de 8 caracteres). A senha é persistida somente como hash BCrypt e deve ser entregue diretamente ao colaborador. Um gerente pode alterar contas entre `CLIENTE`, `LAVADOR` e `GERENTE`, inclusive o próprio perfil; ao alterar o próprio perfil, precisa autenticar novamente pela tela do novo perfil. Contas podem ser desativadas sem exclusão dos dados históricos. A desativação é aplicada no login e em cada request autenticada; lavadores com atendimentos `EM_LAVAGEM` ou `PAUSADA` não podem ser desativados nem mudar de perfil até que esses atendimentos sejam resolvidos.
 
@@ -143,13 +157,17 @@ Endpoints operacionais:
 * `GET /api/schedule/availability?date=YYYY-MM-DD` (público): horários do dia com vagas restantes (`booked`/`capacity`), já marcando horários lotados, passados ou dia fechado - as telas de agendamento do gerente e do cliente só oferecem horários aceitos pela API.
 * `GET /api/operations/agenda?from=YYYY-MM-DD&to=YYYY-MM-DD`: atendimentos por data de agendamento (data Manaus, qualquer status), intervalo máximo de 62 dias.
 * `POST /api/sales`: registra venda rápida ou orçamento (`type` = `QUICK_SALE` ou `BUDGET`, `items` com `servicePriceId` e `quantity`, `discount`, `payments` com `method` e `amount`). Preços vêm do catálogo; desconto entre zero e o subtotal; pagamentos não excedem o total. A resposta traz `paidAmount` e `outstandingAmount`.
-* `GET /api/sales?from=YYYY-MM-DD&to=YYYY-MM-DD[&type=]`: vendas/orçamentos por data Manaus de criação.
+* `GET /api/sales?from=YYYY-MM-DD&to=YYYY-MM-DD[&type=]`: vendas/orçamentos por data Manaus de criação, com `refunds` e `refundedAmount`.
+* `POST /api/sales/{id}/refunds` (gerente): estorna `amount` (até 2 casas) na forma `method`, com `reason` e `description`; acima do que a forma ainda tem → 409 ("Pix só tem R$ 20,00 para estornar nesta venda"), orçamento → 409. A venda fica travada (`FOR UPDATE`) durante a conta, então estornos simultâneos nunca passam do pago. Responde a venda atualizada.
+* `GET /api/sales/refunds?from=&to=` (gerente): estornos de venda pela data do estorno. A tela "Vendas realizadas" (`/gerente/vendas`) lista as vendas com o botão "Estornar"; o "Caixa do dia" desconta os estornos feitos no dia (atendimentos e vendas, de qualquer data).
 * `POST /api/services`: o gerente cadastra produto ou serviço no catálogo (`name`, `price`, `washerCommission`). Somente `GET /api/services` é público.
 * Caixa (`/api/cash-transactions`), categorias de despesa (`/api/expense-categories`) e checklist/fotos de atendimento são exclusivos do gerente.
 * `PATCH /api/service-orders/{id}/pause`: pausa uma lavagem atribuída ao lavador; exige motivo (`LUNCH`, `RESTROOM`, `OTHER`) e descrição para `OTHER`.
 * `PATCH /api/service-orders/{id}/resume`: retoma a lavagem pausada pelo próprio lavador.
+* `PATCH /api/service-orders/{id}/cancel` (gerente): cancela atendimento `AGENDADO` ou `AGUARDANDO_PATIO` com `reason` (`CUSTOMER_GAVE_UP`, `NO_SHOW`, `REGISTERED_BY_MISTAKE`, `OTHER`) e `description` (obrigatória para `OTHER`); depois disso, 409. O atendimento não é apagado: sai do pátio, libera a vaga da hora e a placa pode entrar de novo; continua na agenda e no ticket como cancelado.
+* `PATCH /api/service-orders/{id}/refund` (gerente): estorna o pagamento total de um atendimento `FINALIZADO` (vira `ESTORNADO`; segundo estorno → 409). Recebe `reason` (`CUSTOMER_COMPLAINT`, `WRONG_CHARGE`, `SERVICE_NOT_DONE`, `OTHER`), `description` (obrigatória para `OTHER`), `refundMethod` (opcional; padrão a forma do pagamento) e `reverseCommission` (padrão `false`: o lavador mantém a comissão). Na tela, o botão "Estornar" fica nos atendimentos finalizados da agenda.
 * `PATCH /api/service-orders/{id}/finalize`: recebe `paymentMethod`; em uma transação, muda o status para `FINALIZADO`, registra o pagamento pelo preço do catálogo e credita a comissão.
-* `GET /api/operations/report?from=YYYY-MM-DD&to=YYYY-MM-DD`: relatório do gerente por data Manaus, com faturamento, comissões, serviços, pagamentos, pausas e tempo médio de lavagem (descontadas as pausas); intervalo máximo de 366 dias.
+* `GET /api/operations/report?from=YYYY-MM-DD&to=YYYY-MM-DD`: relatório do gerente por data Manaus, com faturamento, comissões, serviços, pagamentos, pausas e tempo médio de lavagem (descontadas as pausas). Estornos entram na data do estorno (`refundedOrders`, `refunds`, `reversedCommissions`, `refundReasons`), com `netRevenue` e `netCommissions` líquidos; os dias anteriores não mudam. Também traz os cancelamentos do período por motivo (`cancelledOrders`, `cancellationReasons`, pela data do cancelamento) e as vendas rápidas (`salesReceived` pela data do pagamento, `saleRefunds` e `saleRefundReasons` pela data do estorno, `netSales`); intervalo máximo de 366 dias.
 * `GET /api/users`: lista as contas para o gerente.
 * `POST /api/users`: cria uma conta `LAVADOR` com `name`, `phone` e `password`.
 * `PATCH /api/users/{id}/profile`: altera o perfil para `CUSTOMER`, `WASHER` ou `MANAGER`.
@@ -181,6 +199,13 @@ Cliques duplos, reenvios após timeout e duas pessoas agindo ao mesmo tempo não
 * **Violação de unicidade** do banco (SQLState 23505) vira `DuplicateKeyError`, nunca 500: cadastro de cliente enviado duas vezes entra na conta recém-criada (mesma senha) e lavador duplicado vira 409.
 * **`Idempotency-Key`** (tabela `chaves_idempotencia`): todo `POST` autenticado que traz o cabeçalho grava a primeira resposta de sucesso por 24 horas, por usuário; o reenvio com a mesma chave devolve a mesma resposta (cabeçalho `Idempotent-Replayed: true`) sem executar de novo. Mesma chave com outro conteúdo → 422; mesma chave enquanto a primeira ainda roda → 409; falhas liberam a chave. O PWA (`FetchHttpClient`) envia a chave em todo POST autenticado, reaproveita a requisição idêntica em andamento e mantém a chave para o reenvio após uma falha.
 * Testes: `ConcurrencyIntegrationTest` (corridas reais no PostgreSQL embutido), `IdempotencyGuardTest`, `JdbiIdempotencyStoreIntegrationTest`; contra um servidor rodando, `scripts/probe_real_world.py`.
+
+### Auditoria
+* Toda alteração autenticada que dá certo (`POST`, `PUT`, `PATCH`, `DELETE` com 2xx) é gravada pelo `AuditTrail` na tabela `auditoria` (V4): lava-jato (NULL para o administrador da plataforma), usuário, perfil, método, rota (`/api/cash-transactions/{id}`), caminho real, status, corpo da requisição e horário. Endpoints novos entram automaticamente.
+* O corpo é guardado com senhas, PINs, tokens, códigos e imagens trocados por `***`, cortado em 2000 caracteres; corpo que não é JSON não é guardado.
+* Roda dentro do `IdempotencyGuard` (reenvio repetido não grava duas vezes) e fora da transação da operação: se a gravação falhar, a operação vale e o erro vai para o log.
+* `auditoria` é somente inserção: um trigger recusa `UPDATE` e `DELETE`.
+* `GET /api/audit?from=YYYY-MM-DD&to=YYYY-MM-DD` (gerente): registros do próprio lava-jato por data Manaus, mais recentes primeiro, com o nome do autor; intervalo máximo de 92 dias.
 
 ### Observabilidade
 * Logs em stdout (Logback, `src/main/resources/logback.xml`, `LOG_LEVEL`), uma linha `logger=http` por requisição com `request_id`, rota, status, duração, usuário e motivo do erro (4xx em WARN, 5xx em ERROR com stack trace).

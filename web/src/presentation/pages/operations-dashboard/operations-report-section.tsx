@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { UiIcon } from '@/presentation/components/ui-icon'
 import type { OperationsReportModel } from '@/domain/models/operations-report-model'
 import type { Operations } from '@/domain/usecases/operations'
-import { PAUSE_LABELS, PAYMENT_LABELS } from '@/main/config/labels'
+import {
+  CANCEL_LABELS,
+  PAUSE_LABELS,
+  PAYMENT_LABELS,
+  REFUND_LABELS,
+} from '@/main/config/labels'
 import { operationsReportCsv } from './operations-report-csv'
 
 function currentManausDate(): string {
@@ -18,6 +23,9 @@ function currentManausDate(): string {
   )
   return `${parts.year}-${parts.month}-${parts.day}`
 }
+
+const money = (value: number) =>
+  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 function downloadReport(report: OperationsReportModel): void {
   const blob = new Blob([`\uFEFF${operationsReportCsv(report)}`], {
@@ -151,6 +159,49 @@ export function OperationsReportSection({ operations }: Props) {
                 })}
               </strong>
             </article>
+            {report.refundedOrders > 0 && (
+              <>
+                <article>
+                  <span>Estornos ({report.refundedOrders})</span>
+                  <strong>
+                    {report.refunds.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </strong>
+                </article>
+                <article>
+                  <span>Faturamento líquido</span>
+                  <strong>
+                    {report.netRevenue.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </strong>
+                </article>
+                <article>
+                  <span>Comissões líquidas</span>
+                  <strong>
+                    {report.netCommissions.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </strong>
+                </article>
+              </>
+            )}
+            {(report.salesReceived > 0 || report.saleRefunds > 0) && (
+              <>
+                <article>
+                  <span>Vendas rápidas recebidas</span>
+                  <strong>{money(report.salesReceived)}</strong>
+                </article>
+                <article>
+                  <span>Vendas rápidas líquidas</span>
+                  <strong>{money(report.netSales)}</strong>
+                </article>
+              </>
+            )}
             <article>
               <span>Tempo médio de lavagem</span>
               <strong>
@@ -230,6 +281,56 @@ export function OperationsReportSection({ operations }: Props) {
                 </table>
               )}
             </div>
+            {(report.refundReasons.length > 0 ||
+              report.saleRefundReasons.length > 0) && (
+              <section aria-label="Estornos por motivo">
+                <h3>Estornos por motivo</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Motivo</th>
+                      <th>Origem</th>
+                      <th>Qtd.</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ...report.refundReasons.map((refund) => ({
+                        ...refund,
+                        origin: 'Atendimento',
+                      })),
+                      ...report.saleRefundReasons.map((refund) => ({
+                        ...refund,
+                        origin: 'Venda rápida',
+                      })),
+                    ].map((refund) => (
+                      <tr key={`${refund.origin}-${refund.reason}`}>
+                        <td>{REFUND_LABELS[refund.reason] ?? refund.reason}</td>
+                        <td>{refund.origin}</td>
+                        <td>{refund.count}</td>
+                        <td>{money(refund.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
+            {report.cancelledOrders > 0 && (
+              <section aria-label={`Cancelamentos (${report.cancelledOrders})`}>
+                <h3>Cancelamentos ({report.cancelledOrders})</h3>
+                <ul className="report-pause-list">
+                  {report.cancellationReasons.map((cancel) => (
+                    <li key={cancel.reason}>
+                      <span>
+                        {CANCEL_LABELS[cancel.reason] ?? cancel.reason}
+                      </span>
+                      <strong>{cancel.count}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             <div>
               <h3>Pausas registradas</h3>
               {report.pauses.length === 0 ? (

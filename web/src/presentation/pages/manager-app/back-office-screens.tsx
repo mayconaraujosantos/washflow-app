@@ -15,9 +15,13 @@ type DaySummary = {
   salesReceived: number
   cashIncome: number
   cashExpense: number
+  refunds: number
 }
 
-/** "Caixa do dia": what came in today (orders + counter sales + cash entries) minus expenses. */
+/**
+ * "Caixa do dia": what came in today (orders + counter sales + cash entries) minus expenses and
+ * the refunds made today (of orders and sales from any day).
+ */
 export function CashScreen() {
   const { operations, features } = useManager()
   const [summary, setSummary] = useState<DaySummary | null>(null)
@@ -30,8 +34,9 @@ export function CashScreen() {
       operations.loadReport(today, today),
       operations.listSales(today, today),
       features.transactionReport(today, today),
+      operations.listSaleRefunds(today, today),
     ])
-      .then(([report, sales, cash]) => {
+      .then(([report, sales, cash, saleRefunds]) => {
         if (!active) return
         setSummary({
           ordersRevenue: Number(report.revenue),
@@ -41,6 +46,9 @@ export function CashScreen() {
           ),
           cashIncome: Number(cash.totalIncome),
           cashExpense: Number(cash.totalExpense),
+          refunds:
+            Number(report.refunds ?? 0) +
+            saleRefunds.reduce((sum, refund) => sum + Number(refund.amount), 0),
         })
       })
       .catch((cause) => {
@@ -55,7 +63,8 @@ export function CashScreen() {
     ? summary.ordersRevenue +
       summary.salesReceived +
       summary.cashIncome -
-      summary.cashExpense
+      summary.cashExpense -
+      summary.refunds
     : 0
 
   return (
@@ -79,6 +88,10 @@ export function CashScreen() {
             <div className="report-card expense">
               <span>Despesas</span>
               <strong>{formatMoney(summary.cashExpense)}</strong>
+            </div>
+            <div className="report-card expense">
+              <span>Estornos</span>
+              <strong>{formatMoney(summary.refunds)}</strong>
             </div>
           </div>
           <div className="kpi-band">

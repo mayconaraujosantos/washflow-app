@@ -11,6 +11,38 @@ import org.junit.jupiter.params.provider.CsvSource;
 class RoutePermissionMatcherTest {
 
   @Test
+  void onlyManagersReadTheAuditTrail() {
+    assertEquals(UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile("GET", "/api/audit"));
+  }
+
+  @Test
+  void onlyManagersCancelServiceOrders() {
+    assertEquals(
+        UserProfile.MANAGER,
+        RoutePermissionMatcher.requiredProfile("PATCH", "/api/service-orders/abc-123/cancel"));
+  }
+
+  @Test
+  void onlyManagersRefundServiceOrders() {
+    assertEquals(
+        UserProfile.MANAGER,
+        RoutePermissionMatcher.requiredProfile("PATCH", "/api/service-orders/abc-123/refund"));
+  }
+
+  @Test
+  void onlyManagersListSaleRefunds() {
+    assertEquals(
+        UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile("GET", "/api/sales/refunds"));
+  }
+
+  @Test
+  void onlyManagersRefundSales() {
+    assertEquals(
+        UserProfile.MANAGER,
+        RoutePermissionMatcher.requiredProfile("POST", "/api/sales/abc-123/refunds"));
+  }
+
+  @Test
   void returnsCustomerForCreateVehicle() {
     assertEquals(
         UserProfile.CUSTOMER, RoutePermissionMatcher.requiredProfile("POST", "/api/vehicles"));
