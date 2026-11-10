@@ -2,8 +2,8 @@ package com.washflow.application.factories.usecases.customer;
 
 import com.washflow.data.usecases.customer.DbListServiceOrdersByCustomer;
 import com.washflow.domain.usecases.customer.ListServiceOrdersByCustomer;
-import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
-import com.washflow.infra.db.jdbi.UserJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 
 /**

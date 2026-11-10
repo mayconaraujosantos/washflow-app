@@ -5,11 +5,11 @@ import com.washflow.application.factories.usecases.establishment.EstablishmentHo
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
-import com.washflow.infra.db.jdbi.AgendaJdbiRepository;
-import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
-import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
-import com.washflow.infra.db.jdbi.UserJdbiRepository;
-import com.washflow.infra.db.jdbi.VehicleJdbiRepository;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import java.time.Clock;
 import org.jdbi.v3.core.Jdbi;
 

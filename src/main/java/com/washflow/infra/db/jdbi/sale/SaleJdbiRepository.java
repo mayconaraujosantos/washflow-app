@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.sale;
 
 import com.washflow.data.protocols.db.sale.LoadSalesRepository;
 import com.washflow.data.protocols.db.sale.RefundSaleRepository;

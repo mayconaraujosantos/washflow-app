@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.establishment;
 
 import com.washflow.data.protocols.db.establishment.PlatformRepository;
 import com.washflow.domain.entities.establishment.Establishment;

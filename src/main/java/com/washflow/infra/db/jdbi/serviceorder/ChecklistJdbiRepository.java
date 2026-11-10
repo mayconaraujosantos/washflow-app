@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.serviceorder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

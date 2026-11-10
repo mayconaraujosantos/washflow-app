@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.vehicle;
 
 import com.washflow.data.protocols.db.vehicle.CreateVehicleRepository;
 import com.washflow.data.protocols.db.vehicle.LoadVehicleByIdRepository;

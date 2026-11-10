@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.serviceorder;
 
 import com.washflow.data.protocols.db.yard.LoadWaitingQueueRepository;
 import com.washflow.data.protocols.db.yard.LoadWashingByWasherRepository;

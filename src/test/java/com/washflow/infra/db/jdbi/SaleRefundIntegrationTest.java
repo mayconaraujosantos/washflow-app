@@ -11,6 +11,7 @@ import com.washflow.domain.entities.sale.SaleType;
 import com.washflow.domain.entities.shared.PaymentMethod;
 import com.washflow.domain.errors.sale.SaleNotFoundError;
 import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
+import com.washflow.infra.db.jdbi.sale.SaleJdbiRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;

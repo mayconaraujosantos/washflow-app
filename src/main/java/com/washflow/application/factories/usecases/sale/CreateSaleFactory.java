@@ -2,9 +2,9 @@ package com.washflow.application.factories.usecases.sale;
 
 import com.washflow.data.usecases.sale.DbCreateSale;
 import com.washflow.domain.usecases.sale.CreateSale;
-import com.washflow.infra.db.jdbi.SaleJdbiRepository;
-import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
-import com.washflow.infra.db.jdbi.VehicleJdbiRepository;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.sale.SaleJdbiRepository;
+import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import java.time.Clock;
 import org.jdbi.v3.core.Jdbi;
 

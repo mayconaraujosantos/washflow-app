@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.user;
 
 import com.washflow.application.security.AccountSecurityGateway;
 import com.washflow.domain.entities.user.UserProfile;

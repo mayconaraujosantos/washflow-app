@@ -2,7 +2,7 @@ package com.washflow.application.factories.usecases.user;
 
 import com.washflow.data.usecases.user.DbUpdateUserProfile;
 import com.washflow.domain.usecases.user.UpdateUserProfile;
-import com.washflow.infra.db.jdbi.UserJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 
 /**

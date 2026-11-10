@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

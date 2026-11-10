@@ -10,6 +10,7 @@ import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.usecases.user.AuthenticateUser;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.security.BCryptPasswordHasher;
 import java.time.Instant;
 import java.util.Map;

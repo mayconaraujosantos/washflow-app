@@ -2,8 +2,8 @@ package com.washflow.application.factories.usecases.serviceorder;
 
 import com.washflow.data.usecases.serviceorder.DbFinalizeServiceOrder;
 import com.washflow.domain.usecases.serviceorder.FinalizeServiceOrder;
-import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
-import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 
 /**

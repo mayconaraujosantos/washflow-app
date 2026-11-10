@@ -13,7 +13,7 @@ import com.washflow.data.usecases.user.DbUpdateUserEmail;
 import com.washflow.domain.entities.establishment.Establishment;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;
-import com.washflow.infra.db.jdbi.UserJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.presentation.controllers.establishment.EstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupEstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupStatusController;

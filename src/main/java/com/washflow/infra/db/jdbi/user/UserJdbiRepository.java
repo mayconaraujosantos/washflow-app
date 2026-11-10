@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.user;
 
 import com.washflow.data.protocols.db.user.CreateUserRepository;
 import com.washflow.data.protocols.db.user.CreateWasherRepository;
@@ -15,6 +15,7 @@ import com.washflow.data.tenancy.TenantContext;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.user.UserHasActiveWashesError;
+import com.washflow.infra.db.jdbi.UniqueViolations;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;

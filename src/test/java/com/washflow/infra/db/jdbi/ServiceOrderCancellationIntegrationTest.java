@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;

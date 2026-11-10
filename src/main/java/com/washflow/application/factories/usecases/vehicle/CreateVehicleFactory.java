@@ -2,8 +2,8 @@ package com.washflow.application.factories.usecases.vehicle;
 
 import com.washflow.data.usecases.vehicle.DbCreateVehicle;
 import com.washflow.domain.usecases.vehicle.CreateVehicle;
-import com.washflow.infra.db.jdbi.UserJdbiRepository;
-import com.washflow.infra.db.jdbi.VehicleJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 
 /**

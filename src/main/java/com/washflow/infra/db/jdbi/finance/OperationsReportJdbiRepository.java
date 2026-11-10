@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.finance;
 
 import com.washflow.data.protocols.db.finance.LoadOperationsReportRepository;
 import com.washflow.domain.entities.finance.OperationsReport;
@@ -8,6 +8,8 @@ import com.washflow.domain.entities.finance.OperationsReport.ReasonCount;
 import com.washflow.domain.entities.finance.OperationsReport.RefundBreakdown;
 import com.washflow.domain.entities.finance.OperationsReport.ServiceBreakdown;
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -69,8 +71,8 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
                               rs.getString("forma_pagamento"),
                               rs.getBigDecimal("valor"),
                               rs.getBigDecimal("commission"),
-                              ServiceOrderRows.timestamp(rs, "lavagem_iniciada_em"),
-                              ServiceOrderRows.timestamp(rs, "lavagem_concluida_em")))
+                              timestamp(rs, "lavagem_iniciada_em"),
+                              timestamp(rs, "lavagem_concluida_em")))
                   .list();
 
           Map<UUID, Duration> pauseDurations = new LinkedHashMap<>();
@@ -268,5 +270,10 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
       orders++;
       amount = amount.add(value);
     }
+  }
+
+  private static Instant timestamp(ResultSet rs, String column) throws SQLException {
+    java.sql.Timestamp value = rs.getTimestamp(column);
+    return value == null ? null : value.toInstant();
   }
 }

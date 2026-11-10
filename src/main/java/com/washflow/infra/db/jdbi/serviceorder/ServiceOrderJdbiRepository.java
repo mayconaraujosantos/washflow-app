@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.serviceorder;
 
 import com.washflow.data.protocols.db.serviceorder.CancelServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.CreateServiceOrderRepository;
@@ -15,6 +15,7 @@ import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.entities.serviceorder.ServicePayment;
 import com.washflow.domain.entities.serviceorder.WasherCommission;
 import com.washflow.domain.entities.shared.PaymentMethod;
+import com.washflow.infra.db.jdbi.UniqueViolations;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.customer;
 
 import com.washflow.data.protocols.db.customer.CustomerIdentityRepository;
 import com.washflow.data.protocols.db.customer.OtpRepository;

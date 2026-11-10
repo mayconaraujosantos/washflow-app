@@ -21,6 +21,8 @@ import com.washflow.domain.errors.user.AccountLockedError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.usecases.user.WasherBadge;
+import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.security.BCryptPasswordHasher;
 import com.washflow.infra.security.HmacTokenHasher;
 import java.time.Clock;

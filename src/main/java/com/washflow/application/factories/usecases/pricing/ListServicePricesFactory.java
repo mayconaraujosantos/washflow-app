@@ -2,7 +2,7 @@ package com.washflow.application.factories.usecases.pricing;
 
 import com.washflow.data.usecases.pricing.DbListServicePrices;
 import com.washflow.domain.usecases.pricing.ListServicePrices;
-import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 
 /**

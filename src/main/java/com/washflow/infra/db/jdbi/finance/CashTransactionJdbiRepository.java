@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.finance;
 
 import com.washflow.data.protocols.db.finance.CashTransactionReportRepository;
 import com.washflow.data.protocols.db.finance.DeleteCashTransactionRepository;

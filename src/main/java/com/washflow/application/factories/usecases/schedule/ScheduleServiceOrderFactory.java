@@ -4,10 +4,10 @@ import com.washflow.application.AppConfig;
 import com.washflow.application.factories.usecases.establishment.EstablishmentHours;
 import com.washflow.data.usecases.schedule.DbScheduleServiceOrder;
 import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
-import com.washflow.infra.db.jdbi.AgendaJdbiRepository;
-import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
-import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
-import com.washflow.infra.db.jdbi.VehicleJdbiRepository;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import java.time.Clock;
 import org.jdbi.v3.core.Jdbi;
 

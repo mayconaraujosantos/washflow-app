@@ -8,6 +8,7 @@ import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.entities.serviceorder.ServicePayment;
 import com.washflow.domain.entities.serviceorder.WasherCommission;
 import com.washflow.domain.entities.shared.PaymentMethod;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;

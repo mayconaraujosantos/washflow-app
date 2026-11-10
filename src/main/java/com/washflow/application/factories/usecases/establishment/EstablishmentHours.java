@@ -3,7 +3,7 @@ package com.washflow.application.factories.usecases.establishment;
 import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.domain.entities.establishment.Establishment;
-import com.washflow.infra.db.jdbi.EstablishmentJdbiRepository;
+import com.washflow.infra.db.jdbi.establishment.EstablishmentJdbiRepository;
 import java.util.function.Supplier;
 import org.jdbi.v3.core.Jdbi;
 

@@ -1,4 +1,4 @@
-package com.washflow.infra.db.jdbi;
+package com.washflow.infra.db.jdbi.pricing;
 
 import com.washflow.data.protocols.db.shared.CreateServicePriceRepository;
 import com.washflow.data.protocols.db.shared.LoadAllServicePricesRepository;

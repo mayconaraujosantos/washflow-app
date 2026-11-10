@@ -8,13 +8,13 @@ import org.postgresql.util.PSQLException;
 import org.postgresql.util.ServerErrorMessage;
 
 /** Turns PostgreSQL's unique_violation (SQLState 23505) into {@link DuplicateKeyError}. */
-final class UniqueViolations {
+public final class UniqueViolations {
 
   private static final String UNIQUE_VIOLATION = "23505";
 
   private UniqueViolations() {}
 
-  static <T> T translate(Supplier<T> work) {
+  public static <T> T translate(Supplier<T> work) {
     try {
       return work.get();
     } catch (JdbiException e) {
@@ -26,7 +26,7 @@ final class UniqueViolations {
     }
   }
 
-  static void translate(Runnable work) {
+  public static void translate(Runnable work) {
     translate(
         () -> {
           work.run();
