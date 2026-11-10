@@ -164,6 +164,15 @@ button:disabled {
   }
 }
 
+/* Tablet widths (iPad portrait and up) got the same 600px phone-card layout
+   as mobile, leaving huge empty margins on either side. Widen the card
+   instead of redesigning the layout. */
+@media (min-width: 768px) {
+  :root {
+    --app-width: 860px;
+  }
+}
+
 .app-content {
   flex: 1;
   display: flex;
