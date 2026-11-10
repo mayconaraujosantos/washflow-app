@@ -15,6 +15,10 @@ import {
   clearCustomerSession,
   loadCustomerSession,
 } from '@/main/session/customer-session'
+import {
+  clearEstablishmentChoice,
+  loadEstablishmentChoice,
+} from '@/main/session/establishment-choice'
 import { UiIcon } from '@/presentation/components/ui-icon'
 import {
   ScreenLayout,
@@ -84,6 +88,11 @@ export function CustomerDashboard({
   const [statusNotice, setStatusNotice] = useState<string | null>(null)
   const [businessHours, setBusinessHours] = useState<string | undefined>()
   const [openOnSunday, setOpenOnSunday] = useState(false)
+  // Which lava-jato this account belongs to: the remembered choice right away,
+  // then the name from the API (the choice may hold only the address).
+  const [shopName, setShopName] = useState(
+    () => loadEstablishmentChoice()?.name ?? '',
+  )
   const loadDay = useMemo(
     () =>
       establishment
@@ -125,6 +134,7 @@ export function CustomerDashboard({
       .then((settings) => {
         setBusinessHours(formatBusinessHours(settings))
         setOpenOnSunday(settings.openOnSunday)
+        if (settings.name) setShopName(settings.name)
       })
       .catch(() => {
         // The schedule form keeps its default hint; the API still enforces the rules.
@@ -184,6 +194,13 @@ export function CustomerDashboard({
     navigate('/login/cliente')
   }
 
+  // The account belongs to one lava-jato: switching means signing in at another.
+  const handleSwitchShop = () => {
+    clearCustomerSession()
+    clearEstablishmentChoice()
+    navigate('/')
+  }
+
   const handleRefreshOrders = () => {
     setRefreshingOrders(true)
     void listServiceOrdersByCustomer
@@ -227,6 +244,20 @@ export function CustomerDashboard({
           <strong>{firstName(user.name)}</strong>
         </div>
       </div>
+      {shopName && (
+        <p className="auth-establishment">
+          <span>
+            Lava-jato: <strong>{shopName}</strong>
+          </span>
+          <button
+            type="button"
+            className="link-action"
+            onClick={handleSwitchShop}
+          >
+            Trocar
+          </button>
+        </p>
+      )}
       <KpiBand
         items={[
           { label: 'Meus veículos', value: vehicles.length },
@@ -299,6 +330,13 @@ export function CustomerDashboard({
           path="agendar"
           element={
             <ScreenLayout title="Agendar lavagem" backTo="/cliente">
+              {shopName && (
+                <p className="auth-establishment">
+                  <span>
+                    Agendando no <strong>{shopName}</strong>
+                  </span>
+                </p>
+              )}
               <ScheduleSection
                 vehicles={vehicles}
                 servicePrices={servicePrices}

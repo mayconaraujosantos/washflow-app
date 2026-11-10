@@ -378,7 +378,7 @@ const STEPS = [
   {
     marker: '1',
     title: 'Agende uma lavagem',
-    text: 'Escolha o serviço e o horário (segunda a sábado, 8h às 18h).',
+    text: 'Escolha os serviços e um horário livre do seu lava-jato.',
   },
   {
     marker: '2',

@@ -177,10 +177,12 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     await expect(
       customerPhone.getByRole('heading', { name: 'Bem-vindo ao Washflow!' }),
     ).toBeVisible()
+    await expect(customerPhone.getByText('segunda a sábado')).toHaveCount(0)
     await customerPhone
       .getByRole('button', { name: 'Perfeito, entendi, vou começar' })
       .click()
     await expect(customerPhone).toHaveURL(/\/cliente$/)
+    await expect(customerPhone.getByText('Lava-jato:')).toContainText(raio.name)
   })
 
   await test.step('cadastra o carro', async () => {
@@ -199,6 +201,9 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     await customerPhone
       .getByRole('link', { name: 'Agendar', exact: true })
       .click()
+    await expect(customerPhone.getByText('Agendando no')).toContainText(
+      raio.name,
+    )
     await customerPhone
       .getByRole('radio', { name: new RegExp(customer.plate) })
       .click()
@@ -414,8 +419,17 @@ test('5. cada lava-jato é isolado do outro', async () => {
     await other
       .getByRole('button', { name: 'Perfeito, entendi, vou começar' })
       .click()
+    await expect(other.getByText('Lava-jato:')).toContainText(sol.name)
     await other.getByRole('link', { name: 'Veículos' }).click()
     await expect(other.getByText(customer.plate)).toHaveCount(0) // carros são por lava-jato
+  })
+
+  await test.step('"Trocar" no painel sai da conta e volta para a escolha do lava-jato', async () => {
+    await other.getByRole('link', { name: 'Início' }).click()
+    await other.getByRole('button', { name: 'Trocar' }).click()
+    await expect(
+      other.getByRole('heading', { name: 'Qual é o seu lava-jato?' }),
+    ).toBeVisible()
   })
 
   await test.step('lavador do Lava Raio não entra pelo crachá no Lava Sol com PIN errado', async () => {
