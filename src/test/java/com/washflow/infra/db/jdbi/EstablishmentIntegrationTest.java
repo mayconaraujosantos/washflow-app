@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.tenancy.TenantContext;
@@ -13,7 +14,9 @@ import com.washflow.data.usecases.establishment.DbManagePlatform;
 import com.washflow.data.usecases.establishment.DbSetupEstablishment;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.data.usecases.user.DbAuthenticateUser;
+import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserEmail;
+import com.washflow.data.usecases.user.DbWasherBadge;
 import com.washflow.domain.entities.establishment.Establishment;
 import com.washflow.domain.entities.establishment.EstablishmentSummary;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
@@ -23,14 +26,19 @@ import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.errors.common.TenantRequiredError;
 import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
+import com.washflow.domain.errors.establishment.EstablishmentNotFoundError;
 import com.washflow.domain.errors.establishment.EstablishmentSlugTakenError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
+import com.washflow.domain.errors.user.AccountLockedError;
 import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
+import com.washflow.domain.errors.user.PasswordResetNotAllowedError;
+import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.establishment.ManageEstablishment;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;
 import com.washflow.domain.usecases.user.AuthenticateUser;
+import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
 import com.washflow.infra.db.jdbi.establishment.EstablishmentJdbiRepository;
 import com.washflow.infra.db.jdbi.establishment.PlatformJdbiRepository;
 import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
@@ -40,6 +48,7 @@ import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import com.washflow.infra.security.BCryptPasswordHasher;
+import com.washflow.infra.security.HmacTokenHasher;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -182,6 +191,131 @@ class EstablishmentIntegrationTest {
             auth.authenticate(
                 new AuthenticateUser.Params(
                     null, null, "errada-123", UserProfile.MANAGER, "ana@centro.com")));
+  }
+
+  @Test
+  void lostPasswordsAreResetByManagerAndAdministrator() throws Exception {
+    Jdbi jdbi = createJdbi();
+    DbManagePlatform platform = platform(jdbi);
+    EstablishmentSummary centro =
+        platform.create(newEstablishment("Lava Centro", "ana@centro.com"));
+    EstablishmentSummary bairro =
+        platform.create(newEstablishment("Lava Bairro", "bia@bairro.com"));
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    BCryptPasswordHasher hasher = new BCryptPasswordHasher();
+
+    // Administrator: the manager's new password works, the old one no longer does.
+    TenantContext.clear();
+    platform.resetManagerPassword(centro.id(), "nova-senha-gerente");
+    DbAuthenticateUser auth =
+        new DbAuthenticateUser(
+            users,
+            users,
+            users,
+            users,
+            hasher,
+            AppConfig.load(Map.of("APP_ENV", "production-like"), Map.of()),
+            users);
+    assertEquals(
+        centro.managerName(),
+        auth.authenticate(
+                new AuthenticateUser.Params(
+                    null, null, "nova-senha-gerente", UserProfile.MANAGER, "ana@centro.com"))
+            .name());
+    assertThrows(
+        InvalidCredentialsError.class,
+        () ->
+            auth.authenticate(
+                new AuthenticateUser.Params(
+                    null, null, "senha-do-gerente", UserProfile.MANAGER, "ana@centro.com")));
+    assertThrows(
+        EstablishmentNotFoundError.class,
+        () -> platform.resetManagerPassword(UUID.randomUUID(), "nova-senha-gerente"));
+
+    // Manager: resets a washer of their own lava-jato, never a manager or another lava-jato's.
+    TenantContext.set(bairro.id());
+    User bairroWasher =
+        users.createWasher(
+            new User(
+                UUID.randomUUID(),
+                "Lavador Bairro",
+                "92981110009",
+                UserProfile.WASHER,
+                Instant.now(),
+                true),
+            hasher.hash("senha-antiga-1"));
+    TenantContext.set(centro.id());
+    User centroWasher =
+        users.createWasher(
+            new User(
+                UUID.randomUUID(),
+                "Lavador Centro",
+                "92981110008",
+                UserProfile.WASHER,
+                Instant.now(),
+                true),
+            hasher.hash("senha-antiga-1"));
+    User centroManager = users.loadByEmail("ana@centro.com").orElseThrow();
+    DbResetUserPassword reset = new DbResetUserPassword(users, users, hasher);
+
+    reset.reset(centroWasher.id(), "senha-nova-123");
+
+    assertTrue(
+        hasher.matches("senha-nova-123", users.loadPasswordHash(centroWasher.id()).orElseThrow()));
+    assertThrows(UserNotFoundError.class, () -> reset.reset(bairroWasher.id(), "senha-nova-123"));
+    assertThrows(
+        PasswordResetNotAllowedError.class,
+        () -> reset.reset(centroManager.id(), "senha-nova-123"));
+    TenantContext.set(bairro.id());
+    assertTrue(
+        hasher.matches("senha-antiga-1", users.loadPasswordHash(bairroWasher.id()).orElseThrow()));
+    TenantContext.clear();
+  }
+
+  @Test
+  void washerWithTheSamePhoneInTwoLavaJatosSignsInWithEachBadgePin() throws Exception {
+    Jdbi jdbi = createJdbi();
+    DbManagePlatform platform = platform(jdbi);
+    EstablishmentSummary centro =
+        platform.create(newEstablishment("Lava Centro", "ana@centro.com"));
+    EstablishmentSummary bairro =
+        platform.create(newEstablishment("Lava Bairro", "bia@bairro.com"));
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    DbWasherBadge badges =
+        new DbWasherBadge(
+            users,
+            users,
+            new AccessJdbiRepository(jdbi),
+            new BCryptPasswordHasher(),
+            new HmacTokenHasher("test-secret-0123456789abcdef"),
+            Clock.systemUTC());
+    String phone = "92981110007";
+    UUID[] washers = new UUID[2];
+    String[] pins = new String[2];
+    EstablishmentSummary[] shops = {centro, bairro};
+    for (int i = 0; i < 2; i++) {
+      TenantContext.set(shops[i].id());
+      washers[i] =
+          users
+              .createWasher(
+                  new User(
+                      UUID.randomUUID(), "Lucas", phone, UserProfile.WASHER, Instant.now(), true),
+                  null)
+              .id();
+      pins[i] = badges.issue(washers[i]).pin();
+    }
+    TenantContext.clear(); // the PIN screen has no lava-jato: the phone + PIN find it
+    assumeTrue(!pins[0].equals(pins[1]), "one-in-a-million identical PINs");
+
+    assertEquals(washers[0], badges.signInWithPin(phone, pins[0]).id());
+    assertEquals(washers[1], badges.signInWithPin("(92) 98111-0007", pins[1]).id());
+
+    String wrong = "000000".equals(pins[0]) || "000000".equals(pins[1]) ? "999999" : "000000";
+    for (int i = 0; i < 4; i++) {
+      assertThrows(InvalidCredentialsError.class, () -> badges.signInWithPin(phone, wrong));
+    }
+    assertThrows(AccountLockedError.class, () -> badges.signInWithPin(phone, wrong));
+    assertThrows(AccountLockedError.class, () -> badges.signInWithPin(phone, pins[0]));
   }
 
   @Test

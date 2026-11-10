@@ -163,6 +163,16 @@ describe('RemoteOperations', () => {
     })
   })
 
+  it('resets a lost password', async () => {
+    await operations.resetUserPassword('user-1', 'nova-senha-123')
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/users/user-1/password',
+      method: 'patch',
+      body: { password: 'nova-senha-123' },
+    })
+  })
+
   it('sends the pause reason and description', async () => {
     await operations.pause('order-1', 'OTHER', 'Repor material')
 

@@ -76,6 +76,8 @@ export interface Operations {
   ) => Promise<UserModel>
   setUserActive: (userId: string, active: boolean) => Promise<UserModel>
   updateUserEmail: (userId: string, email: string | null) => Promise<UserModel>
+  /** New password for a customer or washer who lost theirs (manager only). */
+  resetUserPassword: (userId: string, password: string) => Promise<UserModel>
   checkIn: (serviceOrderId: string) => Promise<void>
   start: (serviceOrderId: string, washerId: string) => Promise<void>
   pause: (

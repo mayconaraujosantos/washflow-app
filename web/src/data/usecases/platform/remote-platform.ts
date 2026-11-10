@@ -42,6 +42,17 @@ export class RemotePlatform implements Platform {
     )
   }
 
+  resetManagerPassword(
+    id: string,
+    password: string,
+  ): Promise<EstablishmentSummaryModel> {
+    return this.request(
+      `/api/admin/establishments/${encodeURIComponent(id)}/manager-password`,
+      'patch',
+      { password },
+    )
+  }
+
   private async request<T>(
     path: string,
     method: 'get' | 'post' | 'patch',

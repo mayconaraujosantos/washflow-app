@@ -94,6 +94,14 @@ public class PlatformJdbiRepository implements PlatformRepository {
       FROM estabelecimentos e
       """;
 
+  // Same manager the summary shows: the lava-jato's oldest GERENTE account.
+  private static final String RESET_MANAGER_PASSWORD_UPDATE_SQL =
+      """
+      UPDATE usuarios SET senha_hash = :hash
+      WHERE id = (SELECT u.id FROM usuarios u WHERE u.estabelecimento_id = :id
+                    AND u.perfil = 'GERENTE' ORDER BY u.criado_em LIMIT 1)
+      """;
+
   private final Jdbi jdbi;
 
   public PlatformJdbiRepository(Jdbi jdbi) {
@@ -291,6 +299,28 @@ public class PlatformJdbiRepository implements PlatformRepository {
           return handle
               .createQuery(SUMMARY_SQL + " WHERE e.id = :id")
               .bind("id", id)
+              .map((rs, ctx) -> summary(rs))
+              .findOne();
+        });
+  }
+
+  @Override
+  public Optional<EstablishmentSummary> resetManagerPassword(
+      UUID establishmentId, String passwordHash) {
+    return jdbi.inTransaction(
+        handle -> {
+          int updated =
+              handle
+                  .createUpdate(RESET_MANAGER_PASSWORD_UPDATE_SQL)
+                  .bind("hash", passwordHash)
+                  .bind("id", establishmentId)
+                  .execute();
+          if (updated != 1) {
+            return Optional.empty();
+          }
+          return handle
+              .createQuery(SUMMARY_SQL + " WHERE e.id = :id")
+              .bind("id", establishmentId)
               .map((rs, ctx) -> summary(rs))
               .findOne();
         });

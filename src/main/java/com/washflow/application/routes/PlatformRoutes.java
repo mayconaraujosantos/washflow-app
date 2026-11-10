@@ -14,6 +14,7 @@ import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.presentation.controllers.establishment.AdminSignInController;
 import com.washflow.presentation.controllers.establishment.CreateEstablishmentController;
 import com.washflow.presentation.controllers.establishment.ListEstablishmentsController;
+import com.washflow.presentation.controllers.establishment.ResetManagerPasswordController;
 import com.washflow.presentation.controllers.establishment.SearchEstablishmentsController;
 import com.washflow.presentation.controllers.establishment.SetEstablishmentActiveController;
 import io.javalin.openapi.HttpMethod;
@@ -37,6 +38,7 @@ public final class PlatformRoutes {
     registerList(platform);
     registerCreate(platform);
     registerSetActive(platform);
+    registerResetManagerPassword(platform);
   }
 
   @OpenApi(
@@ -122,5 +124,24 @@ public final class PlatformRoutes {
     patch(
         ADMIN_ESTABLISHMENTS + "/{id}/active",
         JavalinRouteAdapter.adapt(new SetEstablishmentActiveController(platform)));
+  }
+
+  @OpenApi(
+      path = ADMIN_ESTABLISHMENTS + "/{id}/manager-password",
+      methods = HttpMethod.PATCH,
+      summary = "Set a new password for the lava-jato's manager (admin)",
+      tags = {"Platform"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            content = @OpenApiContent(from = EstablishmentSummary.class)),
+        @OpenApiResponse(status = "400", description = "Password shorter than 8 characters"),
+        @OpenApiResponse(status = "404", description = "Unknown lava-jato or no manager")
+      })
+  private static void registerResetManagerPassword(ManagePlatform platform) {
+    patch(
+        ADMIN_ESTABLISHMENTS + "/{id}/manager-password",
+        JavalinRouteAdapter.adapt(new ResetManagerPasswordController(platform)));
   }
 }

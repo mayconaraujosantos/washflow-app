@@ -10,3 +10,6 @@ web/coverage
 .env
 .env.*
 *.log
+web/test-results
+web/playwright-report
+.local-test-users

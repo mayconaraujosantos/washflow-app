@@ -33,6 +33,21 @@ describe('RemotePlatform', () => {
     })
   })
 
+  it("resets the manager's password", async () => {
+    const http = client(200, { id: 'e1', active: true })
+
+    await new RemotePlatform('', http).resetManagerPassword(
+      'e1',
+      'nova-senha-123',
+    )
+
+    expect(http.request).toHaveBeenCalledWith({
+      url: '/api/admin/establishments/e1/manager-password',
+      method: 'patch',
+      body: { password: 'nova-senha-123' },
+    })
+  })
+
   it('surfaces the API error', async () => {
     const http = client(409, {
       error: 'Já existe um lava-jato com o endereço x',

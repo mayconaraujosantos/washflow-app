@@ -27,6 +27,7 @@ const platform = () => ({
     managerEmail: 'bia@norte.com',
   }),
   setActive: vi.fn().mockResolvedValue({ ...centro, active: false }),
+  resetManagerPassword: vi.fn().mockResolvedValue(centro),
 })
 
 const renderPanel = (admin: Platform) =>
@@ -105,5 +106,32 @@ describe('AdminPanel', () => {
       }),
     )
     expect(await screen.findByText(/Lava Norte criado/)).toBeInTheDocument()
+  })
+
+  it("resets the manager's lost password", async () => {
+    const admin = platform()
+    renderPanel(admin)
+    await screen.findByText('Lava Centro')
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Redefinir senha do gerente' }),
+    )
+    const save = screen.getByRole('button', { name: 'Salvar nova senha' })
+    await userEvent.type(screen.getByLabelText('Nova senha de Ana'), 'curta')
+    expect(save).toBeDisabled()
+    await userEvent.type(
+      screen.getByLabelText('Nova senha de Ana'),
+      '-mas-agora-longa',
+    )
+    await userEvent.click(save)
+
+    expect(admin.resetManagerPassword).toHaveBeenCalledWith(
+      'e1',
+      'curta-mas-agora-longa',
+    )
+    expect(
+      await screen.findByText(/Senha de Ana \(Lava Centro\) redefinida/),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText('Nova senha de Ana')).not.toBeInTheDocument()
   })
 })

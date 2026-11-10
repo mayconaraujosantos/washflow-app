@@ -224,7 +224,7 @@ export function AccessScreen({
             <p className="subtitle">
               {whatsappEnabled
                 ? 'Entre com um código enviado ao seu WhatsApp, sem precisar da senha.'
-                : 'Ainda não há recuperação de senha pelo app. Fale com o atendimento do lava-jato para redefinir o seu acesso.'}
+                : 'Peça uma nova senha no balcão: o gerente do lava-jato cria na hora e você entra com ela.'}
             </p>
             {whatsappEnabled && (
               <button
@@ -378,7 +378,7 @@ const STEPS = [
   {
     marker: '1',
     title: 'Agende uma lavagem',
-    text: 'Escolha o serviço e o horário (segunda a sábado, 8h às 18h).',
+    text: 'Escolha os serviços e um horário livre do seu lava-jato.',
   },
   {
     marker: '2',

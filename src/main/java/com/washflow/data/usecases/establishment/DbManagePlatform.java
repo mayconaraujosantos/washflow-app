@@ -105,6 +105,17 @@ public class DbManagePlatform implements ManagePlatform {
   }
 
   @Override
+  public EstablishmentSummary resetManagerPassword(UUID establishmentId, String newPassword)
+      throws EstablishmentNotFoundError {
+    if (newPassword == null || newPassword.length() < 8) {
+      throw new IllegalArgumentException("A nova senha deve ter no mínimo 8 caracteres");
+    }
+    return repository
+        .resetManagerPassword(establishmentId, passwordHasher.hash(newPassword))
+        .orElseThrow(EstablishmentNotFoundError::new);
+  }
+
+  @Override
   public List<EstablishmentListing> search(String query) {
     String text = query == null ? "" : query.trim();
     return repository.searchActive(text.length() > 60 ? text.substring(0, 60) : text, SEARCH_LIMIT);

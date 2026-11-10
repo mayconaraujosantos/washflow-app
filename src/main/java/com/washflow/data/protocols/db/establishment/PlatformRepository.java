@@ -36,4 +36,7 @@ public interface PlatformRepository {
   Optional<EstablishmentSummary> setEstablishmentActive(UUID id, boolean active);
 
   List<EstablishmentListing> searchActive(String query, int limit);
+
+  /** Updates the password of the lava-jato's first manager; empty when there is none. */
+  Optional<EstablishmentSummary> resetManagerPassword(UUID establishmentId, String passwordHash);
 }

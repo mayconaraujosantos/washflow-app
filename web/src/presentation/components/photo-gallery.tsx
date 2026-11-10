@@ -26,7 +26,7 @@ export function PhotoGallery({ features, serviceOrderId }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [serviceOrderId])
+  }, [features, serviceOrderId])
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

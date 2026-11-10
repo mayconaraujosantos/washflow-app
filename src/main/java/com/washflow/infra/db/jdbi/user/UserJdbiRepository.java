@@ -7,6 +7,7 @@ import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
 import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.user.LoadUserPasswordHashRepository;
+import com.washflow.data.protocols.db.user.LoadWashersByPhoneRepository;
 import com.washflow.data.protocols.db.user.SaveUserPasswordHashRepository;
 import com.washflow.data.protocols.db.user.UpdateUserActiveRepository;
 import com.washflow.data.protocols.db.user.UpdateUserEmailRepository;
@@ -35,7 +36,8 @@ public class UserJdbiRepository
         UpdateUserActiveRepository,
         UpdateUserProfileRepository,
         LoadUserByEmailRepository,
-        UpdateUserEmailRepository {
+        UpdateUserEmailRepository,
+        LoadWashersByPhoneRepository {
 
   private static final String CREATE_INSERT_SQL =
       """
@@ -118,6 +120,21 @@ public class UserJdbiRepository
                 .bind("id", id)
                 .map(this::mapRow)
                 .findOne());
+  }
+
+  @Override
+  public List<User> loadWashersByPhone(String phone) {
+    return jdbi.withHandle(
+        handle ->
+            handle
+                .createQuery(
+                    SELECT_SQL
+                        + " WHERE telefone = :phone AND perfil = 'LAVADOR'"
+                        + ACTIVE_ESTABLISHMENT
+                        + tenantScope())
+                .bind(PHONE, phone)
+                .map(this::mapRow)
+                .list());
   }
 
   /**
