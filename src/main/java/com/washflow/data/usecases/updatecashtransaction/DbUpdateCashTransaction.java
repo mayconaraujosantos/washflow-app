@@ -3,7 +3,7 @@ package com.washflow.data.usecases.updatecashtransaction;
 import com.washflow.data.protocols.db.LoadCashTransactionRepository;
 import com.washflow.data.protocols.db.UpdateCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
-import com.washflow.domain.usecases.UpdateCashTransaction;
+import com.washflow.domain.usecases.cash.UpdateCashTransaction;
 import java.util.UUID;
 
 public class DbUpdateCashTransaction implements UpdateCashTransaction {

@@ -8,7 +8,7 @@ import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
-import com.washflow.domain.usecases.CheckInServiceOrder;
+import com.washflow.domain.usecases.serviceorder.CheckInServiceOrder;
 
 /**
  * Only talks to {@code data.protocols.db} ports, same as {@code DbScheduleServiceOrder} - never to

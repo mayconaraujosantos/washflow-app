@@ -4,7 +4,7 @@ import com.washflow.data.protocols.db.LoadSalesRepository;
 import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleRefund;
-import com.washflow.domain.usecases.ListSales;
+import com.washflow.domain.usecases.sale.ListSales;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;

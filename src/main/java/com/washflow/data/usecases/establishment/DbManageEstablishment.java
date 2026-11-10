@@ -2,7 +2,7 @@ package com.washflow.data.usecases.establishment;
 
 import com.washflow.data.protocols.db.EstablishmentRepository;
 import com.washflow.domain.entities.Establishment;
-import com.washflow.domain.usecases.ManageEstablishment;
+import com.washflow.domain.usecases.establishment.ManageEstablishment;
 
 public class DbManageEstablishment implements ManageEstablishment {
 

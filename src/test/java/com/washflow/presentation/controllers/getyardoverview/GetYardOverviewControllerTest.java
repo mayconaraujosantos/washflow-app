@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.usecases.GetYardOverview;
+import com.washflow.domain.usecases.yard.GetYardOverview;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.time.Instant;

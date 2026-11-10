@@ -18,7 +18,7 @@ import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
 import com.washflow.domain.errors.establishment.InvalidSetupCodeError;
-import com.washflow.domain.usecases.SetupEstablishment;
+import com.washflow.domain.usecases.establishment.SetupEstablishment;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;

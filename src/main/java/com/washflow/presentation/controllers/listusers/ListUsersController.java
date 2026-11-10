@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.listusers;
 
 import com.washflow.domain.entities.User;
-import com.washflow.domain.usecases.ListUsers;
+import com.washflow.domain.usecases.user.ListUsers;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

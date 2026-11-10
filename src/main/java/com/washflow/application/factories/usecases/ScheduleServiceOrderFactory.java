@@ -2,7 +2,7 @@ package com.washflow.application.factories.usecases;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.scheduleserviceorder.DbScheduleServiceOrder;
-import com.washflow.domain.usecases.ScheduleServiceOrder;
+import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
 import com.washflow.infra.db.jdbi.VehicleJdbiRepository;

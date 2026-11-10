@@ -4,7 +4,7 @@ import com.washflow.data.protocols.db.TicketRepository;
 import com.washflow.domain.entities.TicketView;
 import com.washflow.domain.errors.common.TicketNotFoundError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
-import com.washflow.domain.usecases.ServiceOrderTicket;
+import com.washflow.domain.usecases.customer.ServiceOrderTicket;
 import java.util.UUID;
 
 public class DbServiceOrderTicket implements ServiceOrderTicket {

@@ -12,7 +12,7 @@ import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
-import com.washflow.domain.usecases.CheckInServiceOrder;
+import com.washflow.domain.usecases.serviceorder.CheckInServiceOrder;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;

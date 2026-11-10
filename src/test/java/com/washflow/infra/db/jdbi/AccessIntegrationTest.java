@@ -20,7 +20,7 @@ import com.washflow.domain.errors.common.TicketNotFoundError;
 import com.washflow.domain.errors.user.AccountLockedError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;
-import com.washflow.domain.usecases.WasherBadge;
+import com.washflow.domain.usecases.access.WasherBadge;
 import com.washflow.infra.security.BCryptPasswordHasher;
 import com.washflow.infra.security.HmacTokenHasher;
 import java.time.Clock;

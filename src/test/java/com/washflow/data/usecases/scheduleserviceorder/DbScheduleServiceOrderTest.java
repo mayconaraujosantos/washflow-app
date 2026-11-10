@@ -22,7 +22,7 @@ import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
-import com.washflow.domain.usecases.ScheduleServiceOrder;
+import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;

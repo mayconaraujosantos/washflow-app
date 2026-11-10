@@ -7,7 +7,7 @@ import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.UpdateUserEmail;
+import com.washflow.domain.usecases.user.UpdateUserEmail;
 import java.util.UUID;
 
 public class DbUpdateUserEmail implements UpdateUserEmail {

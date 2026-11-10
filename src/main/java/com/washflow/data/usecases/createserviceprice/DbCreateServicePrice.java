@@ -3,7 +3,7 @@ package com.washflow.data.usecases.createserviceprice;
 import com.washflow.data.protocols.db.CreateServicePriceRepository;
 import com.washflow.data.usecases.shared.ContactRules;
 import com.washflow.domain.entities.ServicePrice;
-import com.washflow.domain.usecases.CreateServicePrice;
+import com.washflow.domain.usecases.pricing.CreateServicePrice;
 import java.math.BigDecimal;
 
 public class DbCreateServicePrice implements CreateServicePrice {

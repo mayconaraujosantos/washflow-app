@@ -2,7 +2,7 @@ package com.washflow.presentation.controllers.createvehicle;
 
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
-import com.washflow.domain.usecases.CreateVehicle;
+import com.washflow.domain.usecases.vehicle.CreateVehicle;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

@@ -2,7 +2,7 @@ package com.washflow.data.usecases.listusers;
 
 import com.washflow.data.protocols.db.LoadAllUsersRepository;
 import com.washflow.domain.entities.User;
-import com.washflow.domain.usecases.ListUsers;
+import com.washflow.domain.usecases.user.ListUsers;
 import java.util.List;
 
 /**

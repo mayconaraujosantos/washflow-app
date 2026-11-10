@@ -2,7 +2,7 @@ package com.washflow.data.usecases.scheduleavailability;
 
 import com.washflow.data.protocols.db.CountServiceOrdersScheduledInRangeRepository;
 import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
-import com.washflow.domain.usecases.ScheduleAvailability;
+import com.washflow.domain.usecases.schedule.ScheduleAvailability;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.Instant;

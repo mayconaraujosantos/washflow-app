@@ -2,7 +2,7 @@ package com.washflow.presentation.controllers.savephoto;
 
 import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
 import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
-import com.washflow.domain.usecases.SaveServiceOrderPhoto;
+import com.washflow.domain.usecases.serviceorder.SaveServiceOrderPhoto;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

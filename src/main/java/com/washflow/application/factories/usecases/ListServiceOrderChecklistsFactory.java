@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.data.usecases.listchecklists.DbListServiceOrderChecklists;
-import com.washflow.domain.usecases.ListServiceOrderChecklists;
+import com.washflow.domain.usecases.serviceorder.ListServiceOrderChecklists;
 import com.washflow.infra.db.jdbi.ChecklistJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 

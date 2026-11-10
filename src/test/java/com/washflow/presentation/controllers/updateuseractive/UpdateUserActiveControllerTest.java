@@ -9,7 +9,7 @@ import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.UpdateUserActive;
+import com.washflow.domain.usecases.user.UpdateUserActive;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.time.Instant;

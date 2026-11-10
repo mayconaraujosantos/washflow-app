@@ -5,7 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.ExpenseCategory;
-import com.washflow.domain.usecases.ListExpenseCategories;
+import com.washflow.domain.usecases.cash.ListExpenseCategories;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.time.Instant;

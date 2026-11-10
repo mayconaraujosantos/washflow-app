@@ -2,7 +2,7 @@ package com.washflow.data.usecases.listcashtransactions;
 
 import com.washflow.data.protocols.db.LoadCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
-import com.washflow.domain.usecases.ListCashTransactions;
+import com.washflow.domain.usecases.cash.ListCashTransactions;
 import java.time.LocalDate;
 import java.util.List;
 

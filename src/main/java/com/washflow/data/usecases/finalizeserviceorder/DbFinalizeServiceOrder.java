@@ -11,7 +11,7 @@ import com.washflow.domain.entities.WasherCommission;
 import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
-import com.washflow.domain.usecases.FinalizeServiceOrder;
+import com.washflow.domain.usecases.serviceorder.FinalizeServiceOrder;
 import java.time.Instant;
 import java.util.UUID;
 

@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.PauseServiceOrderRepository;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotPausedError;
-import com.washflow.domain.usecases.PauseServiceOrder;
+import com.washflow.domain.usecases.serviceorder.PauseServiceOrder;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

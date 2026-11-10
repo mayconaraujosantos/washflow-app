@@ -2,7 +2,7 @@ package com.washflow.data.usecases.getwaitingqueue;
 
 import com.washflow.data.protocols.db.LoadWaitingQueueRepository;
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.usecases.GetWaitingQueue;
+import com.washflow.domain.usecases.yard.GetWaitingQueue;
 import java.util.List;
 
 /**

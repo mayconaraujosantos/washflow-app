@@ -12,7 +12,7 @@ import com.washflow.application.security.AuthTokenService;
 import com.washflow.data.usecases.updateuseremail.DbUpdateUserEmail;
 import com.washflow.domain.entities.Establishment;
 import com.washflow.domain.entities.User;
-import com.washflow.domain.usecases.SetupEstablishment;
+import com.washflow.domain.usecases.establishment.SetupEstablishment;
 import com.washflow.infra.db.jdbi.UserJdbiRepository;
 import com.washflow.presentation.controllers.establishment.EstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupEstablishmentController;

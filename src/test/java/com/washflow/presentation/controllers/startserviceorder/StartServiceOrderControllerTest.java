@@ -9,7 +9,7 @@ import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
-import com.washflow.domain.usecases.StartServiceOrder;
+import com.washflow.domain.usecases.serviceorder.StartServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import com.washflow.validation.protocols.Validation;

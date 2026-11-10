@@ -11,7 +11,7 @@ import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.entities.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.ListVehiclesByCustomer;
+import com.washflow.domain.usecases.vehicle.ListVehiclesByCustomer;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;

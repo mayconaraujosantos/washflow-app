@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.deletephoto;
 
-import com.washflow.domain.usecases.DeleteServiceOrderPhoto;
+import com.washflow.domain.usecases.serviceorder.DeleteServiceOrderPhoto;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

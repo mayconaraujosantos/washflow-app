@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.listagenda;
 
-import com.washflow.domain.usecases.ListAgenda;
+import com.washflow.domain.usecases.schedule.ListAgenda;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

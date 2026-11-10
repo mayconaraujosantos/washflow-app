@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.SaveExpenseCategoryRepository;
 import com.washflow.domain.entities.ExpenseCategory;
-import com.washflow.domain.usecases.CreateExpenseCategory;
+import com.washflow.domain.usecases.cash.CreateExpenseCategory;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

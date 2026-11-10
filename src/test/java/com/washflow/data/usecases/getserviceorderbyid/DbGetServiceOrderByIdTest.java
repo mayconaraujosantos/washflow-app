@@ -8,7 +8,7 @@ import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
-import com.washflow.domain.usecases.GetServiceOrderById;
+import com.washflow.domain.usecases.serviceorder.GetServiceOrderById;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;

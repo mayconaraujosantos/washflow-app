@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.establishment;
 
-import com.washflow.domain.usecases.SetupEstablishment;
+import com.washflow.domain.usecases.establishment.SetupEstablishment;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

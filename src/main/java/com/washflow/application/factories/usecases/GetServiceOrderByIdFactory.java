@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.data.usecases.getserviceorderbyid.DbGetServiceOrderById;
-import com.washflow.domain.usecases.GetServiceOrderById;
+import com.washflow.domain.usecases.serviceorder.GetServiceOrderById;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 

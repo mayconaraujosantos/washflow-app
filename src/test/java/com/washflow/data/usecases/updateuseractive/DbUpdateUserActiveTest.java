@@ -11,7 +11,7 @@ import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.UpdateUserActive;
+import com.washflow.domain.usecases.user.UpdateUserActive;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

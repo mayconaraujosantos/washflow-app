@@ -10,7 +10,7 @@ import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.user.AccountLockedError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.WasherBadge;
+import com.washflow.domain.usecases.access.WasherBadge;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;

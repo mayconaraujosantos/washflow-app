@@ -6,7 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
-import com.washflow.domain.usecases.CancelServiceOrder;
+import com.washflow.domain.usecases.serviceorder.CancelServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.HashMap;

@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.listserviceordersbycustomer;
 
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.ListServiceOrdersByCustomer;
+import com.washflow.domain.usecases.customer.ListServiceOrdersByCustomer;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

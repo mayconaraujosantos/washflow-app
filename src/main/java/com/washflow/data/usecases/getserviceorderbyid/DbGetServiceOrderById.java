@@ -3,7 +3,7 @@ package com.washflow.data.usecases.getserviceorderbyid;
 import com.washflow.data.protocols.db.LoadServiceOrderByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
-import com.washflow.domain.usecases.GetServiceOrderById;
+import com.washflow.domain.usecases.serviceorder.GetServiceOrderById;
 
 /**
  * Only talks to {@code data.protocols.db} ports - never to JDBI, Postgres, or anything else

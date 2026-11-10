@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.data.usecases.createsale.DbCreateSale;
-import com.washflow.domain.usecases.CreateSale;
+import com.washflow.domain.usecases.sale.CreateSale;
 import com.washflow.infra.db.jdbi.SaleJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
 import com.washflow.infra.db.jdbi.VehicleJdbiRepository;

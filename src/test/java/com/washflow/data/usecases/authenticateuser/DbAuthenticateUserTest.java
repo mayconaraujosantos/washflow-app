@@ -23,7 +23,7 @@ import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.ManagerSelfRegistrationNotAllowedError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.errors.user.WasherSelfRegistrationNotAllowedError;
-import com.washflow.domain.usecases.AuthenticateUser;
+import com.washflow.domain.usecases.user.AuthenticateUser;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;

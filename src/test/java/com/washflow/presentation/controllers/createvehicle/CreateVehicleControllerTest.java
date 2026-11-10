@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import com.washflow.domain.entities.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
-import com.washflow.domain.usecases.CreateVehicle;
+import com.washflow.domain.usecases.vehicle.CreateVehicle;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import com.washflow.validation.protocols.Validation;

@@ -17,7 +17,7 @@ import com.washflow.domain.errors.auth.OtpTooSoonError;
 import com.washflow.domain.errors.auth.OtpUnavailableError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;
-import com.washflow.domain.usecases.CustomerPasswordlessLogin;
+import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

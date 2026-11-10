@@ -21,7 +21,7 @@ import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.InvalidPlateError;
 import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
-import com.washflow.domain.usecases.RegisterVehicleEntry;
+import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;

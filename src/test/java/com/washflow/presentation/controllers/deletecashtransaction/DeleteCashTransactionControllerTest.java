@@ -3,7 +3,7 @@ package com.washflow.presentation.controllers.deletecashtransaction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 
-import com.washflow.domain.usecases.DeleteCashTransaction;
+import com.washflow.domain.usecases.cash.DeleteCashTransaction;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.Collections;

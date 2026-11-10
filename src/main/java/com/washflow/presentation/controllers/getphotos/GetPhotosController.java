@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.getphotos;
 
 import com.washflow.domain.entities.ServiceOrderPhoto;
-import com.washflow.domain.usecases.ListServiceOrderPhotos;
+import com.washflow.domain.usecases.serviceorder.ListServiceOrderPhotos;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

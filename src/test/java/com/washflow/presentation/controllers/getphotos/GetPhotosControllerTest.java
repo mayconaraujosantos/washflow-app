@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.ServiceOrderPhoto;
 import com.washflow.domain.entities.ServiceOrderPhoto.PhotoType;
-import com.washflow.domain.usecases.ListServiceOrderPhotos;
+import com.washflow.domain.usecases.serviceorder.ListServiceOrderPhotos;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.time.Instant;

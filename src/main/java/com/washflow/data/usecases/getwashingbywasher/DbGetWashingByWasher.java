@@ -2,7 +2,7 @@ package com.washflow.data.usecases.getwashingbywasher;
 
 import com.washflow.data.protocols.db.LoadWashingByWasherRepository;
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.usecases.GetWashingByWasher;
+import com.washflow.domain.usecases.yard.GetWashingByWasher;
 import java.util.List;
 import java.util.UUID;
 

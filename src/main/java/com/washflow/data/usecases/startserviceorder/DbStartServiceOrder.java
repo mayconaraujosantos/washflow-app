@@ -6,7 +6,7 @@ import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
-import com.washflow.domain.usecases.StartServiceOrder;
+import com.washflow.domain.usecases.serviceorder.StartServiceOrder;
 
 /**
  * Only talks to {@code data.protocols.db} ports, same as {@code DbCheckInServiceOrder} - never to

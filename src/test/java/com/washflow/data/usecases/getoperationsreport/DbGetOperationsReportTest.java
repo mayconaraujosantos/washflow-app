@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.LoadOperationsReportRepository;
-import com.washflow.domain.usecases.GetOperationsReport;
+import com.washflow.domain.usecases.reporting.GetOperationsReport;
 import com.washflow.infra.db.jdbi.OperationsReport;
 import java.math.BigDecimal;
 import java.time.LocalDate;

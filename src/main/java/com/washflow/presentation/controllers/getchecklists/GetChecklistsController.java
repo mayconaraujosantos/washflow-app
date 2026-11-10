@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.getchecklists;
 
 import com.washflow.domain.entities.ServiceOrderChecklist;
-import com.washflow.domain.usecases.ListServiceOrderChecklists;
+import com.washflow.domain.usecases.serviceorder.ListServiceOrderChecklists;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

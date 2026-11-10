@@ -10,7 +10,7 @@ import com.washflow.application.factories.usecases.EstablishmentFactory;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.EstablishmentListing;
 import com.washflow.domain.entities.EstablishmentSummary;
-import com.washflow.domain.usecases.ManagePlatform;
+import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.presentation.controllers.platform.PlatformController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;

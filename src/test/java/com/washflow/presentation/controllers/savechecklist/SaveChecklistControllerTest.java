@@ -10,7 +10,7 @@ import com.washflow.domain.entities.ServiceOrderChecklist;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistItem;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistType;
 import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
-import com.washflow.domain.usecases.SaveServiceOrderChecklist;
+import com.washflow.domain.usecases.serviceorder.SaveServiceOrderChecklist;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.time.Instant;

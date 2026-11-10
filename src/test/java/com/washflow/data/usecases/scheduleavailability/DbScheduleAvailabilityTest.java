@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
-import com.washflow.domain.usecases.ScheduleAvailability;
+import com.washflow.domain.usecases.schedule.ScheduleAvailability;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;

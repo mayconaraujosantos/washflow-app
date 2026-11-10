@@ -12,7 +12,7 @@ import com.washflow.domain.entities.User;
 import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.errors.common.ForbiddenError;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.UpdateUserProfile;
+import com.washflow.domain.usecases.user.UpdateUserProfile;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;

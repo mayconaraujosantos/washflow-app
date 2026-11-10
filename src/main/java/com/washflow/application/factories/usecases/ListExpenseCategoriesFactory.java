@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.data.usecases.listexpensecategories.DbListExpenseCategories;
-import com.washflow.domain.usecases.ListExpenseCategories;
+import com.washflow.domain.usecases.cash.ListExpenseCategories;
 import com.washflow.infra.db.jdbi.CashTransactionJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 

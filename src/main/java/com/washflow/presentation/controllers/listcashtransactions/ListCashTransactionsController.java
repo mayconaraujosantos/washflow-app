@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.listcashtransactions;
 
 import com.washflow.domain.entities.CashTransaction;
-import com.washflow.domain.usecases.ListCashTransactions;
+import com.washflow.domain.usecases.cash.ListCashTransactions;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

@@ -16,7 +16,7 @@ import com.washflow.domain.entities.UserProfile;
 import com.washflow.domain.entities.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
-import com.washflow.domain.usecases.CreateVehicle;
+import com.washflow.domain.usecases.vehicle.CreateVehicle;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;

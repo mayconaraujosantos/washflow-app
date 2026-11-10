@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.getcashtransactionreport;
 
-import com.washflow.domain.usecases.GetCashTransactionReport;
+import com.washflow.domain.usecases.cash.GetCashTransactionReport;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

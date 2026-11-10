@@ -12,7 +12,7 @@ import com.washflow.data.protocols.db.SaveCashTransactionRepository;
 import com.washflow.domain.entities.CashTransaction;
 import com.washflow.domain.entities.CashTransaction.TransactionType;
 import com.washflow.domain.errors.cash.InvalidTransactionTypeError;
-import com.washflow.domain.usecases.CreateCashTransaction;
+import com.washflow.domain.usecases.cash.CreateCashTransaction;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;

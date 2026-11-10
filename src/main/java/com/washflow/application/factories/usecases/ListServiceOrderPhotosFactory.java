@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.data.usecases.listphotos.DbListServiceOrderPhotos;
-import com.washflow.domain.usecases.ListServiceOrderPhotos;
+import com.washflow.domain.usecases.serviceorder.ListServiceOrderPhotos;
 import com.washflow.infra.db.jdbi.PhotoJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 

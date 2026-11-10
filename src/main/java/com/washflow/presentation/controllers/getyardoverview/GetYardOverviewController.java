@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.getyardoverview;
 
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.usecases.GetYardOverview;
+import com.washflow.domain.usecases.yard.GetYardOverview;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

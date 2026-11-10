@@ -4,7 +4,7 @@ import com.washflow.data.protocols.db.UpdateUserActiveRepository;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.errors.user.UserHasActiveWashesError;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.UpdateUserActive;
+import com.washflow.domain.usecases.user.UpdateUserActive;
 
 /**
  * Delegates to {@code UpdateUserActiveRepository}. Depends only on the port interface, never on

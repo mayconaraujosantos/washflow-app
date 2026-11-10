@@ -4,7 +4,7 @@ import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.SaleType;
 import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
-import com.washflow.domain.usecases.CreateSale;
+import com.washflow.domain.usecases.sale.CreateSale;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

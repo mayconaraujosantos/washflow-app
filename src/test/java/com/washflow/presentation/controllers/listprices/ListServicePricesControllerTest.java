@@ -5,7 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.ServicePrice;
-import com.washflow.domain.usecases.ListServicePrices;
+import com.washflow.domain.usecases.pricing.ListServicePrices;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.math.BigDecimal;

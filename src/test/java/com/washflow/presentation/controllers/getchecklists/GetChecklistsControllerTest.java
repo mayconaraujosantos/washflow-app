@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import com.washflow.domain.entities.ServiceOrderChecklist;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistItem;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistType;
-import com.washflow.domain.usecases.ListServiceOrderChecklists;
+import com.washflow.domain.usecases.serviceorder.ListServiceOrderChecklists;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.time.Instant;

@@ -2,7 +2,7 @@ package com.washflow.data.usecases.resumeserviceorder;
 
 import com.washflow.data.protocols.db.ResumeServiceOrderRepository;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotWashingError;
-import com.washflow.domain.usecases.ResumeServiceOrder;
+import com.washflow.domain.usecases.serviceorder.ResumeServiceOrder;
 
 /**
  * Delegates to {@code ResumeServiceOrderRepository}. Depends only on the port interface, never on

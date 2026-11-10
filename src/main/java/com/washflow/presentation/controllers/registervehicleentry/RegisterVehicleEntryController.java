@@ -6,7 +6,7 @@ import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.InvalidPlateError;
 import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
-import com.washflow.domain.usecases.RegisterVehicleEntry;
+import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

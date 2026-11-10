@@ -2,7 +2,7 @@ package com.washflow.data.usecases.listexpensecategories;
 
 import com.washflow.data.protocols.db.LoadExpenseCategoryRepository;
 import com.washflow.domain.entities.ExpenseCategory;
-import com.washflow.domain.usecases.ListExpenseCategories;
+import com.washflow.domain.usecases.cash.ListExpenseCategories;
 import java.util.List;
 
 public class DbListExpenseCategories implements ListExpenseCategories {

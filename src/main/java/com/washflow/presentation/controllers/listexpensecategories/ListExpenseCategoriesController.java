@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.listexpensecategories;
 
 import com.washflow.domain.entities.ExpenseCategory;
-import com.washflow.domain.usecases.ListExpenseCategories;
+import com.washflow.domain.usecases.cash.ListExpenseCategories;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

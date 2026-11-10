@@ -2,7 +2,7 @@ package com.washflow.data.usecases.getyardoverview;
 
 import com.washflow.data.protocols.db.LoadYardOverviewRepository;
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.usecases.GetYardOverview;
+import com.washflow.domain.usecases.yard.GetYardOverview;
 import java.util.List;
 
 /**

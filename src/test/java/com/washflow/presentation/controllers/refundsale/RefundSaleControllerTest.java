@@ -10,7 +10,7 @@ import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.errors.sale.SaleNotFoundError;
 import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
-import com.washflow.domain.usecases.RefundSale;
+import com.washflow.domain.usecases.sale.RefundSale;
 import com.washflow.presentation.protocols.HttpRequest;
 import java.math.BigDecimal;
 import java.util.HashMap;

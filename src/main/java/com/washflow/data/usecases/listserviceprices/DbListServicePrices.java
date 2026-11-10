@@ -2,7 +2,7 @@ package com.washflow.data.usecases.listserviceprices;
 
 import com.washflow.data.protocols.db.LoadAllServicePricesRepository;
 import com.washflow.domain.entities.ServicePrice;
-import com.washflow.domain.usecases.ListServicePrices;
+import com.washflow.domain.usecases.pricing.ListServicePrices;
 import java.util.List;
 
 /**

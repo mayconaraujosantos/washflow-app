@@ -4,7 +4,7 @@ import com.washflow.data.protocols.db.LoadServiceOrdersByCustomerIdRepository;
 import com.washflow.data.protocols.db.LoadUserByIdRepository;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.usecases.ListServiceOrdersByCustomer;
+import com.washflow.domain.usecases.customer.ListServiceOrdersByCustomer;
 import java.util.List;
 
 /**

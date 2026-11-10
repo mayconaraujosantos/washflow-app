@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.data.usecases.searchvehicles.DbSearchVehicles;
-import com.washflow.domain.usecases.SearchVehicles;
+import com.washflow.domain.usecases.vehicle.SearchVehicles;
 import com.washflow.infra.db.jdbi.VehicleJdbiRepository;
 import org.jdbi.v3.core.Jdbi;
 

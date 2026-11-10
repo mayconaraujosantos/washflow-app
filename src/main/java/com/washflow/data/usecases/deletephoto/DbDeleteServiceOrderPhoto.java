@@ -1,7 +1,7 @@
 package com.washflow.data.usecases.deletephoto;
 
 import com.washflow.data.protocols.db.DeleteServiceOrderPhotoRepository;
-import com.washflow.domain.usecases.DeleteServiceOrderPhoto;
+import com.washflow.domain.usecases.serviceorder.DeleteServiceOrderPhoto;
 import java.util.UUID;
 
 public class DbDeleteServiceOrderPhoto implements DeleteServiceOrderPhoto {

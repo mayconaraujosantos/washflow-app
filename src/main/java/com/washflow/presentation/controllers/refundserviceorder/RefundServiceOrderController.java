@@ -2,7 +2,7 @@ package com.washflow.presentation.controllers.refundserviceorder;
 
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
-import com.washflow.domain.usecases.RefundServiceOrder;
+import com.washflow.domain.usecases.serviceorder.RefundServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

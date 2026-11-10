@@ -6,7 +6,7 @@ import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.factories.usecases.EstablishmentHours;
 import com.washflow.data.usecases.scheduleavailability.DbScheduleAvailability;
-import com.washflow.domain.usecases.ScheduleAvailability;
+import com.washflow.domain.usecases.schedule.ScheduleAvailability;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import com.washflow.presentation.controllers.scheduleavailability.ScheduleAvailabilityController;
 import io.javalin.openapi.HttpMethod;

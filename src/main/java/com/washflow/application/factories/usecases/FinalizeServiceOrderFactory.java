@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.data.usecases.finalizeserviceorder.DbFinalizeServiceOrder;
-import com.washflow.domain.usecases.FinalizeServiceOrder;
+import com.washflow.domain.usecases.serviceorder.FinalizeServiceOrder;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;
 import org.jdbi.v3.core.Jdbi;

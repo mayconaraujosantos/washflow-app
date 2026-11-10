@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 
 import com.washflow.data.protocols.db.LoadServiceOrdersScheduledBetweenRepository;
-import com.washflow.domain.usecases.ListAgenda;
+import com.washflow.domain.usecases.schedule.ListAgenda;
 import java.time.Instant;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;

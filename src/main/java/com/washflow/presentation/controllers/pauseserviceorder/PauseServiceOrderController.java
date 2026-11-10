@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.pauseserviceorder;
 
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotPausedError;
-import com.washflow.domain.usecases.PauseServiceOrder;
+import com.washflow.domain.usecases.serviceorder.PauseServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

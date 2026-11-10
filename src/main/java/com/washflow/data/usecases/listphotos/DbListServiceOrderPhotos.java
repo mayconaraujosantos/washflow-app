@@ -2,7 +2,7 @@ package com.washflow.data.usecases.listphotos;
 
 import com.washflow.data.protocols.db.LoadServiceOrderPhotoRepository;
 import com.washflow.domain.entities.ServiceOrderPhoto;
-import com.washflow.domain.usecases.ListServiceOrderPhotos;
+import com.washflow.domain.usecases.serviceorder.ListServiceOrderPhotos;
 import java.util.List;
 import java.util.UUID;
 

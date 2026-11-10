@@ -11,7 +11,7 @@ import com.washflow.data.protocols.db.RefundServiceOrderRepository;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.ServiceOrderRefund;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
-import com.washflow.domain.usecases.RefundServiceOrder;
+import com.washflow.domain.usecases.serviceorder.RefundServiceOrder;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;

@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.searchvehicles;
 
-import com.washflow.domain.usecases.SearchVehicles;
+import com.washflow.domain.usecases.vehicle.SearchVehicles;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

@@ -5,7 +5,7 @@ import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleRefund;
 import com.washflow.domain.errors.sale.SaleNotFoundError;
 import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
-import com.washflow.domain.usecases.RefundSale;
+import com.washflow.domain.usecases.sale.RefundSale;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;

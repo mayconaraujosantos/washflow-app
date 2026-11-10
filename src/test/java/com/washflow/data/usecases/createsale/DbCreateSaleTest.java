@@ -15,7 +15,7 @@ import com.washflow.domain.entities.SaleType;
 import com.washflow.domain.entities.ServicePrice;
 import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
-import com.washflow.domain.usecases.CreateSale;
+import com.washflow.domain.usecases.sale.CreateSale;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;

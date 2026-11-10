@@ -5,7 +5,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.SaleRefund;
-import com.washflow.domain.usecases.ListSales;
+import com.washflow.domain.usecases.sale.ListSales;
 import com.washflow.presentation.protocols.HttpRequest;
 import java.time.LocalDate;
 import java.util.HashMap;

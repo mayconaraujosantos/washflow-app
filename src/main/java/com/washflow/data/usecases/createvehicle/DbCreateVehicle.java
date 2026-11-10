@@ -6,7 +6,7 @@ import com.washflow.data.protocols.db.LoadVehicleByPlateRepository;
 import com.washflow.domain.entities.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
-import com.washflow.domain.usecases.CreateVehicle;
+import com.washflow.domain.usecases.vehicle.CreateVehicle;
 import java.util.UUID;
 
 /**

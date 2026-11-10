@@ -13,7 +13,7 @@ import com.washflow.domain.entities.ServiceOrderChecklist;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistItem;
 import com.washflow.domain.entities.ServiceOrderChecklist.ChecklistType;
 import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
-import com.washflow.domain.usecases.SaveServiceOrderChecklist;
+import com.washflow.domain.usecases.serviceorder.SaveServiceOrderChecklist;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

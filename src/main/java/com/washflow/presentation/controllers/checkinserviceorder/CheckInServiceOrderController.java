@@ -3,7 +3,7 @@ package com.washflow.presentation.controllers.checkinserviceorder;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
-import com.washflow.domain.usecases.CheckInServiceOrder;
+import com.washflow.domain.usecases.serviceorder.CheckInServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;

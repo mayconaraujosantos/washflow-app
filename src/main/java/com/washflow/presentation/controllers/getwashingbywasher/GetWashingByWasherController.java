@@ -1,7 +1,7 @@
 package com.washflow.presentation.controllers.getwashingbywasher;
 
 import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.usecases.GetWashingByWasher;
+import com.washflow.domain.usecases.yard.GetWashingByWasher;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

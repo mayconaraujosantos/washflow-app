@@ -11,7 +11,7 @@ import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
-import com.washflow.domain.usecases.ScheduleServiceOrder;
+import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import com.washflow.validation.protocols.Validation;

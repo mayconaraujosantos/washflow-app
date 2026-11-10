@@ -28,7 +28,7 @@ import com.washflow.domain.errors.cash.ServicePriceNotFoundError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.InvalidPlateError;
-import com.washflow.domain.usecases.RegisterVehicleEntry;
+import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;

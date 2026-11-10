@@ -13,7 +13,7 @@ import com.washflow.data.protocols.db.RefundSaleRepository;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleRefund;
-import com.washflow.domain.usecases.RefundSale;
+import com.washflow.domain.usecases.sale.RefundSale;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;

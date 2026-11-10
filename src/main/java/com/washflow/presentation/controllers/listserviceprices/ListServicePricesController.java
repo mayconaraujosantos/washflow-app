@@ -1,6 +1,6 @@
 package com.washflow.presentation.controllers.listserviceprices;
 
-import com.washflow.domain.usecases.ListServicePrices;
+import com.washflow.domain.usecases.pricing.ListServicePrices;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
