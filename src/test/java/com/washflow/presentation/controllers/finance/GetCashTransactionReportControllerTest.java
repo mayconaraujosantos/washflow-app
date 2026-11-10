@@ -1,7 +1,6 @@
 package com.washflow.presentation.controllers.finance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +34,7 @@ class GetCashTransactionReportControllerTest {
     LocalDate to = LocalDate.of(2025, 1, 31);
     Map<String, Object> expected = new HashMap<>();
     expected.put("totalIncome", 1000.0);
-    when(getCashTransactionReport.report(eq(from), eq(to))).thenReturn(expected);
+    when(getCashTransactionReport.report(from, to)).thenReturn(expected);
 
     Map<String, Object> body = new HashMap<>();
     body.put("from", "2025-01-01");

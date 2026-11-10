@@ -2,7 +2,6 @@ package com.washflow.data.usecases.user;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,7 +38,7 @@ class DbUpdateUserActiveTest {
 
   @Test
   void activatesUserSuccessfully() throws Exception {
-    when(updateRepository.updateActive(eq(userId), eq(true))).thenReturn(testUser);
+    when(updateRepository.updateActive(userId, true)).thenReturn(testUser);
 
     UpdateUserActive.Params params = new UpdateUserActive.Params(userId, true);
 
@@ -53,7 +52,7 @@ class DbUpdateUserActiveTest {
   void deactivatesUserSuccessfully() throws Exception {
     User deactivatedUser =
         new User(userId, "Test User", "11999999999", UserProfile.WASHER, Instant.now(), false);
-    when(updateRepository.updateActive(eq(userId), eq(false))).thenReturn(deactivatedUser);
+    when(updateRepository.updateActive(userId, false)).thenReturn(deactivatedUser);
 
     UpdateUserActive.Params params = new UpdateUserActive.Params(userId, false);
 
@@ -65,7 +64,7 @@ class DbUpdateUserActiveTest {
 
   @Test
   void throwsUserHasActiveWashesErrorWhenWasherHasActiveOrders() {
-    when(updateRepository.updateActive(eq(userId), eq(false)))
+    when(updateRepository.updateActive(userId, false))
         .thenThrow(new UserHasActiveWashesError(userId));
 
     UpdateUserActive.Params params = new UpdateUserActive.Params(userId, false);
@@ -75,7 +74,7 @@ class DbUpdateUserActiveTest {
 
   @Test
   void throwsUserNotFoundErrorWhenUserDoesNotExist() {
-    when(updateRepository.updateActive(eq(userId), eq(true)))
+    when(updateRepository.updateActive(userId, true))
         .thenThrow(new RuntimeException("User not found"));
 
     UpdateUserActive.Params params = new UpdateUserActive.Params(userId, true);

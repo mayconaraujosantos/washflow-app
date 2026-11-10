@@ -1,7 +1,6 @@
 package com.washflow.data.usecases.finance;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,7 +47,7 @@ class DbListCashTransactionsTest {
                 null,
                 Instant.now(),
                 null));
-    when(loadRepository.loadByDateRange(eq(from), eq(to))).thenReturn(expected);
+    when(loadRepository.loadByDateRange(from, to)).thenReturn(expected);
 
     List<CashTransaction> result = sut.list(from, to);
 
