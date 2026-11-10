@@ -207,13 +207,11 @@ class ConcurrencyIntegrationTest {
 
     assertEquals(1, results.stream().filter(Boolean.TRUE::equals).count(), "" + results);
     assertEquals(1, results.stream().filter(Boolean.FALSE::equals).count(), "" + results);
-    assertEquals(
-        1,
+    long admins =
         jdbi.withHandle(
             handle ->
-                handle.createQuery("SELECT COUNT(*) FROM administradores")
-                    .mapTo(Integer.class)
-                    .one()));
+                handle.createQuery("SELECT COUNT(*) FROM administradores").mapTo(Long.class).one());
+    assertEquals(1L, admins);
   }
 
   // ---------------------------------------------------------------- helpers

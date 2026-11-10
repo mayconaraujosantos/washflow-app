@@ -160,19 +160,19 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
   private static List<ReportOrder> paidOrders(Handle handle, Instant start, Instant end) {
     try (var query = handle.createQuery(PAID_ORDERS_SQL)) {
       return query
-              .bind(START, start)
-              .bind(END, end)
-              .map(
-                      (rs, ctx) ->
-                              new ReportOrder(
-                                      rs.getObject("id", UUID.class),
-                                      rs.getString("service_name"),
-                                      rs.getString("forma_pagamento"),
-                                      rs.getBigDecimal("valor"),
-                                      rs.getBigDecimal("commission"),
-                                      timestamp(rs, "lavagem_iniciada_em"),
-                                      timestamp(rs, "lavagem_concluida_em")))
-              .list();
+          .bind(START, start)
+          .bind(END, end)
+          .map(
+              (rs, ctx) ->
+                  new ReportOrder(
+                      rs.getObject("id", UUID.class),
+                      rs.getString("service_name"),
+                      rs.getString("forma_pagamento"),
+                      rs.getBigDecimal("valor"),
+                      rs.getBigDecimal("commission"),
+                      timestamp(rs, "lavagem_iniciada_em"),
+                      timestamp(rs, "lavagem_concluida_em")))
+          .list();
     }
   }
 
@@ -185,18 +185,18 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
     }
     try (var query = handle.createQuery(PAUSES_SQL)) {
       query
-              .bindList("orderIds", orders.stream().map(ReportOrder::id).toList())
-              .map(
-                      (rs, ctx) -> {
-                        UUID orderId = rs.getObject("atendimento_id", UUID.class);
-                        Instant startedAt = rs.getTimestamp("iniciada_em").toInstant();
-                        java.sql.Timestamp resumed = rs.getTimestamp("retomada_em");
-                        Instant endedAt = resumed == null ? Instant.now() : resumed.toInstant();
-                        durations.merge(orderId, Duration.between(startedAt, endedAt), Duration::plus);
-                        counts.merge(rs.getString("motivo"), 1, Integer::sum);
-                        return orderId;
-                      })
-              .list();
+          .bindList("orderIds", orders.stream().map(ReportOrder::id).toList())
+          .map(
+              (rs, ctx) -> {
+                UUID orderId = rs.getObject("atendimento_id", UUID.class);
+                Instant startedAt = rs.getTimestamp("iniciada_em").toInstant();
+                java.sql.Timestamp resumed = rs.getTimestamp("retomada_em");
+                Instant endedAt = resumed == null ? Instant.now() : resumed.toInstant();
+                durations.merge(orderId, Duration.between(startedAt, endedAt), Duration::plus);
+                counts.merge(rs.getString("motivo"), 1, Integer::sum);
+                return orderId;
+              })
+          .list();
     }
     return new Pauses(durations, counts);
   }
@@ -247,32 +247,24 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
   private static List<ReasonCount> cancellationReasons(Handle handle, Instant start, Instant end) {
     try (var query = handle.createQuery(CANCELLATIONS_SQL)) {
       return query
-              .bind(START, start)
-              .bind(END, end)
-              .map(
-                      (rs, ctx) ->
-                              new ReasonCount(rs.getString("motivo_cancelamento"), rs.getInt("cancelled")))
-              .list();
+          .bind(START, start)
+          .bind(END, end)
+          .map(
+              (rs, ctx) ->
+                  new ReasonCount(rs.getString("motivo_cancelamento"), rs.getInt("cancelled")))
+          .list();
     }
   }
 
   private static BigDecimal salesReceived(Handle handle, Instant start, Instant end) {
     try (var query = handle.createQuery(SALES_RECEIVED_SQL)) {
-      return query
-          .bind(START, start)
-          .bind(END, end)
-          .mapTo(BigDecimal.class)
-          .one();
+      return query.bind(START, start).bind(END, end).mapTo(BigDecimal.class).one();
     }
   }
 
   private static BigDecimal reversedCommissions(Handle handle, Instant start, Instant end) {
     try (var query = handle.createQuery(REVERSED_COMMISSIONS_SQL)) {
-      return query
-          .bind(START, start)
-          .bind(END, end)
-          .mapTo(BigDecimal.class)
-          .one();
+      return query.bind(START, start).bind(END, end).mapTo(BigDecimal.class).one();
     }
   }
 

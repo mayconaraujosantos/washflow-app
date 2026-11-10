@@ -252,10 +252,7 @@ public class ServiceOrderJdbiRepository
     return jdbi.withHandle(
         handle -> {
           try (var query = handle.createQuery(SELECT_BY_CUSTOMER_ID_SQL)) {
-            return query
-                .bind("customerId", customerId)
-                .map(ServiceOrderRows::map)
-                .list();
+            return query.bind("customerId", customerId).map(ServiceOrderRows::map).list();
           }
         });
   }
@@ -280,8 +277,7 @@ public class ServiceOrderJdbiRepository
                     return Optional.<ServiceOrder>empty();
                   }
                   try (var query = handle.createQuery(SELECT_SQL)) {
-                    return Optional.of(
-                        query.bind("id", id).map(ServiceOrderRows::map).one());
+                    return Optional.of(query.bind("id", id).map(ServiceOrderRows::map).one());
                   }
                 }));
   }
