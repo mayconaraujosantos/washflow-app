@@ -1,5 +1,6 @@
 import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import {
+  CANCEL_LABELS,
   PAUSE_LABELS,
   PAYMENT_LABELS,
   REFUND_LABELS,
@@ -24,6 +25,10 @@ export function operationsReportCsv(report: OperationsReportModel): string {
     ['Faturamento líquido (R$)', report.netRevenue.toFixed(2)],
     ['Comissões estornadas (R$)', report.reversedCommissions.toFixed(2)],
     ['Comissões líquidas (R$)', report.netCommissions.toFixed(2)],
+    ['Atendimentos cancelados', report.cancelledOrders],
+    ['Vendas rápidas recebidas (R$)', report.salesReceived.toFixed(2)],
+    ['Estornos de vendas rápidas (R$)', report.saleRefunds.toFixed(2)],
+    ['Vendas rápidas líquidas (R$)', report.netSales.toFixed(2)],
     [
       'Tempo médio de lavagem (min)',
       report.averageWashingMinutes ?? 'Sem dados',
@@ -47,11 +52,24 @@ export function operationsReportCsv(report: OperationsReportModel): string {
     ['Motivo da pausa', 'Quantidade'],
     ...report.pauses.map((pause) => [PAUSE_LABELS[pause.reason], pause.count]),
     [],
-    ['Motivo do estorno', 'Quantidade', 'Valor (R$)'],
+    ['Motivo do estorno', 'Origem', 'Quantidade', 'Valor (R$)'],
     ...report.refundReasons.map((refund) => [
       REFUND_LABELS[refund.reason] ?? refund.reason,
+      'Atendimento',
       refund.count,
       refund.amount.toFixed(2),
+    ]),
+    ...report.saleRefundReasons.map((refund) => [
+      REFUND_LABELS[refund.reason] ?? refund.reason,
+      'Venda rápida',
+      refund.count,
+      refund.amount.toFixed(2),
+    ]),
+    [],
+    ['Motivo do cancelamento', 'Quantidade'],
+    ...report.cancellationReasons.map((cancel) => [
+      CANCEL_LABELS[cancel.reason] ?? cancel.reason,
+      cancel.count,
     ]),
   ]
 

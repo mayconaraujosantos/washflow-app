@@ -27,4 +27,11 @@ export type OperationsReportModel = {
   netRevenue: number
   netCommissions: number
   refundReasons: { reason: string; count: number; amount: number }[]
+  // Cancellations by the day they were made; quick sales by payment / refund date.
+  cancelledOrders: number
+  cancellationReasons: { reason: string; count: number }[]
+  salesReceived: number
+  saleRefunds: number
+  netSales: number
+  saleRefundReasons: { reason: string; count: number; amount: number }[]
 }
