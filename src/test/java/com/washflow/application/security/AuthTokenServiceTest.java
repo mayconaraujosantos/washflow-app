@@ -3,8 +3,8 @@ package com.washflow.application.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;

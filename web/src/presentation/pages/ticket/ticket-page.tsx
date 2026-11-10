@@ -33,6 +33,8 @@ const HEADLINES: Record<ServiceOrderStatus, string> = {
   PAUSED: 'Lavagem pausada por instantes',
   READY: 'Pronto para retirada!',
   DONE: 'Atendimento finalizado. Obrigado!',
+  CANCELLED: 'Atendimento cancelado. Fale com o lava-jato.',
+  REFUNDED: 'Pagamento estornado. Fale com o lava-jato.',
 }
 
 type Props = Readonly<{ access: Access }>

@@ -4,9 +4,9 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.CreateSaleControllerFactory;
-import com.washflow.application.factories.controllers.ListSalesControllerFactory;
-import com.washflow.domain.entities.Sale;
+import com.washflow.application.modules.SaleModule;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleRefund;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
@@ -24,6 +24,8 @@ public final class SaleRoutes {
   public static void register(Jdbi jdbi) {
     registerCreate(jdbi);
     registerList(jdbi);
+    registerRefund(jdbi);
+    registerRefundList(jdbi);
   }
 
   @OpenApi(
@@ -37,7 +39,7 @@ public final class SaleRoutes {
         @OpenApiResponse(status = "404", description = "Service or vehicle not found")
       })
   private static void registerCreate(Jdbi jdbi) {
-    post(BASE_PATH, JavalinRouteAdapter.adapt(CreateSaleControllerFactory.make(jdbi)));
+    post(BASE_PATH, JavalinRouteAdapter.adapt(SaleModule.createSaleController(jdbi)));
   }
 
   @OpenApi(
@@ -55,6 +57,45 @@ public final class SaleRoutes {
         @OpenApiResponse(status = "400", description = "Invalid range or type")
       })
   private static void registerList(Jdbi jdbi) {
-    get(BASE_PATH, JavalinRouteAdapter.adapt(ListSalesControllerFactory.make(jdbi)));
+    get(BASE_PATH, JavalinRouteAdapter.adapt(SaleModule.listSalesController(jdbi)));
+  }
+
+  @OpenApi(
+      path = BASE_PATH + "/{id}/refunds",
+      methods = HttpMethod.POST,
+      summary = "Refund all or part of a quick sale in one method, up to what came in through it",
+      tags = {"Sales"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = Sale.class)),
+        @OpenApiResponse(status = "400", description = "Invalid method, amount or reason"),
+        @OpenApiResponse(status = "404", description = "Sale not found"),
+        @OpenApiResponse(
+            status = "409",
+            description = "A budget, or more than the method still has to give back")
+      })
+  private static void registerRefund(Jdbi jdbi) {
+    post(
+        BASE_PATH + "/{id}/refunds",
+        JavalinRouteAdapter.adapt(SaleModule.refundSaleController(jdbi)));
+  }
+
+  @OpenApi(
+      path = BASE_PATH + "/refunds",
+      methods = HttpMethod.GET,
+      summary = "List sale refunds made between two shop-local dates (by refund date)",
+      tags = {"Sales"},
+      queryParams = {
+        @OpenApiParam(name = "from", type = String.class, required = true),
+        @OpenApiParam(name = "to", type = String.class, required = true)
+      },
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = SaleRefund[].class)),
+        @OpenApiResponse(status = "400", description = "Invalid range")
+      })
+  private static void registerRefundList(Jdbi jdbi) {
+    get(
+        BASE_PATH + "/refunds",
+        JavalinRouteAdapter.adapt(SaleModule.listSaleRefundsController(jdbi)));
   }
 }

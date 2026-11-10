@@ -1,15 +1,26 @@
 import { HttpClient } from '@/data/protocols/http/http-client'
-import { ServiceOrderModel } from '@/domain/models/service-order-model'
+import { AuditEntryModel } from '@/domain/models/audit-entry-model'
+import {
+  ServiceOrderModel,
+  ServiceOrderRefundModel,
+} from '@/domain/models/service-order-model'
 import { OperationsReportModel } from '@/domain/models/operations-report-model'
 import { ServicePriceModel } from '@/domain/models/service-price-model'
 import { UserModel, UserProfile } from '@/domain/models/user-model'
 import { VehicleLookupModel } from '@/domain/models/vehicle-lookup-model'
-import { SaleModel, SaleType } from '@/domain/models/sale-model'
+import {
+  SaleModel,
+  SaleRefundModel,
+  SaleType,
+} from '@/domain/models/sale-model'
 import {
   CreateSaleParams,
   Operations,
+  CancelReason,
   PauseReason,
   PaymentMethod,
+  RefundParams,
+  SaleRefundParams,
   RegisterEntryParams,
 } from '@/domain/usecases/operations'
 
@@ -117,8 +128,34 @@ export class RemoteOperations implements Operations {
     })
   }
 
+  async cancel(
+    serviceOrderId: string,
+    reason: CancelReason,
+    description?: string,
+  ): Promise<void> {
+    await this.request(
+      `/api/service-orders/${serviceOrderId}/cancel`,
+      'patch',
+      {
+        reason,
+        description,
+      },
+    )
+  }
+
   async resume(serviceOrderId: string): Promise<void> {
     await this.request(`/api/service-orders/${serviceOrderId}/resume`, 'patch')
+  }
+
+  refund(
+    serviceOrderId: string,
+    params: RefundParams,
+  ): Promise<ServiceOrderRefundModel> {
+    return this.request(
+      `/api/service-orders/${serviceOrderId}/refund`,
+      'patch',
+      params,
+    ) as Promise<ServiceOrderRefundModel>
   }
 
   async finalize(
@@ -167,6 +204,29 @@ export class RemoteOperations implements Operations {
     if (type) query.set('type', type)
     return this.request(`/api/sales?${query.toString()}`, 'get') as Promise<
       SaleModel[]
+    >
+  }
+
+  refundSale(saleId: string, params: SaleRefundParams): Promise<SaleModel> {
+    return this.request(
+      `/api/sales/${saleId}/refunds`,
+      'post',
+      params,
+    ) as Promise<SaleModel>
+  }
+
+  listSaleRefunds(from: string, to: string): Promise<SaleRefundModel[]> {
+    const query = new URLSearchParams({ from, to })
+    return this.request(
+      `/api/sales/refunds?${query.toString()}`,
+      'get',
+    ) as Promise<SaleRefundModel[]>
+  }
+
+  loadAudit(from: string, to: string): Promise<AuditEntryModel[]> {
+    const query = new URLSearchParams({ from, to })
+    return this.request(`/api/audit?${query.toString()}`, 'get') as Promise<
+      AuditEntryModel[]
     >
   }
 

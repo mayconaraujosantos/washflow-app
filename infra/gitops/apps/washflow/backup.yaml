@@ -1,0 +1,86 @@
+# Nightly pg_dump of washflow-postgres (scripts in db-backup/, tested by
+# scripts/test-db-backup.sh). Dumps land on their own volume and are kept for
+# BACKUP_KEEP_DAYS. That volume lives on the same node as the database, so it
+# protects against a bad migration or a deleted table, not against losing the
+# machine: for that set BACKUP_S3_URI (+ AWS_* keys) in the secret, using an
+# image that has the aws CLI. Restore steps: infra/README.md, "Backup".
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: washflow-db-backups
+spec:
+  storageClassName: standard
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: washflow-db-backup
+  labels:
+    app.kubernetes.io/name: washflow-db-backup
+spec:
+  # 03:00 in Manaus: after closing, before the first booking.
+  schedule: "0 3 * * *"
+  timeZone: America/Manaus
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: washflow-db-backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              # Same major version as the server: pg_dump refuses newer servers.
+              image: postgres:16-alpine
+              command: ["sh", "/scripts/db-backup.sh"]
+              env:
+                - name: PGHOST
+                  value: washflow-postgres
+                - name: PGDATABASE
+                  value: washflow
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: washflow
+                      key: DB_USER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: washflow
+                      key: DB_PASSWORD
+                - name: BACKUP_DIR
+                  value: /backups
+                - name: BACKUP_KEEP_DAYS
+                  value: "14"
+                - name: BACKUP_S3_URI
+                  valueFrom:
+                    secretKeyRef:
+                      name: washflow
+                      key: BACKUP_S3_URI
+                      optional: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: scripts
+              configMap:
+                name: washflow-db-backup-scripts
+            - name: backups
+              persistentVolumeClaim:
+                claimName: washflow-db-backups

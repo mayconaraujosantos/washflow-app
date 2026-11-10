@@ -4,9 +4,8 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.CreateServicePriceControllerFactory;
-import com.washflow.application.factories.controllers.ListServicePricesControllerFactory;
-import com.washflow.domain.entities.ServicePrice;
+import com.washflow.application.modules.PricingModule;
+import com.washflow.domain.entities.pricing.ServicePrice;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
@@ -35,7 +34,7 @@ public final class ServicePriceRoutes {
         @OpenApiResponse(status = "400", description = "Invalid name, price or commission")
       })
   private static void registerCreate(Jdbi jdbi) {
-    post(BASE_PATH, JavalinRouteAdapter.adapt(CreateServicePriceControllerFactory.make(jdbi)));
+    post(BASE_PATH, JavalinRouteAdapter.adapt(PricingModule.createServicePriceController(jdbi)));
   }
 
   @OpenApi(
@@ -47,6 +46,6 @@ public final class ServicePriceRoutes {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = ServicePrice[].class))
       })
   private static void registerList(Jdbi jdbi) {
-    get(BASE_PATH, JavalinRouteAdapter.adapt(ListServicePricesControllerFactory.make(jdbi)));
+    get(BASE_PATH, JavalinRouteAdapter.adapt(PricingModule.listServicePricesController(jdbi)));
   }
 }

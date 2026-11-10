@@ -3,12 +3,44 @@ package com.washflow.application.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 class RoutePermissionMatcherTest {
+
+  @Test
+  void onlyManagersReadTheAuditTrail() {
+    assertEquals(UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile("GET", "/api/audit"));
+  }
+
+  @Test
+  void onlyManagersCancelServiceOrders() {
+    assertEquals(
+        UserProfile.MANAGER,
+        RoutePermissionMatcher.requiredProfile("PATCH", "/api/service-orders/abc-123/cancel"));
+  }
+
+  @Test
+  void onlyManagersRefundServiceOrders() {
+    assertEquals(
+        UserProfile.MANAGER,
+        RoutePermissionMatcher.requiredProfile("PATCH", "/api/service-orders/abc-123/refund"));
+  }
+
+  @Test
+  void onlyManagersListSaleRefunds() {
+    assertEquals(
+        UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile("GET", "/api/sales/refunds"));
+  }
+
+  @Test
+  void onlyManagersRefundSales() {
+    assertEquals(
+        UserProfile.MANAGER,
+        RoutePermissionMatcher.requiredProfile("POST", "/api/sales/abc-123/refunds"));
+  }
 
   @Test
   void returnsCustomerForCreateVehicle() {

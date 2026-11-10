@@ -12,12 +12,15 @@ else
   DETECTED_OS := $(shell uname -s)
 endif
 
-# Detect container runtime: Docker first, then Podman as default fallback
+# Detect container runtime: Docker first, then Podman as default fallback.
+# A `docker` binary can exist with no daemon behind it (e.g. this machine's
+# rootless Podman setup), so check that the daemon actually answers rather
+# than just that the binary is on PATH.
 ifeq ($(OS),Windows_NT)
   HAS_DOCKER := $(shell where docker 2>$null)
   HAS_PODMAN := $(shell where podman 2>$null)
 else
-  HAS_DOCKER := $(shell command -v docker 2>/dev/null)
+  HAS_DOCKER := $(shell docker info >/dev/null 2>&1 && echo yes)
   HAS_PODMAN := $(shell command -v podman 2>/dev/null)
 endif
 
@@ -47,7 +50,7 @@ else
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev dev-backend dev-frontend build run start test lint format generate-auth-secret seed-test-users \
+.PHONY: help install dev dev-backend dev-frontend build run start test test-backup lint format generate-auth-secret seed-test-users load-seed load-test \
 	coverage sonar stop ip clean db-up db-down db-logs \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
@@ -65,7 +68,11 @@ help:
 	@echo "  make build     Build the frontend only (web/dist), nothing started."
 	@echo "  make generate-auth-secret  Generate AUTH_TOKEN_SECRET in the local .env file."
 	@echo "  make seed-test-users  Create local-only customer, washer, and manager test accounts."
+	@echo "  make load-seed  Create the load-test data (20 lava-jatos, Podman, see docs/load-test.md)."
+	@echo "  make load-test  Peak-day load test with a hosting plan's limits"
+	@echo "                 (PROFILE=render-starter, HOLD=5m; PROFILES=\"a b\" runs several)."
 	@echo "  make test      Run the backend test suite (+ JaCoCo coverage report)."
+	@echo "  make test-backup  Back up, drop and restore a throwaway Postgres (db-backup scripts)."
 	@echo "  make lint      Lint + check formatting for both frontend (ESLint/Prettier)"
 	@echo "                 and backend (Spotless)."
 	@echo "  make format    Auto-format frontend (Prettier) and backend (Spotless)."
@@ -105,6 +112,13 @@ generate-auth-secret:
 seed-test-users:
 	@bun scripts/seed-test-users.mjs
 
+load-seed:
+	@scripts/load/run.sh seed
+
+load-test:
+	@if [ -n "$(PROFILES)" ]; then scripts/load/matrix.sh $(PROFILES); \
+	else scripts/load/run.sh $(or $(PROFILE),render-starter); fi
+
 ## Fast iteration: hot reload on both ends. Open http://localhost:$(FRONTEND_PORT)
 ## in the browser you're coding with. Not representative of the installed PWA -
 ## use `make run` for that. Vite's own startup log prints a LAN URL too.
@@ -135,6 +149,9 @@ start: run
 
 test:
 	$(GRADLE) test --console=plain
+
+test-backup:
+	CONTAINER_RUNTIME=$(DOCKER) sh scripts/test-db-backup.sh
 
 lint:
 	cd web && bun run lint && bun run format:check

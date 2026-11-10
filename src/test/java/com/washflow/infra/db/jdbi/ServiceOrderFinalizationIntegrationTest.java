@@ -3,11 +3,12 @@ package com.washflow.infra.db.jdbi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.domain.entities.PaymentMethod;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.entities.ServicePayment;
-import com.washflow.domain.entities.WasherCommission;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.serviceorder.ServicePayment;
+import com.washflow.domain.entities.serviceorder.WasherCommission;
+import com.washflow.domain.entities.shared.PaymentMethod;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;

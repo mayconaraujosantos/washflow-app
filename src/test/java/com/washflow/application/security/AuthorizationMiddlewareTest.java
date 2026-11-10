@@ -7,7 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
 import java.util.Map;
@@ -252,8 +252,8 @@ class AuthorizationMiddlewareTest {
   }
 
   private String createTokenForUser(UUID userId, UserProfile profile) {
-    com.washflow.domain.entities.User user =
-        new com.washflow.domain.entities.User(
+    com.washflow.domain.entities.user.User user =
+        new com.washflow.domain.entities.user.User(
             userId, "Test", "11999990000", profile, java.time.Instant.now());
     return tokenService.issue(user);
   }

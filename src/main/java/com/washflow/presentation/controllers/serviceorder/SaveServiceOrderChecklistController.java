@@ -1,0 +1,80 @@
+package com.washflow.presentation.controllers.serviceorder;
+
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistItem;
+import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistType;
+import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
+import com.washflow.domain.usecases.serviceorder.SaveServiceOrderChecklist;
+import com.washflow.presentation.helpers.BodyValues;
+import com.washflow.presentation.helpers.HttpHelper;
+import com.washflow.presentation.protocols.Controller;
+import com.washflow.presentation.protocols.HttpRequest;
+import com.washflow.presentation.protocols.HttpResponse;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Parses the HTTP request, validates fields, and delegates to {@code SaveServiceOrderChecklist}.
+ * Framework-agnostic — depends only on HttpRequest/HttpResponse and the UseCase interface.
+ *
+ * <p>The {@code createdBy} UUID is expected in the request body under the key {@code "createdBy"},
+ * injected by {@code JavalinRouteAdapter} from the authenticated user's claims.
+ */
+public class SaveServiceOrderChecklistController implements Controller {
+
+  private final SaveServiceOrderChecklist saveServiceOrderChecklist;
+
+  public SaveServiceOrderChecklistController(SaveServiceOrderChecklist saveServiceOrderChecklist) {
+    this.saveServiceOrderChecklist = saveServiceOrderChecklist;
+  }
+
+  @Override
+  public HttpResponse handle(HttpRequest request) {
+    try {
+      UUID serviceOrderId = UUID.fromString(request.pathParams().get("id"));
+      Map<String, Object> body = request.body();
+
+      String typeStr = BodyValues.text(body, "type");
+      if (typeStr == null || typeStr.isBlank()) {
+        return HttpHelper.badRequest(new IllegalArgumentException("type is required"));
+      }
+      ChecklistType type = ChecklistType.valueOf(typeStr);
+
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> itemsMap = BodyValues.objects(body, "items");
+      if (itemsMap == null || itemsMap.isEmpty()) {
+        return HttpHelper.badRequest(new IllegalArgumentException("items are required"));
+      }
+      List<ChecklistItem> items =
+          itemsMap.stream()
+              .map(
+                  m ->
+                      new ChecklistItem(
+                          (String) m.get("label"),
+                          Boolean.TRUE.equals(m.get("checked")),
+                          (String) m.get("note")))
+              .toList();
+
+      String signatureImage = BodyValues.text(body, "signatureImage");
+
+      UUID createdBy = BodyValues.createdBy(body);
+      if (createdBy == null) {
+        return HttpHelper.badRequest(new IllegalArgumentException("createdBy is required"));
+      }
+
+      SaveServiceOrderChecklist.Params params =
+          new SaveServiceOrderChecklist.Params(
+              serviceOrderId, type, items, signatureImage, createdBy);
+
+      var saved = saveServiceOrderChecklist.save(params);
+      return new HttpResponse(201, saved);
+
+    } catch (IllegalArgumentException e) {
+      return HttpHelper.badRequest(e);
+    } catch (InvalidChecklistTypeError e) {
+      return HttpHelper.badRequest(e);
+    } catch (Exception e) {
+      return HttpHelper.serverError(e);
+    }
+  }
+}

@@ -5,20 +5,35 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.data.protocols.db.DuplicateKeyError;
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
 import com.washflow.data.tenancy.TenantContext;
-import com.washflow.data.usecases.registervehicleentry.DbRegisterVehicleEntry;
-import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
-import com.washflow.data.usecases.startserviceorder.DbStartServiceOrder;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.errors.InvalidServiceOrderStatusError;
-import com.washflow.domain.errors.SlotFullyBookedError;
-import com.washflow.domain.errors.VehicleAlreadyInYardError;
-import com.washflow.domain.usecases.RegisterVehicleEntry;
-import com.washflow.domain.usecases.StartServiceOrder;
+import com.washflow.data.usecases.serviceorder.DbStartServiceOrder;
+import com.washflow.data.usecases.shared.SchedulingRules;
+import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
+import com.washflow.domain.entities.sale.Sale;
+import com.washflow.domain.entities.sale.SaleItem;
+import com.washflow.domain.entities.sale.SalePayment;
+import com.washflow.domain.entities.sale.SaleRefund;
+import com.washflow.domain.entities.sale.SaleType;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.shared.PaymentMethod;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
+import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
+import com.washflow.domain.errors.schedule.SlotFullyBookedError;
+import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
+import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
+import com.washflow.domain.usecases.serviceorder.StartServiceOrder;
+import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.sale.SaleJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -91,8 +106,7 @@ class ConcurrencyIntegrationTest {
     assertEquals(3, booked, "capacity is 3: " + results);
     assertEquals(plates.length - 3, refused, "the rest get 'slot full' (409): " + results);
     assertEquals(
-        3,
-        new ServiceOrderJdbiRepository(jdbi).countScheduledBetween(slot, slot.plusSeconds(3600)));
+        3, new AgendaJdbiRepository(jdbi).countScheduledBetween(slot, slot.plusSeconds(3600)));
   }
 
   @Test
@@ -111,7 +125,7 @@ class ConcurrencyIntegrationTest {
         1,
         results.stream().filter(VehicleAlreadyInYardError.class::isInstance).count(),
         "" + results);
-    assertEquals(1, new ServiceOrderJdbiRepository(jdbi).loadYardOverview().size());
+    assertEquals(1, new YardJdbiRepository(jdbi).loadYardOverview().size());
   }
 
   @Test
@@ -163,6 +177,49 @@ class ConcurrencyIntegrationTest {
   // ---------------------------------------------------------------- helpers
 
   /** Runs every task at the same instant on its own thread (same lava-jato); result or error. */
+  @Test
+  void simultaneousPartialRefundsNeverGiveBackMoreThanWasPaid() throws Exception {
+    Jdbi jdbi = TestDatabase.prepare();
+    SaleJdbiRepository sales = new SaleJdbiRepository(jdbi);
+    UUID saleId = UUID.randomUUID();
+    BigDecimal fifty = new BigDecimal("50.00");
+    sales.save(
+        Sale.of(
+            saleId,
+            SaleType.QUICK_SALE,
+            null,
+            null,
+            null,
+            BigDecimal.ZERO,
+            null,
+            null,
+            NOW,
+            List.of(new SaleItem(UUID.randomUUID(), 1, "Lavagem Completa", 1, fifty, fifty)),
+            List.of(new SalePayment(UUID.randomUUID(), PaymentMethod.PIX, fifty, NOW))));
+    Callable<Object> refundThirty =
+        () ->
+            sales.refund(
+                saleId,
+                new SaleRefund(
+                    UUID.randomUUID(),
+                    saleId,
+                    PaymentMethod.PIX,
+                    new BigDecimal("30.00"),
+                    "WRONG_CHARGE",
+                    null,
+                    UUID.fromString("44444444-4444-4444-4444-444444444444"),
+                    NOW));
+
+    List<Object> results = race(List.of(refundThirty, refundThirty, refundThirty));
+
+    assertEquals(
+        1, results.stream().filter(Sale.class::isInstance).count(), "one refund fits: " + results);
+    assertEquals(
+        2,
+        results.stream().filter(SaleRefundNotAllowedError.class::isInstance).count(),
+        "the others exceed the 20.00 left (409): " + results);
+  }
+
   private static List<Object> race(List<Callable<Object>> tasks) throws Exception {
     UUID tenant = TenantContext.require();
     CyclicBarrier barrier = new CyclicBarrier(tasks.size());
@@ -202,7 +259,7 @@ class ConcurrencyIntegrationTest {
         vehicles,
         new UserJdbiRepository(jdbi),
         new ServicePriceJdbiRepository(jdbi),
-        new SchedulingRules(orders, 3),
+        new SchedulingRules(new AgendaJdbiRepository(jdbi), 3),
         orders,
         orders,
         Clock.fixed(NOW, ZoneOffset.UTC));

@@ -7,17 +7,18 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.usecases.EstablishmentFactory;
+import com.washflow.application.modules.EstablishmentModule;
 import com.washflow.application.security.AuthTokenService;
-import com.washflow.data.usecases.updateuseremail.DbUpdateUserEmail;
-import com.washflow.domain.entities.Establishment;
-import com.washflow.domain.entities.User;
-import com.washflow.domain.usecases.SetupEstablishment;
-import com.washflow.infra.db.jdbi.UserJdbiRepository;
-import com.washflow.presentation.controllers.establishment.EstablishmentController;
+import com.washflow.data.usecases.user.DbUpdateUserEmail;
+import com.washflow.domain.entities.establishment.Establishment;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.usecases.establishment.SetupEstablishment;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.presentation.controllers.establishment.GetEstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupEstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupStatusController;
-import com.washflow.presentation.controllers.updateuseremail.UpdateUserEmailController;
+import com.washflow.presentation.controllers.establishment.UpdateEstablishmentController;
+import com.washflow.presentation.controllers.user.UpdateUserEmailController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
@@ -55,7 +56,7 @@ public final class EstablishmentRoutes {
     get(
         SETUP,
         JavalinRouteAdapter.adapt(
-            new SetupStatusController(EstablishmentFactory.setup(jdbi, appConfig))));
+            new SetupStatusController(EstablishmentModule.setup(jdbi, appConfig))));
   }
 
   @OpenApi(
@@ -73,7 +74,7 @@ public final class EstablishmentRoutes {
     post(
         SETUP,
         JavalinRouteAdapter.adaptAuthenticated(
-            new SetupEstablishmentController(EstablishmentFactory.setup(jdbi, appConfig)),
+            new SetupEstablishmentController(EstablishmentModule.setup(jdbi, appConfig)),
             new AuthTokenService(appConfig.tokenSecret())));
   }
 
@@ -88,7 +89,8 @@ public final class EstablishmentRoutes {
   private static void registerGetEstablishment(Jdbi jdbi) {
     get(
         ESTABLISHMENT,
-        JavalinRouteAdapter.adapt(EstablishmentController.get(EstablishmentFactory.manage(jdbi))));
+        JavalinRouteAdapter.adapt(
+            new GetEstablishmentController(EstablishmentModule.manage(jdbi))));
   }
 
   @OpenApi(
@@ -104,7 +106,7 @@ public final class EstablishmentRoutes {
     put(
         ESTABLISHMENT,
         JavalinRouteAdapter.adapt(
-            EstablishmentController.update(EstablishmentFactory.manage(jdbi))));
+            new UpdateEstablishmentController(EstablishmentModule.manage(jdbi))));
   }
 
   @OpenApi(

@@ -7,6 +7,8 @@ export const STATUS_LABELS: Record<ServiceOrderStatus, string> = {
   PAUSED: 'Pausada',
   READY: 'Pronto',
   DONE: 'Finalizado',
+  CANCELLED: 'Cancelado',
+  REFUNDED: 'Estornado',
 }
 
 export const STATUS_LABELS_DETAILED: Record<ServiceOrderStatus, string> = {
@@ -16,6 +18,8 @@ export const STATUS_LABELS_DETAILED: Record<ServiceOrderStatus, string> = {
   PAUSED: 'Lavagem pausada',
   READY: 'Pronto para retirada',
   DONE: 'Finalizado',
+  CANCELLED: 'Atendimento cancelado',
+  REFUNDED: 'Pagamento estornado',
 }
 
 export const PAUSE_LABELS: Record<string, string> = {
@@ -28,6 +32,20 @@ export const PAUSE_LABELS_LOWER: Record<string, string> = {
   LUNCH: 'almoço',
   RESTROOM: 'banheiro',
   OTHER: 'outro motivo',
+}
+
+export const CANCEL_LABELS: Record<string, string> = {
+  CUSTOMER_GAVE_UP: 'Cliente desistiu',
+  NO_SHOW: 'Não compareceu',
+  REGISTERED_BY_MISTAKE: 'Lançado por engano',
+  OTHER: 'Outro',
+}
+
+export const REFUND_LABELS: Record<string, string> = {
+  CUSTOMER_COMPLAINT: 'Reclamação do cliente',
+  WRONG_CHARGE: 'Cobrança errada',
+  SERVICE_NOT_DONE: 'Serviço não realizado',
+  OTHER: 'Outro',
 }
 
 export const PAYMENT_LABELS: Record<string, string> = {

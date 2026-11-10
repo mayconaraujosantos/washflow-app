@@ -13,7 +13,14 @@ labels:
 resources:
   - secret.yaml
   - postgres.yaml
+  - backup.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml
   - servicemonitor.yaml
+  - grafana-dashboard.yaml
+configMapGenerator:
+  - name: washflow-db-backup-scripts
+    files:
+      - db-backup/db-backup.sh
+      - db-backup/db-restore.sh

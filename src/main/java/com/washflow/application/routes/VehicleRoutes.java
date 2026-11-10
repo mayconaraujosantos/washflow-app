@@ -4,10 +4,9 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.CreateVehicleControllerFactory;
-import com.washflow.application.factories.controllers.ListVehiclesByCustomerControllerFactory;
-import com.washflow.domain.entities.Vehicle;
-import com.washflow.presentation.controllers.createvehicle.CreateVehicleRequest;
+import com.washflow.application.modules.VehicleModule;
+import com.washflow.application.routes.requests.CreateVehicleRequest;
+import com.washflow.domain.entities.vehicle.Vehicle;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
@@ -43,7 +42,7 @@ public final class VehicleRoutes {
         @OpenApiResponse(status = "409", description = "Plate already registered")
       })
   private static void registerCreate(Jdbi jdbi) {
-    post(VEHICLES_PATH, JavalinRouteAdapter.adapt(CreateVehicleControllerFactory.make(jdbi)));
+    post(VEHICLES_PATH, JavalinRouteAdapter.adapt(VehicleModule.createVehicleController(jdbi)));
   }
 
   @OpenApi(
@@ -60,6 +59,6 @@ public final class VehicleRoutes {
   private static void registerListByCustomer(Jdbi jdbi) {
     get(
         CUSTOMER_VEHICLES_PATH,
-        JavalinRouteAdapter.adapt(ListVehiclesByCustomerControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(VehicleModule.listVehiclesByCustomerController(jdbi)));
   }
 }

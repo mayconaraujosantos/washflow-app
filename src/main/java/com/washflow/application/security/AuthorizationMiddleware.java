@@ -1,7 +1,7 @@
 package com.washflow.application.security;
 
 import com.washflow.data.tenancy.TenantContext;
-import com.washflow.domain.entities.UserProfile;
+import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
 import java.util.Map;
@@ -16,7 +16,6 @@ public final class AuthorizationMiddleware {
   private static final Set<String> PUBLIC_API_PATHS =
       Set.of(
           "/api/health",
-          "/api/hello",
           "/api/services",
           "/api/setup",
           "/api/establishment",

@@ -3,14 +3,20 @@ package com.washflow.infra.db.jdbi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.data.usecases.listagenda.DbListAgenda;
-import com.washflow.data.usecases.registervehicleentry.DbRegisterVehicleEntry;
-import com.washflow.data.usecases.searchvehicles.DbSearchVehicles;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.entities.VehicleLookup;
-import com.washflow.domain.usecases.ListAgenda;
-import com.washflow.domain.usecases.RegisterVehicleEntry;
+import com.washflow.data.usecases.schedule.DbListAgenda;
+import com.washflow.data.usecases.vehicle.DbSearchVehicles;
+import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.vehicle.VehicleLookup;
+import com.washflow.domain.usecases.schedule.ListAgenda;
+import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -36,7 +42,7 @@ class VehicleEntryIntegrationTest {
             vehicles,
             new UserJdbiRepository(jdbi),
             new ServicePriceJdbiRepository(jdbi),
-            orders,
+            new AgendaJdbiRepository(jdbi),
             orders,
             orders,
             Clock.fixed(NOW, ZoneOffset.UTC),
@@ -62,7 +68,7 @@ class VehicleEntryIntegrationTest {
     assertEquals("Lavagem Completa", order.details().serviceName());
     assertEquals(NOW.plusSeconds(3600), order.expectedDeliveryAt());
     assertEquals("Cliente aguarda na loja", order.notes());
-    assertEquals(order.id(), orders.loadWaitingQueue().get(0).id());
+    assertEquals(order.id(), new YardJdbiRepository(jdbi).loadWaitingQueue().get(0).id());
 
     DbSearchVehicles search = new DbSearchVehicles(vehicles);
     assertPlates(List.of("XYZ9A87"), search.search("xyz9"));
@@ -72,7 +78,7 @@ class VehicleEntryIntegrationTest {
     assertTrue(search.search("50%x").isEmpty(), "LIKE wildcards must match literally");
 
     List<ServiceOrder> agenda =
-        new DbListAgenda(orders)
+        new DbListAgenda(new AgendaJdbiRepository(jdbi))
             .list(new ListAgenda.Params(LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3)));
     assertEquals(List.of(order.id()), agenda.stream().map(ServiceOrder::id).toList());
   }
@@ -88,7 +94,7 @@ class VehicleEntryIntegrationTest {
             vehicles,
             new UserJdbiRepository(jdbi),
             new ServicePriceJdbiRepository(jdbi),
-            orders,
+            new AgendaJdbiRepository(jdbi),
             orders,
             orders,
             Clock.fixed(NOW, ZoneOffset.UTC),

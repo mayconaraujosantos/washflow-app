@@ -8,29 +8,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.tenancy.TenantContext;
-import com.washflow.data.usecases.authenticateuser.DbAuthenticateUser;
 import com.washflow.data.usecases.establishment.DbManageEstablishment;
+import com.washflow.data.usecases.establishment.DbManagePlatform;
 import com.washflow.data.usecases.establishment.DbSetupEstablishment;
-import com.washflow.data.usecases.platform.DbManagePlatform;
-import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
-import com.washflow.data.usecases.updateuseremail.DbUpdateUserEmail;
-import com.washflow.domain.entities.Establishment;
-import com.washflow.domain.entities.EstablishmentSummary;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.ServiceOrderStatus;
-import com.washflow.domain.entities.User;
-import com.washflow.domain.entities.UserProfile;
-import com.washflow.domain.entities.Vehicle;
-import com.washflow.domain.errors.EmailAlreadyRegisteredError;
-import com.washflow.domain.errors.EstablishmentAlreadyConfiguredError;
-import com.washflow.domain.errors.EstablishmentSlugTakenError;
-import com.washflow.domain.errors.InvalidCredentialsError;
-import com.washflow.domain.errors.OutsideBusinessHoursError;
-import com.washflow.domain.errors.TenantRequiredError;
-import com.washflow.domain.usecases.AuthenticateUser;
-import com.washflow.domain.usecases.ManageEstablishment;
-import com.washflow.domain.usecases.ManagePlatform;
-import com.washflow.domain.usecases.SetupEstablishment;
+import com.washflow.data.usecases.shared.SchedulingRules;
+import com.washflow.data.usecases.user.DbAuthenticateUser;
+import com.washflow.data.usecases.user.DbUpdateUserEmail;
+import com.washflow.domain.entities.establishment.Establishment;
+import com.washflow.domain.entities.establishment.EstablishmentSummary;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.user.User;
+import com.washflow.domain.entities.user.UserProfile;
+import com.washflow.domain.entities.vehicle.Vehicle;
+import com.washflow.domain.errors.common.TenantRequiredError;
+import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
+import com.washflow.domain.errors.establishment.EstablishmentSlugTakenError;
+import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
+import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
+import com.washflow.domain.errors.user.InvalidCredentialsError;
+import com.washflow.domain.usecases.establishment.ManageEstablishment;
+import com.washflow.domain.usecases.establishment.ManagePlatform;
+import com.washflow.domain.usecases.establishment.SetupEstablishment;
+import com.washflow.domain.usecases.user.AuthenticateUser;
+import com.washflow.infra.db.jdbi.establishment.EstablishmentJdbiRepository;
+import com.washflow.infra.db.jdbi.establishment.PlatformJdbiRepository;
+import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import com.washflow.infra.security.BCryptPasswordHasher;
 import java.time.Clock;
 import java.time.Instant;
@@ -106,14 +114,14 @@ class EstablishmentIntegrationTest {
             now,
             now,
             null));
-    assertEquals(1, orders.loadYardOverview().size());
+    assertEquals(1, new YardJdbiRepository(jdbi).loadYardOverview().size());
 
     TenantContext.set(bairro.id());
     // The same plate can exist in another lava-jato; nothing of "Centro" is visible here.
     vehicles.create(new Vehicle(UUID.randomUUID(), null, "ABC1D23", "Gol", "Preto", "Bia", null));
     assertTrue(vehicles.loadById(centroVehicle).isEmpty());
     assertTrue(orders.loadById(centroOrder).isEmpty());
-    assertTrue(orders.loadYardOverview().isEmpty());
+    assertTrue(new YardJdbiRepository(jdbi).loadYardOverview().isEmpty());
     assertTrue(services.loadById(centroService).isEmpty());
     assertEquals(1, vehicles.search("ABC", "", "", 10).size());
 
@@ -188,7 +196,7 @@ class EstablishmentIntegrationTest {
     assertEquals(22, saved.closingHour());
     SchedulingRules rules =
         new SchedulingRules(
-            new ServiceOrderJdbiRepository(jdbi),
+            new AgendaJdbiRepository(jdbi),
             () -> {
               Establishment e = establishments.load();
               return new SchedulingRules.Hours(

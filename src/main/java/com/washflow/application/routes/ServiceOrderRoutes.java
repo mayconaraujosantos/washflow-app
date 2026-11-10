@@ -6,17 +6,13 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.CheckInServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.CompleteServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.FinalizeServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.GetServiceOrderByIdControllerFactory;
-import com.washflow.application.factories.controllers.ListServiceOrdersByCustomerControllerFactory;
-import com.washflow.application.factories.controllers.ScheduleServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.StartServiceOrderControllerFactory;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.presentation.controllers.finalizeserviceorder.FinalizeServiceOrderRequest;
-import com.washflow.presentation.controllers.scheduleserviceorder.ScheduleServiceOrderRequest;
-import com.washflow.presentation.controllers.startserviceorder.StartServiceOrderRequest;
+import com.washflow.application.modules.CustomerModule;
+import com.washflow.application.modules.ScheduleModule;
+import com.washflow.application.modules.ServiceOrderModule;
+import com.washflow.application.routes.requests.FinalizeServiceOrderRequest;
+import com.washflow.application.routes.requests.ScheduleServiceOrderRequest;
+import com.washflow.application.routes.requests.StartServiceOrderRequest;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
@@ -64,7 +60,7 @@ public final class ServiceOrderRoutes {
   private static void registerSchedule(Jdbi jdbi, AppConfig appConfig) {
     post(
         BASE_PATH,
-        JavalinRouteAdapter.adapt(ScheduleServiceOrderControllerFactory.make(jdbi, appConfig)));
+        JavalinRouteAdapter.adapt(ScheduleModule.scheduleServiceOrderController(jdbi, appConfig)));
   }
 
   @OpenApi(
@@ -82,7 +78,7 @@ public final class ServiceOrderRoutes {
   private static void registerCheckIn(Jdbi jdbi) {
     patch(
         BY_ID_PATH + "/check-in",
-        JavalinRouteAdapter.adapt(CheckInServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.checkInServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -104,7 +100,7 @@ public final class ServiceOrderRoutes {
   private static void registerStart(Jdbi jdbi) {
     patch(
         BY_ID_PATH + "/start",
-        JavalinRouteAdapter.adapt(StartServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.startServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -122,7 +118,7 @@ public final class ServiceOrderRoutes {
   private static void registerComplete(Jdbi jdbi) {
     patch(
         BY_ID_PATH + "/complete",
-        JavalinRouteAdapter.adapt(CompleteServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.completeServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -142,7 +138,7 @@ public final class ServiceOrderRoutes {
   private static void registerFinalize(Jdbi jdbi) {
     patch(
         BY_ID_PATH + "/finalize",
-        JavalinRouteAdapter.adapt(FinalizeServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.finalizeServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -157,7 +153,9 @@ public final class ServiceOrderRoutes {
         @OpenApiResponse(status = "404", description = "Service order not found")
       })
   private static void registerGetById(Jdbi jdbi) {
-    get(BY_ID_PATH, JavalinRouteAdapter.adapt(GetServiceOrderByIdControllerFactory.make(jdbi)));
+    get(
+        BY_ID_PATH,
+        JavalinRouteAdapter.adapt(ServiceOrderModule.getServiceOrderByIdController(jdbi)));
   }
 
   @OpenApi(
@@ -174,6 +172,6 @@ public final class ServiceOrderRoutes {
   private static void registerListByCustomer(Jdbi jdbi) {
     get(
         CUSTOMER_SERVICE_ORDERS_PATH,
-        JavalinRouteAdapter.adapt(ListServiceOrdersByCustomerControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(CustomerModule.listServiceOrdersByCustomerController(jdbi)));
   }
 }

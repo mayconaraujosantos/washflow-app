@@ -1,0 +1,21 @@
+package com.washflow.data.usecases.serviceorder;
+
+import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderPhotoRepository;
+import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto;
+import com.washflow.domain.usecases.serviceorder.ListServiceOrderPhotos;
+import java.util.List;
+import java.util.UUID;
+
+public class DbListServiceOrderPhotos implements ListServiceOrderPhotos {
+
+  private final LoadServiceOrderPhotoRepository loadRepository;
+
+  public DbListServiceOrderPhotos(LoadServiceOrderPhotoRepository loadRepository) {
+    this.loadRepository = loadRepository;
+  }
+
+  @Override
+  public List<ServiceOrderPhoto> list(UUID serviceOrderId) {
+    return loadRepository.loadByServiceOrderId(serviceOrderId);
+  }
+}

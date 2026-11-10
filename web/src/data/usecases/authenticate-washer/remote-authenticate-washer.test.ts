@@ -90,4 +90,18 @@ describe('RemoteAuthenticateWasher', () => {
 
     await expect(sut.auth(params)).rejects.toThrow('Erro inesperado ao entrar')
   })
+
+  it('tells the user to wait when sign-in is locked (429)', async () => {
+    const { sut, httpClient } = makeSut()
+    vi.mocked(httpClient.request).mockResolvedValueOnce({
+      statusCode: HttpStatusCode.tooManyRequests,
+      body: {
+        error: 'Muitas tentativas de acesso. Tente de novo em 15 minutos.',
+      } as never,
+    })
+
+    await expect(sut.auth(params)).rejects.toThrow(
+      'Muitas tentativas de acesso. Tente de novo em 15 minutos.',
+    )
+  })
 })

@@ -8,7 +8,7 @@ import org.jdbi.v3.core.statement.StatementCustomizer;
 /**
  * Binds {@code :tenant} to the current establishment on every statement that uses it, unless the
  * caller bound it explicitly (platform admin flows). A statement that needs a tenant outside of one
- * throws {@link com.washflow.domain.errors.TenantRequiredError}.
+ * throws {@link com.washflow.domain.errors.common.TenantRequiredError}.
  */
 public final class TenantBindingCustomizer implements StatementCustomizer {
 

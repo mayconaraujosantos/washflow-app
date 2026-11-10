@@ -6,22 +6,21 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
-import com.washflow.application.factories.controllers.GetOperationsReportControllerFactory;
-import com.washflow.application.factories.controllers.GetWaitingQueueControllerFactory;
-import com.washflow.application.factories.controllers.GetWashingByWasherControllerFactory;
-import com.washflow.application.factories.controllers.GetYardOverviewControllerFactory;
-import com.washflow.application.factories.controllers.ListAgendaControllerFactory;
-import com.washflow.application.factories.controllers.PauseServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.RegisterVehicleEntryControllerFactory;
-import com.washflow.application.factories.controllers.ResumeServiceOrderControllerFactory;
-import com.washflow.application.factories.controllers.SearchVehiclesControllerFactory;
-import com.washflow.domain.entities.ServiceOrder;
-import com.washflow.domain.entities.VehicleLookup;
-import com.washflow.infra.db.jdbi.OperationsReport;
+import com.washflow.application.modules.FinanceModule;
+import com.washflow.application.modules.ScheduleModule;
+import com.washflow.application.modules.ServiceOrderModule;
+import com.washflow.application.modules.VehicleModule;
+import com.washflow.application.modules.YardModule;
+import com.washflow.application.routes.requests.PauseServiceOrderRequest;
+import com.washflow.domain.entities.finance.OperationsReport;
+import com.washflow.domain.entities.serviceorder.ServiceOrder;
+import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
+import com.washflow.domain.entities.vehicle.VehicleLookup;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import org.jdbi.v3.core.Jdbi;
 
@@ -37,6 +36,8 @@ public final class OperationsRoutes {
     registerAgenda(jdbi);
     registerPause(jdbi);
     registerResume(jdbi);
+    registerCancel(jdbi);
+    registerRefund(jdbi);
     registerQueue(jdbi);
     registerYard(jdbi);
     registerReport(jdbi);
@@ -59,7 +60,7 @@ public final class OperationsRoutes {
   private static void registerEntry(Jdbi jdbi, AppConfig appConfig) {
     post(
         "/api/operations/entries",
-        JavalinRouteAdapter.adapt(RegisterVehicleEntryControllerFactory.make(jdbi, appConfig)));
+        JavalinRouteAdapter.adapt(YardModule.registerVehicleEntryController(jdbi, appConfig)));
   }
 
   @OpenApi(
@@ -74,7 +75,7 @@ public final class OperationsRoutes {
   private static void registerVehicleSearch(Jdbi jdbi) {
     get(
         "/api/operations/vehicles",
-        JavalinRouteAdapter.adapt(SearchVehiclesControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(VehicleModule.searchVehiclesController(jdbi)));
   }
 
   @OpenApi(
@@ -93,7 +94,7 @@ public final class OperationsRoutes {
   private static void registerAgenda(Jdbi jdbi) {
     get(
         "/api/operations/agenda",
-        JavalinRouteAdapter.adapt(ListAgendaControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ScheduleModule.listAgendaController(jdbi)));
   }
 
   @OpenApi(
@@ -102,6 +103,8 @@ public final class OperationsRoutes {
       summary = "Pause an active wash, recording the reason",
       tags = {"Operations"},
       pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      requestBody =
+          @OpenApiRequestBody(content = @OpenApiContent(from = PauseServiceOrderRequest.class)),
       responses = {
         @OpenApiResponse(status = "200", description = "Wash paused"),
         @OpenApiResponse(status = "400", description = "Invalid pause reason"),
@@ -112,7 +115,7 @@ public final class OperationsRoutes {
   private static void registerPause(Jdbi jdbi) {
     patch(
         SERVICE_ORDER_BY_ID + "/pause",
-        JavalinRouteAdapter.adapt(PauseServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.pauseServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -130,7 +133,47 @@ public final class OperationsRoutes {
   private static void registerResume(Jdbi jdbi) {
     patch(
         SERVICE_ORDER_BY_ID + "/resume",
-        JavalinRouteAdapter.adapt(ResumeServiceOrderControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.resumeServiceOrderController(jdbi)));
+  }
+
+  @OpenApi(
+      path = SERVICE_ORDER_BY_ID + "/cancel",
+      methods = HttpMethod.PATCH,
+      summary = "Manager cancels an order that never reached washing, recording the reason",
+      tags = {"Operations"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(status = "200", description = "Service order cancelled"),
+        @OpenApiResponse(status = "400", description = "Invalid cancellation reason"),
+        @OpenApiResponse(
+            status = "409",
+            description = "Service order is no longer scheduled or waiting in the yard")
+      })
+  private static void registerCancel(Jdbi jdbi) {
+    patch(
+        SERVICE_ORDER_BY_ID + "/cancel",
+        JavalinRouteAdapter.adapt(ServiceOrderModule.cancelServiceOrderController(jdbi)));
+  }
+
+  @OpenApi(
+      path = SERVICE_ORDER_BY_ID + "/refund",
+      methods = HttpMethod.PATCH,
+      summary =
+          "Manager refunds the full payment of a finalized order (FINALIZADO -> ESTORNADO), dated"
+              + " today; reverses the washer's commission only with reverseCommission",
+      tags = {"Operations"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            content = @OpenApiContent(from = ServiceOrderRefund.class)),
+        @OpenApiResponse(status = "400", description = "Invalid reason or refund method"),
+        @OpenApiResponse(status = "409", description = "Service order is not finalized")
+      })
+  private static void registerRefund(Jdbi jdbi) {
+    patch(
+        SERVICE_ORDER_BY_ID + "/refund",
+        JavalinRouteAdapter.adapt(ServiceOrderModule.refundServiceOrderController(jdbi)));
   }
 
   @OpenApi(
@@ -144,7 +187,7 @@ public final class OperationsRoutes {
   private static void registerQueue(Jdbi jdbi) {
     get(
         "/api/operations/queue",
-        JavalinRouteAdapter.adapt(GetWaitingQueueControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(YardModule.getWaitingQueueController(jdbi)));
   }
 
   @OpenApi(
@@ -158,7 +201,7 @@ public final class OperationsRoutes {
   private static void registerYard(Jdbi jdbi) {
     get(
         "/api/operations/yard",
-        JavalinRouteAdapter.adapt(GetYardOverviewControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(YardModule.getYardOverviewController(jdbi)));
   }
 
   @OpenApi(
@@ -173,7 +216,7 @@ public final class OperationsRoutes {
   private static void registerReport(Jdbi jdbi) {
     get(
         "/api/operations/report",
-        JavalinRouteAdapter.adapt(GetOperationsReportControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(FinanceModule.getOperationsReportController(jdbi)));
   }
 
   @OpenApi(
@@ -187,6 +230,6 @@ public final class OperationsRoutes {
   private static void registerMyOrders(Jdbi jdbi) {
     get(
         "/api/operations/my-orders",
-        JavalinRouteAdapter.adapt(GetWashingByWasherControllerFactory.make(jdbi)));
+        JavalinRouteAdapter.adapt(YardModule.getWashingByWasherController(jdbi)));
   }
 }
