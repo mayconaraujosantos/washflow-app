@@ -4,6 +4,7 @@ import com.washflow.application.security.AuthTokenService;
 import com.washflow.data.tenancy.TenantContext;
 import com.washflow.presentation.helpers.HttpHelper;
 import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -35,12 +36,6 @@ public final class IdempotencyGuard {
   private static final Pattern VALID_KEY = Pattern.compile("[A-Za-z0-9_.:-]{8,100}");
   private static final String CLAIMS_ATTRIBUTE = "washflow.auth.claims";
 
-  /** The endpoint's own work. */
-  @FunctionalInterface
-  public interface Work {
-    void run() throws Exception;
-  }
-
   private final IdempotencyStore store;
   private final Clock clock;
 
@@ -49,11 +44,11 @@ public final class IdempotencyGuard {
     this.clock = clock;
   }
 
-  public void handle(String method, Context ctx, Work work) throws Exception {
+  public void handle(String method, Context ctx, Handler next) throws Exception {
     String key = ctx.header(HEADER);
     AuthTokenService.Claims claims = ctx.attribute(CLAIMS_ATTRIBUTE);
     if (key == null || !"POST".equals(method) || claims == null) {
-      work.run();
+      next.handle(ctx);
       return;
     }
     if (!VALID_KEY.matcher(key).matches()) {
@@ -77,18 +72,18 @@ public final class IdempotencyGuard {
             Instant.now(clock));
 
     switch (claim) {
-      case IdempotencyStore.Replay replay -> {
-        if (!replay.requestHash().equals(requestHash)) {
+      case IdempotencyStore.Replay(String storedHash, int status, String body) -> {
+        if (!storedHash.equals(requestHash)) {
           reusedKey(ctx);
           return;
         }
-        ctx.status(replay.status())
+        ctx.status(status)
             .header(REPLAYED_HEADER, "true")
             .contentType("application/json")
-            .result(replay.body() == null ? "" : replay.body());
+            .result(body == null ? "" : body);
       }
-      case IdempotencyStore.InProgress inProgress -> {
-        if (!inProgress.requestHash().equals(requestHash)) {
+      case IdempotencyStore.InProgress(String storedHash) -> {
+        if (!storedHash.equals(requestHash)) {
           reusedKey(ctx);
           return;
         }
@@ -98,15 +93,15 @@ public final class IdempotencyGuard {
                     "Esta operação ainda está sendo processada. Aguarde um instante e confira"
                         + " antes de tentar de novo."));
       }
-      case IdempotencyStore.Acquired acquired -> runAndRemember(ctx, claims, key, work);
+      case IdempotencyStore.Acquired() -> runAndRemember(ctx, claims, key, next);
     }
   }
 
-  private void runAndRemember(Context ctx, AuthTokenService.Claims claims, String key, Work work)
+  private void runAndRemember(Context ctx, AuthTokenService.Claims claims, String key, Handler next)
       throws Exception {
     boolean stored = false;
     try {
-      work.run();
+      next.handle(ctx);
       int status = ctx.statusCode();
       if (status >= 200 && status < 300) {
         store.complete(claims.userId(), key, status, ctx.result());

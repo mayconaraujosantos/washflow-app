@@ -95,7 +95,7 @@ class IdempotencyGuardTest {
             guard.handle(
                 "POST",
                 crashed,
-                () -> {
+                ignored -> {
                   throw new IllegalStateException("db down");
                 }));
 
@@ -126,7 +126,7 @@ class IdempotencyGuardTest {
     verify(anonymous, never()).status(409);
   }
 
-  private void createSale() {
+  private void createSale(Context ignored) {
     runs.incrementAndGet();
   }
 

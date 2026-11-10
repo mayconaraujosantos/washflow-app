@@ -37,7 +37,7 @@ class RequestTracingTest {
     String[] seen = new String[1];
 
     tracing.handle(
-        "PATCH", "/api/service-orders/{id}/start", ctx, () -> seen[0] = MDC.get("request_id"));
+        "PATCH", "/api/service-orders/{id}/start", ctx, ignored -> seen[0] = MDC.get("request_id"));
 
     assertEquals("abc12345-front", seen[0]);
     verify(ctx).header(RequestTracing.HEADER, "abc12345-front");
@@ -58,7 +58,7 @@ class RequestTracingTest {
         "GET",
         "/api/x",
         ctx,
-        () -> {
+        ignored -> {
           throw new IllegalStateException("boom");
         });
 
@@ -73,7 +73,7 @@ class RequestTracingTest {
 
   @Test
   void recordsRequestMetricsByRouteTemplateAndStatus() {
-    tracing.handle("PATCH", "/api/service-orders/{id}/start", context(null, 409), () -> {});
+    tracing.handle("PATCH", "/api/service-orders/{id}/start", context(null, 409), ignored -> {});
 
     var timer =
         registry

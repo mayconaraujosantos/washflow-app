@@ -1,6 +1,7 @@
 package com.washflow.application.adapters;
 
 import io.javalin.http.Context;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -15,7 +16,7 @@ public final class SpaFallbackHandler {
 
   private SpaFallbackHandler() {}
 
-  public static void handle(Context ctx) throws Exception {
+  public static void handle(Context ctx) throws IOException {
     if (ctx.attribute(JavalinRouteAdapter.CONTROLLER_HANDLED_ATTRIBUTE) != null) {
       return;
     }

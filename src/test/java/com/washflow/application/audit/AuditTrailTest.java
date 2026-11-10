@@ -130,13 +130,13 @@ class AuditTrailTest {
                 "POST",
                 "/api/sales",
                 request("/api/sales", "{}", 200),
-                () -> {
+                ignored -> {
                   throw new IllegalStateException("boom");
                 }));
     assertEquals(0, store.entries.size());
   }
 
-  private void work() {
+  private void work(Context ignored) {
     runs.incrementAndGet();
   }
 

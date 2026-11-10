@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.data.tenancy.TenantContext;
 import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,12 +43,6 @@ public final class AuditTrail {
               + "|assinatura).*");
   private static final ObjectMapper JSON = new ObjectMapper();
 
-  /** The endpoint's own work. */
-  @FunctionalInterface
-  public interface Work {
-    void run() throws Exception;
-  }
-
   private final AuditStore store;
   private final Clock clock;
 
@@ -56,8 +51,8 @@ public final class AuditTrail {
     this.clock = clock;
   }
 
-  public void handle(String method, String route, Context ctx, Work work) throws Exception {
-    work.run();
+  public void handle(String method, String route, Context ctx, Handler next) throws Exception {
+    next.handle(ctx);
     AuthTokenService.Claims claims = ctx.attribute(CLAIMS_ATTRIBUTE);
     int status = ctx.statusCode();
     if (claims == null || !CHANGES.contains(method) || status < 200 || status >= 300) {
