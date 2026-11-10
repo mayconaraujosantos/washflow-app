@@ -37,6 +37,32 @@ public class UserJdbiRepository
         LoadUserByEmailRepository,
         UpdateUserEmailRepository {
 
+  private static final String CREATE_INSERT_SQL =
+      """
+      INSERT INTO usuarios
+        (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
+         criado_em, ativo)
+      VALUES
+        (:id, :tenant, :name, :phone, :email, :passwordHash, :profile,
+         :createdAt, :active)
+      """;
+
+  private static final String UPDATE_ACTIVE_SELECT_SQL =
+      """
+      SELECT COUNT(*) FROM atendimentos
+      WHERE lavador_id = :userId AND status IN ('EM_LAVAGEM', 'PAUSADA')
+      """;
+
+  private static final String UPDATE_PROFILE_SELECT_SQL =
+      """
+      SELECT COUNT(*) FROM atendimentos
+      WHERE lavador_id = :userId AND status IN ('EM_LAVAGEM', 'PAUSADA')
+      """;
+
+  private static final String PHONE = "phone";
+  private static final String EMAIL = "email";
+  private static final String WHERE_ID = " WHERE id = :id";
+
   // Column name (Portuguese, matches usuarios.perfil) vs. bind parameter name (English, matches
   // this class's other :name/:phone/:createdAt placeholders) - two different strings, unlike
   // ServiceOrderJdbiRepository's STATUS constant where the column and bind name happen to match.
@@ -69,19 +95,11 @@ public class UserJdbiRepository
             jdbi.useHandle(
                 handle ->
                     handle
-                        .createUpdate(
-                            """
-                    INSERT INTO usuarios
-                      (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
-                       criado_em, ativo)
-                    VALUES
-                      (:id, :tenant, :name, :phone, :email, :passwordHash, :profile,
-                       :createdAt, :active)
-                    """)
+                        .createUpdate(CREATE_INSERT_SQL)
                         .bind("id", user.id())
                         .bind("name", user.name())
-                        .bind("phone", user.phone())
-                        .bind("email", user.email())
+                        .bind(PHONE, user.phone())
+                        .bind(EMAIL, user.email())
                         .bind("passwordHash", passwordHash)
                         .bind(PROFILE_PARAM, user.profile().dbValue())
                         .bind("createdAt", user.createdAt())
@@ -96,7 +114,7 @@ public class UserJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(SELECT_SQL + " WHERE id = :id" + tenantScope())
+                .createQuery(SELECT_SQL + WHERE_ID + tenantScope())
                 .bind("id", id)
                 .map(this::mapRow)
                 .findOne());
@@ -114,7 +132,7 @@ public class UserJdbiRepository
           handle ->
               handle
                   .createQuery(SELECT_SQL + " WHERE telefone = :phone" + IN_TENANT)
-                  .bind("phone", phone)
+                  .bind(PHONE, phone)
                   .map(this::mapRow)
                   .findOne());
     }
@@ -126,7 +144,7 @@ public class UserJdbiRepository
                         SELECT_SQL
                             + " WHERE telefone = :phone AND perfil IN ('LAVADOR', 'GERENTE')"
                             + ACTIVE_ESTABLISHMENT)
-                    .bind("phone", phone)
+                    .bind(PHONE, phone)
                     .map(this::mapRow)
                     .list());
     return staff.size() == 1 ? Optional.of(staff.get(0)) : Optional.empty();
@@ -167,11 +185,7 @@ public class UserJdbiRepository
             if (UserProfile.WASHER.dbValue().equals(profile)) {
               boolean hasActiveWashes =
                   handle
-                          .createQuery(
-                              """
-                              SELECT COUNT(*) FROM atendimentos
-                              WHERE lavador_id = :userId AND status IN ('EM_LAVAGEM', 'PAUSADA')
-                              """)
+                          .createQuery(UPDATE_ACTIVE_SELECT_SQL)
                           .bind("userId", id)
                           .mapTo(Integer.class)
                           .one()
@@ -182,11 +196,7 @@ public class UserJdbiRepository
             }
           }
           handle.createUpdate(UPDATE_ACTIVE_SQL).bind("id", id).bind("active", active).execute();
-          return handle
-              .createQuery(SELECT_SQL + " WHERE id = :id")
-              .bind("id", id)
-              .map(this::mapRow)
-              .one();
+          return handle.createQuery(SELECT_SQL + WHERE_ID).bind("id", id).map(this::mapRow).one();
         });
   }
 
@@ -219,11 +229,7 @@ public class UserJdbiRepository
           if (profile != UserProfile.WASHER) {
             boolean hasActiveWashes =
                 handle
-                        .createQuery(
-                            """
-                            SELECT COUNT(*) FROM atendimentos
-                            WHERE lavador_id = :userId AND status IN ('EM_LAVAGEM', 'PAUSADA')
-                            """)
+                        .createQuery(UPDATE_PROFILE_SELECT_SQL)
                         .bind("userId", id)
                         .mapTo(Integer.class)
                         .one()
@@ -238,11 +244,7 @@ public class UserJdbiRepository
               .bind(PROFILE_PARAM, profile.dbValue())
               .execute();
 
-          return handle
-              .createQuery(SELECT_SQL + " WHERE id = :id")
-              .bind("id", id)
-              .map(this::mapRow)
-              .one();
+          return handle.createQuery(SELECT_SQL + WHERE_ID).bind("id", id).map(this::mapRow).one();
         });
   }
 
@@ -254,7 +256,7 @@ public class UserJdbiRepository
         UserProfile.fromDbValue(rs.getString(PROFILE_COLUMN)),
         rs.getTimestamp("criado_em").toInstant(),
         rs.getBoolean("ativo"),
-        rs.getString("email"));
+        rs.getString(EMAIL));
   }
 
   @Override
@@ -264,7 +266,7 @@ public class UserJdbiRepository
             handle
                 // E-mail login is global (it says which lava-jato); a suspended one can't sign in.
                 .createQuery(SELECT_SQL + " WHERE email = :email" + ACTIVE_ESTABLISHMENT)
-                .bind("email", email)
+                .bind(EMAIL, email)
                 .map(this::mapRow)
                 .findOne());
   }
@@ -276,10 +278,10 @@ public class UserJdbiRepository
           handle
               .createUpdate("UPDATE usuarios SET email = :email WHERE id = :id" + IN_TENANT)
               .bind("id", userId)
-              .bind("email", email)
+              .bind(EMAIL, email)
               .execute();
           return handle
-              .createQuery(SELECT_SQL + " WHERE id = :id")
+              .createQuery(SELECT_SQL + WHERE_ID)
               .bind("id", userId)
               .map(this::mapRow)
               .one();

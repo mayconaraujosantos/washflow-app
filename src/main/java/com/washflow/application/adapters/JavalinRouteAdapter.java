@@ -25,7 +25,7 @@ public final class JavalinRouteAdapter {
   private JavalinRouteAdapter() {}
 
   public static Handler adapt(Controller controller) {
-    return adapt(controller, response -> response.body());
+    return adapt(controller, HttpResponse::body);
   }
 
   public static Handler adaptAuthenticated(Controller controller, AuthTokenService tokenService) {

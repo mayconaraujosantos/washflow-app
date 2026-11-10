@@ -13,6 +13,26 @@ import org.jdbi.v3.core.Jdbi;
  */
 public class JdbiAuditStore implements AuditStore {
 
+  private static final String SAVE_INSERT_SQL =
+      """
+      INSERT INTO auditoria
+        (estabelecimento_id, usuario_id, perfil, metodo, rota, caminho, status,
+         detalhes, criado_em)
+      VALUES (CAST(:establishmentId AS UUID), :userId, :profile, :method, :route,
+              :path, :status, :details, :at)
+      """;
+
+  private static final String LIST_SELECT_SQL =
+      """
+      SELECT a.criado_em, a.usuario_id, u.nome, a.perfil, a.metodo, a.rota,
+             a.caminho, a.status, a.detalhes
+      FROM auditoria a
+      LEFT JOIN usuarios u ON u.id = a.usuario_id
+      WHERE a.estabelecimento_id = :tenant
+        AND a.criado_em >= :start AND a.criado_em < :end
+      ORDER BY a.criado_em DESC
+      """;
+
   private static final ZoneId STORE_ZONE = ZoneId.of("America/Manaus");
 
   private final Jdbi jdbi;
@@ -22,18 +42,11 @@ public class JdbiAuditStore implements AuditStore {
   }
 
   @Override
-  public void record(Entry entry) {
+  public void save(Entry entry) {
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate(
-                    """
-                    INSERT INTO auditoria
-                      (estabelecimento_id, usuario_id, perfil, metodo, rota, caminho, status,
-                       detalhes, criado_em)
-                    VALUES (CAST(:establishmentId AS UUID), :userId, :profile, :method, :route,
-                            :path, :status, :details, :at)
-                    """)
+                .createUpdate(SAVE_INSERT_SQL)
                 .bind("establishmentId", entry.establishmentId())
                 .bind("userId", entry.userId())
                 .bind("profile", entry.profile())
@@ -51,16 +64,7 @@ public class JdbiAuditStore implements AuditStore {
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(
-                    """
-                    SELECT a.criado_em, a.usuario_id, u.nome, a.perfil, a.metodo, a.rota,
-                           a.caminho, a.status, a.detalhes
-                    FROM auditoria a
-                    LEFT JOIN usuarios u ON u.id = a.usuario_id
-                    WHERE a.estabelecimento_id = :tenant
-                      AND a.criado_em >= :start AND a.criado_em < :end
-                    ORDER BY a.criado_em DESC
-                    """)
+                .createQuery(LIST_SELECT_SQL)
                 .bind("start", from.atStartOfDay(STORE_ZONE).toInstant())
                 .bind("end", to.plusDays(1).atStartOfDay(STORE_ZONE).toInstant())
                 .map(

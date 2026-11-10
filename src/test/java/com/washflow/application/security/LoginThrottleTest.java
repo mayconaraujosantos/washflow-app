@@ -162,7 +162,7 @@ class LoginThrottleTest {
     verify(sale, never()).status(429);
   }
 
-  private void signIn() {
+  private void signIn(Context ignored) {
     runs.incrementAndGet();
   }
 

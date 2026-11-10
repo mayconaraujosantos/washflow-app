@@ -69,25 +69,25 @@ public class Application {
                               endpoint.method.name(),
                               endpoint.path,
                               ctx,
-                              () ->
+                              traced ->
                                   // Sign-in routes: lock an account or IP after repeated 401s.
                                   loginThrottle.handle(
                                       endpoint.method.name(),
-                                      ctx,
-                                      () -> {
-                                        if (authorizationMiddleware.authorize(ctx)) {
+                                      traced,
+                                      throttled -> {
+                                        if (authorizationMiddleware.authorize(throttled)) {
                                           // Idempotency-Key: a resent POST replays its first
                                           // success. Inside it, so a replayed retry is audited
                                           // once.
                                           idempotency.handle(
                                               endpoint.method.name(),
-                                              ctx,
-                                              () ->
+                                              throttled,
+                                              unique ->
                                                   auditTrail.handle(
                                                       endpoint.method.name(),
                                                       endpoint.path,
-                                                      ctx,
-                                                      () -> endpoint.handler.handle(ctx)));
+                                                      unique,
+                                                      endpoint.handler));
                                         }
                                       })));
               // Without JavaTimeModule, java.time.Instant fields (e.g.

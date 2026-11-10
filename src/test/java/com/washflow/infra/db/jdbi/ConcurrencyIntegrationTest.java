@@ -26,6 +26,7 @@ import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.serviceorder.StartServiceOrder;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
+import com.washflow.infra.db.jdbi.establishment.PlatformJdbiRepository;
 import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
 import com.washflow.infra.db.jdbi.sale.SaleJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
@@ -172,6 +173,47 @@ class ConcurrencyIntegrationTest {
     assertInstanceOf(
         DuplicateKeyError.class,
         results.stream().filter(r -> !(r instanceof User)).findFirst().orElseThrow());
+  }
+
+  @Test
+  void simultaneousFirstAdminSetupsCreateOnlyOnePlatformAdministrator() throws Exception {
+    Jdbi jdbi = TestDatabase.prepare();
+    PlatformJdbiRepository platform = new PlatformJdbiRepository(jdbi);
+    Instant createdAt = Instant.now();
+    User first =
+        new User(
+            UUID.randomUUID(),
+            "Admin A",
+            null,
+            UserProfile.ADMIN,
+            createdAt,
+            true,
+            "admin-a@example.com");
+    User second =
+        new User(
+            UUID.randomUUID(),
+            "Admin B",
+            null,
+            UserProfile.ADMIN,
+            createdAt,
+            true,
+            "admin-b@example.com");
+
+    List<Object> results =
+        race(
+            List.of(
+                () -> platform.createFirstAdmin(first, "hash-a"),
+                () -> platform.createFirstAdmin(second, "hash-b")));
+
+    assertEquals(1, results.stream().filter(Boolean.TRUE::equals).count(), "" + results);
+    assertEquals(1, results.stream().filter(Boolean.FALSE::equals).count(), "" + results);
+    assertEquals(
+        1,
+        jdbi.withHandle(
+            handle ->
+                handle.createQuery("SELECT COUNT(*) FROM administradores")
+                    .mapTo(Integer.class)
+                    .one()));
   }
 
   // ---------------------------------------------------------------- helpers

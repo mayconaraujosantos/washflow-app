@@ -23,8 +23,8 @@ class JdbiAuditStoreIntegrationTest {
     Jdbi jdbi = TestDatabase.prepare();
     AuditStore store = new JdbiAuditStore(jdbi);
 
-    store.record(entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-10T12:00:00Z", "/api/services"));
-    store.record(
+    store.save(entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-10T12:00:00Z", "/api/services"));
+    store.save(
         entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-10T15:00:00Z", "/api/cash-transactions/x"));
 
     List<AuditStore.Row> rows =
@@ -42,7 +42,7 @@ class JdbiAuditStoreIntegrationTest {
     Jdbi jdbi = TestDatabase.prepare();
     AuditStore store = new JdbiAuditStore(jdbi);
     // 02:00Z on the 11th is still 22:00 on the 10th in Manaus.
-    store.record(entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-11T02:00:00Z", "/api/sales"));
+    store.save(entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-11T02:00:00Z", "/api/sales"));
 
     assertEquals(
         1, store.list(LocalDate.parse("2026-11-10"), LocalDate.parse("2026-11-10")).size());
@@ -54,7 +54,7 @@ class JdbiAuditStoreIntegrationTest {
   void anotherLavaJatoSeesNothing() {
     Jdbi jdbi = TestDatabase.prepare();
     AuditStore store = new JdbiAuditStore(jdbi);
-    store.record(entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-10T12:00:00Z", "/api/sales"));
+    store.save(entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-10T12:00:00Z", "/api/sales"));
 
     UUID other = UUID.randomUUID();
     jdbi.useHandle(
@@ -76,7 +76,7 @@ class JdbiAuditStoreIntegrationTest {
   void theTrailCannotBeEditedOrErased() {
     Jdbi jdbi = TestDatabase.prepare();
     new JdbiAuditStore(jdbi)
-        .record(entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-10T12:00:00Z", "/api/sales"));
+        .save(entry(TestDatabase.ESTABLISHMENT_ID, "2026-11-10T12:00:00Z", "/api/sales"));
 
     assertThrows(
         Exception.class,
@@ -88,7 +88,7 @@ class JdbiAuditStoreIntegrationTest {
   @Test
   void platformAdminActionsAreRecordedWithoutALavaJato() {
     Jdbi jdbi = TestDatabase.prepare();
-    new JdbiAuditStore(jdbi).record(entry(null, "2026-11-10T12:00:00Z", "/api/admin/x"));
+    new JdbiAuditStore(jdbi).save(entry(null, "2026-11-10T12:00:00Z", "/api/admin/x"));
 
     int count =
         jdbi.withHandle(

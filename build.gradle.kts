@@ -129,7 +129,7 @@ sonar {
         property("sonar.test.inclusions", "src/test/java/**,web/src/**/*.test.ts,web/src/**/*.test.tsx,web/src/test/**")
         property(
             "sonar.exclusions",
-            "web/dist/**,web/node_modules/**,web/coverage/**,web/src/**/*.test.ts,web/src/**/*.test.tsx,web/src/test/**",
+            "src/main/resources/db/migration/**,web/dist/**,web/node_modules/**,web/coverage/**,web/src/**/*.test.ts,web/src/**/*.test.tsx,web/src/test/**",
         )
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
         property("sonar.javascript.lcov.reportPaths", "web/coverage/lcov.info")

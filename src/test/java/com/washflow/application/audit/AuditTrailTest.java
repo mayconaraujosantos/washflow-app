@@ -110,7 +110,7 @@ class AuditTrailTest {
         new AuditTrail(
             new InMemoryStore() {
               @Override
-              public void record(Entry entry) {
+              public void save(Entry entry) {
                 throw new IllegalStateException("db down");
               }
             },
@@ -130,13 +130,13 @@ class AuditTrailTest {
                 "POST",
                 "/api/sales",
                 request("/api/sales", "{}", 200),
-                () -> {
+                ignored -> {
                   throw new IllegalStateException("boom");
                 }));
     assertEquals(0, store.entries.size());
   }
 
-  private void work() {
+  private void work(Context ignored) {
     runs.incrementAndGet();
   }
 
@@ -154,7 +154,7 @@ class AuditTrailTest {
     final List<Entry> entries = new ArrayList<>();
 
     @Override
-    public void record(Entry entry) {
+    public void save(Entry entry) {
       entries.add(entry);
     }
 

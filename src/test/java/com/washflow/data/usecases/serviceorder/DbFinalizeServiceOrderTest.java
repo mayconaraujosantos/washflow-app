@@ -93,7 +93,7 @@ class DbFinalizeServiceOrderTest {
     when(finalizeServiceOrderRepository.finalizeSale(any(), any(), any()))
         .thenReturn(Optional.of(doneServiceOrder));
 
-    ServiceOrder result = sut.finalize(params);
+    ServiceOrder result = sut.finalizeOrder(params);
 
     assertEquals(ServiceOrderStatus.DONE, result.status());
     ArgumentCaptor<WasherCommission> commissionCaptor =
@@ -116,7 +116,7 @@ class DbFinalizeServiceOrderTest {
     when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
         .thenReturn(Optional.empty());
 
-    assertThrows(ServiceOrderNotFoundError.class, () -> sut.finalize(params));
+    assertThrows(ServiceOrderNotFoundError.class, () -> sut.finalizeOrder(params));
     verifyNoInteractions(loadServicePriceByIdRepository, finalizeServiceOrderRepository);
   }
 
@@ -135,7 +135,7 @@ class DbFinalizeServiceOrderTest {
     when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
         .thenReturn(Optional.of(stillWashing));
 
-    assertThrows(InvalidServiceOrderStatusError.class, () -> sut.finalize(params));
+    assertThrows(InvalidServiceOrderStatusError.class, () -> sut.finalizeOrder(params));
     verifyNoInteractions(loadServicePriceByIdRepository, finalizeServiceOrderRepository);
   }
 
@@ -146,7 +146,7 @@ class DbFinalizeServiceOrderTest {
     when(loadServicePriceByIdRepository.loadById(readyServiceOrder.servicePriceId()))
         .thenReturn(Optional.empty());
 
-    assertThrows(ServicePriceNotFoundError.class, () -> sut.finalize(params));
+    assertThrows(ServicePriceNotFoundError.class, () -> sut.finalizeOrder(params));
     verify(finalizeServiceOrderRepository, never()).finalizeSale(any(), any(), any());
   }
 }
