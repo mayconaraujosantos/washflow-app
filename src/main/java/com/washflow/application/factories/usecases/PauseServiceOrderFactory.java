@@ -1,6 +1,6 @@
 package com.washflow.application.factories.usecases;
 
-import com.washflow.data.usecases.pauseserviceorder.DbPauseServiceOrder;
+import com.washflow.data.usecases.serviceorder.DbPauseServiceOrder;
 import com.washflow.domain.usecases.serviceorder.PauseServiceOrder;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import org.jdbi.v3.core.Jdbi;

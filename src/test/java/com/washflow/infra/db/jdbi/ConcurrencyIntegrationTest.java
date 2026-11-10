@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.data.protocols.db.DuplicateKeyError;
 import com.washflow.data.tenancy.TenantContext;
-import com.washflow.data.usecases.registervehicleentry.DbRegisterVehicleEntry;
-import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
-import com.washflow.data.usecases.startserviceorder.DbStartServiceOrder;
+import com.washflow.data.usecases.serviceorder.DbStartServiceOrder;
+import com.washflow.data.usecases.shared.SchedulingRules;
+import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleItem;

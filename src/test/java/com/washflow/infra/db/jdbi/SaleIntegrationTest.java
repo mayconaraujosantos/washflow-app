@@ -3,9 +3,9 @@ package com.washflow.infra.db.jdbi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.data.usecases.createsale.DbCreateSale;
-import com.washflow.data.usecases.createserviceprice.DbCreateServicePrice;
-import com.washflow.data.usecases.listsales.DbListSales;
+import com.washflow.data.usecases.pricing.DbCreateServicePrice;
+import com.washflow.data.usecases.sale.DbCreateSale;
+import com.washflow.data.usecases.sale.DbListSales;
 import com.washflow.domain.entities.PaymentMethod;
 import com.washflow.domain.entities.Sale;
 import com.washflow.domain.entities.SaleType;

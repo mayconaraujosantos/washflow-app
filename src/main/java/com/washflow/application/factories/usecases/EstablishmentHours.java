@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.application.AppConfig;
-import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
+import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.domain.entities.Establishment;
 import com.washflow.infra.db.jdbi.EstablishmentJdbiRepository;
 import java.util.function.Supplier;

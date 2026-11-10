@@ -1,6 +1,6 @@
 package com.washflow.application.factories.usecases;
 
-import com.washflow.data.usecases.createsale.DbCreateSale;
+import com.washflow.data.usecases.sale.DbCreateSale;
 import com.washflow.domain.usecases.sale.CreateSale;
 import com.washflow.infra.db.jdbi.SaleJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;

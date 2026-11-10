@@ -2,9 +2,9 @@ package com.washflow.application.factories.usecases;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.protocols.messaging.OtpSender;
-import com.washflow.data.usecases.access.DbCustomerPasswordlessLogin;
-import com.washflow.data.usecases.access.DbServiceOrderTicket;
 import com.washflow.data.usecases.access.DbWasherBadge;
+import com.washflow.data.usecases.customer.DbCustomerPasswordlessLogin;
+import com.washflow.data.usecases.customer.DbServiceOrderTicket;
 import com.washflow.domain.usecases.access.WasherBadge;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;

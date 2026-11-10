@@ -1,6 +1,6 @@
 package com.washflow.application.factories.usecases;
 
-import com.washflow.data.usecases.listvehiclesbycustomer.DbListVehiclesByCustomer;
+import com.washflow.data.usecases.vehicle.DbListVehiclesByCustomer;
 import com.washflow.domain.usecases.vehicle.ListVehiclesByCustomer;
 import com.washflow.infra.db.jdbi.UserJdbiRepository;
 import com.washflow.infra.db.jdbi.VehicleJdbiRepository;

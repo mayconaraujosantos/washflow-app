@@ -1,6 +1,6 @@
 package com.washflow.application.factories.usecases;
 
-import com.washflow.data.usecases.deletecashtransaction.DbDeleteCashTransaction;
+import com.washflow.data.usecases.cash.DbDeleteCashTransaction;
 import com.washflow.domain.usecases.cash.DeleteCashTransaction;
 import com.washflow.infra.db.jdbi.CashTransactionJdbiRepository;
 import org.jdbi.v3.core.Jdbi;

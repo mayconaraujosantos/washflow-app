@@ -1,8 +1,8 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.application.AppConfig;
-import com.washflow.data.usecases.registervehicleentry.DbRegisterVehicleEntry;
-import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
+import com.washflow.data.usecases.shared.SchedulingRules;
+import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.ServicePriceJdbiRepository;

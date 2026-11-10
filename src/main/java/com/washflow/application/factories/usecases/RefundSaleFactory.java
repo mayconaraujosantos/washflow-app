@@ -1,6 +1,6 @@
 package com.washflow.application.factories.usecases;
 
-import com.washflow.data.usecases.refundsale.DbRefundSale;
+import com.washflow.data.usecases.sale.DbRefundSale;
 import com.washflow.domain.usecases.sale.RefundSale;
 import com.washflow.infra.db.jdbi.SaleJdbiRepository;
 import java.time.Clock;

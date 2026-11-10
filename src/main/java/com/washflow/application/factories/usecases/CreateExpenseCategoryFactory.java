@@ -1,6 +1,6 @@
 package com.washflow.application.factories.usecases;
 
-import com.washflow.data.usecases.createexpensecategory.DbCreateExpenseCategory;
+import com.washflow.data.usecases.cash.DbCreateExpenseCategory;
 import com.washflow.domain.usecases.cash.CreateExpenseCategory;
 import com.washflow.infra.db.jdbi.CashTransactionJdbiRepository;
 import org.jdbi.v3.core.Jdbi;

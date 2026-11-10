@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.data.protocols.identity.GoogleTokenVerifier;
 import com.washflow.data.protocols.messaging.OtpSender;
-import com.washflow.data.usecases.access.DbCustomerPasswordlessLogin;
-import com.washflow.data.usecases.access.DbServiceOrderTicket;
 import com.washflow.data.usecases.access.DbWasherBadge;
+import com.washflow.data.usecases.customer.DbCustomerPasswordlessLogin;
+import com.washflow.data.usecases.customer.DbServiceOrderTicket;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.TicketView;
 import com.washflow.domain.entities.User;

@@ -1,6 +1,6 @@
 package com.washflow.application.factories.usecases;
 
-import com.washflow.data.usecases.listsales.DbListSales;
+import com.washflow.data.usecases.sale.DbListSales;
 import com.washflow.domain.usecases.sale.ListSales;
 import com.washflow.infra.db.jdbi.SaleJdbiRepository;
 import org.jdbi.v3.core.Jdbi;

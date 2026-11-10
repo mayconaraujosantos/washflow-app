@@ -1,7 +1,7 @@
 package com.washflow.application.factories.usecases;
 
 import com.washflow.application.AppConfig;
-import com.washflow.data.usecases.authenticateuser.DbAuthenticateUser;
+import com.washflow.data.usecases.user.DbAuthenticateUser;
 import com.washflow.domain.usecases.user.AuthenticateUser;
 import com.washflow.infra.db.jdbi.UserJdbiRepository;
 import com.washflow.infra.security.BCryptPasswordHasher;

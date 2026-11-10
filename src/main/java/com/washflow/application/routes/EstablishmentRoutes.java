@@ -9,7 +9,7 @@ import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.factories.usecases.EstablishmentFactory;
 import com.washflow.application.security.AuthTokenService;
-import com.washflow.data.usecases.updateuseremail.DbUpdateUserEmail;
+import com.washflow.data.usecases.user.DbUpdateUserEmail;
 import com.washflow.domain.entities.Establishment;
 import com.washflow.domain.entities.User;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;

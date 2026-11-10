@@ -3,9 +3,9 @@ package com.washflow.infra.db.jdbi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.data.usecases.listagenda.DbListAgenda;
-import com.washflow.data.usecases.registervehicleentry.DbRegisterVehicleEntry;
-import com.washflow.data.usecases.searchvehicles.DbSearchVehicles;
+import com.washflow.data.usecases.schedule.DbListAgenda;
+import com.washflow.data.usecases.vehicle.DbSearchVehicles;
+import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
 import com.washflow.domain.entities.ServiceOrder;
 import com.washflow.domain.entities.ServiceOrderStatus;
 import com.washflow.domain.entities.VehicleLookup;

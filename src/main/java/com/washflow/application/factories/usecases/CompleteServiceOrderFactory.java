@@ -1,6 +1,6 @@
 package com.washflow.application.factories.usecases;
 
-import com.washflow.data.usecases.completeserviceorder.DbCompleteServiceOrder;
+import com.washflow.data.usecases.serviceorder.DbCompleteServiceOrder;
 import com.washflow.domain.usecases.serviceorder.CompleteServiceOrder;
 import com.washflow.infra.db.jdbi.ServiceOrderJdbiRepository;
 import org.jdbi.v3.core.Jdbi;

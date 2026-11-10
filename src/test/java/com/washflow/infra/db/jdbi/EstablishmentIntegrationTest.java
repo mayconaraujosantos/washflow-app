@@ -8,12 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.tenancy.TenantContext;
-import com.washflow.data.usecases.authenticateuser.DbAuthenticateUser;
 import com.washflow.data.usecases.establishment.DbManageEstablishment;
+import com.washflow.data.usecases.establishment.DbManagePlatform;
 import com.washflow.data.usecases.establishment.DbSetupEstablishment;
-import com.washflow.data.usecases.platform.DbManagePlatform;
-import com.washflow.data.usecases.scheduleserviceorder.SchedulingRules;
-import com.washflow.data.usecases.updateuseremail.DbUpdateUserEmail;
+import com.washflow.data.usecases.shared.SchedulingRules;
+import com.washflow.data.usecases.user.DbAuthenticateUser;
+import com.washflow.data.usecases.user.DbUpdateUserEmail;
 import com.washflow.domain.entities.Establishment;
 import com.washflow.domain.entities.EstablishmentSummary;
 import com.washflow.domain.entities.ServiceOrder;

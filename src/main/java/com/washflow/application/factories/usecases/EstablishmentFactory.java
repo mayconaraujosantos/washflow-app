@@ -2,8 +2,8 @@ package com.washflow.application.factories.usecases;
 
 import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.establishment.DbManageEstablishment;
+import com.washflow.data.usecases.establishment.DbManagePlatform;
 import com.washflow.data.usecases.establishment.DbSetupEstablishment;
-import com.washflow.data.usecases.platform.DbManagePlatform;
 import com.washflow.domain.usecases.establishment.ManageEstablishment;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;
