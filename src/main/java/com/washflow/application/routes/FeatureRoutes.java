@@ -53,7 +53,7 @@ public final class FeatureRoutes {
   private static void registerSaveChecklist(Jdbi jdbi) {
     post(
         SERVICE_ORDER_BY_ID + "/checklist",
-        JavalinRouteAdapter.adapt(ServiceOrderModule.saveChecklistController(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.saveServiceOrderChecklistController(jdbi)));
   }
 
   @OpenApi(
@@ -71,7 +71,7 @@ public final class FeatureRoutes {
   private static void registerGetChecklists(Jdbi jdbi) {
     get(
         SERVICE_ORDER_BY_ID + "/checklist",
-        JavalinRouteAdapter.adapt(ServiceOrderModule.getChecklistsController(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.listServiceOrderChecklistsController(jdbi)));
   }
 
   private static void registerChecklists(Jdbi jdbi) {
@@ -95,7 +95,7 @@ public final class FeatureRoutes {
   private static void registerSavePhoto(Jdbi jdbi) {
     post(
         SERVICE_ORDER_BY_ID + "/photos",
-        JavalinRouteAdapter.adapt(ServiceOrderModule.savePhotoController(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.saveServiceOrderPhotoController(jdbi)));
   }
 
   @OpenApi(
@@ -113,7 +113,7 @@ public final class FeatureRoutes {
   private static void registerGetPhotos(Jdbi jdbi) {
     get(
         SERVICE_ORDER_BY_ID + "/photos",
-        JavalinRouteAdapter.adapt(ServiceOrderModule.getPhotosController(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.listServiceOrderPhotosController(jdbi)));
   }
 
   @OpenApi(
@@ -133,7 +133,7 @@ public final class FeatureRoutes {
   private static void registerDeletePhoto(Jdbi jdbi) {
     delete(
         SERVICE_ORDER_BY_ID + "/photos/{photoId}",
-        JavalinRouteAdapter.adapt(ServiceOrderModule.deletePhotoController(jdbi)));
+        JavalinRouteAdapter.adapt(ServiceOrderModule.deleteServiceOrderPhotoController(jdbi)));
   }
 
   private static void registerPhotos(Jdbi jdbi) {

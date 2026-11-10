@@ -11,7 +11,11 @@ import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.establishment.EstablishmentListing;
 import com.washflow.domain.entities.establishment.EstablishmentSummary;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
-import com.washflow.presentation.controllers.establishment.PlatformController;
+import com.washflow.presentation.controllers.establishment.AdminSignInController;
+import com.washflow.presentation.controllers.establishment.CreateEstablishmentController;
+import com.washflow.presentation.controllers.establishment.ListEstablishmentsController;
+import com.washflow.presentation.controllers.establishment.SearchEstablishmentsController;
+import com.washflow.presentation.controllers.establishment.SetEstablishmentActiveController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
@@ -48,7 +52,7 @@ public final class PlatformRoutes {
     post(
         "/api/auth/admins",
         JavalinRouteAdapter.adaptAuthenticated(
-            PlatformController.signIn(platform), new AuthTokenService(appConfig.tokenSecret())));
+            new AdminSignInController(platform), new AuthTokenService(appConfig.tokenSecret())));
   }
 
   @OpenApi(
@@ -63,7 +67,9 @@ public final class PlatformRoutes {
             content = @OpenApiContent(from = EstablishmentListing[].class))
       })
   private static void registerDirectory(ManagePlatform platform) {
-    get("/api/establishments", JavalinRouteAdapter.adapt(PlatformController.search(platform)));
+    get(
+        "/api/establishments",
+        JavalinRouteAdapter.adapt(new SearchEstablishmentsController(platform)));
   }
 
   @OpenApi(
@@ -77,7 +83,9 @@ public final class PlatformRoutes {
             content = @OpenApiContent(from = EstablishmentSummary[].class))
       })
   private static void registerList(ManagePlatform platform) {
-    get(ADMIN_ESTABLISHMENTS, JavalinRouteAdapter.adapt(PlatformController.list(platform)));
+    get(
+        ADMIN_ESTABLISHMENTS,
+        JavalinRouteAdapter.adapt(new ListEstablishmentsController(platform)));
   }
 
   @OpenApi(
@@ -93,7 +101,9 @@ public final class PlatformRoutes {
         @OpenApiResponse(status = "409", description = "Address or e-mail already in use")
       })
   private static void registerCreate(ManagePlatform platform) {
-    post(ADMIN_ESTABLISHMENTS, JavalinRouteAdapter.adapt(PlatformController.create(platform)));
+    post(
+        ADMIN_ESTABLISHMENTS,
+        JavalinRouteAdapter.adapt(new CreateEstablishmentController(platform)));
   }
 
   @OpenApi(
@@ -111,6 +121,6 @@ public final class PlatformRoutes {
   private static void registerSetActive(ManagePlatform platform) {
     patch(
         ADMIN_ESTABLISHMENTS + "/{id}/active",
-        JavalinRouteAdapter.adapt(PlatformController.setActive(platform)));
+        JavalinRouteAdapter.adapt(new SetEstablishmentActiveController(platform)));
   }
 }

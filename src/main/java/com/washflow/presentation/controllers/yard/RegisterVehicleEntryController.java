@@ -7,6 +7,7 @@ import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.InvalidPlateError;
 import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
@@ -39,15 +40,15 @@ public class RegisterVehicleEntryController implements Controller {
       var serviceOrder =
           registerVehicleEntry.register(
               new RegisterVehicleEntry.Params(
-                  text(body, "plate"),
-                  text(body, "vehicleModel"),
-                  text(body, "vehicleColor"),
-                  text(body, "customerName"),
-                  text(body, "customerPhone"),
+                  BodyValues.text(body, "plate"),
+                  BodyValues.text(body, "vehicleModel"),
+                  BodyValues.text(body, "vehicleColor"),
+                  BodyValues.text(body, "customerName"),
+                  BodyValues.text(body, "customerPhone"),
                   servicePriceId.intValue(),
                   instant(body, "scheduledAt"),
                   instant(body, "expectedDeliveryAt"),
-                  text(body, "notes")));
+                  BodyValues.text(body, "notes")));
 
       return HttpHelper.ok(serviceOrder);
     } catch (DateTimeParseException e) {
@@ -66,13 +67,8 @@ public class RegisterVehicleEntryController implements Controller {
     }
   }
 
-  private static String text(Map<String, Object> body, String key) {
-    Object value = body.get(key);
-    return value == null ? null : value.toString();
-  }
-
   private static Instant instant(Map<String, Object> body, String key) {
-    String value = text(body, key);
+    String value = BodyValues.text(body, key);
     return value == null || value.isBlank() ? null : Instant.parse(value);
   }
 }

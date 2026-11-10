@@ -11,7 +11,15 @@ import com.washflow.domain.entities.serviceorder.TicketView;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
 import com.washflow.domain.usecases.user.WasherBadge;
-import com.washflow.presentation.controllers.customer.AccessControllers;
+import com.washflow.presentation.controllers.customer.CustomerLoginOptionsController;
+import com.washflow.presentation.controllers.customer.GoogleCustomerLoginController;
+import com.washflow.presentation.controllers.customer.IssueServiceOrderTicketController;
+import com.washflow.presentation.controllers.customer.RequestCustomerCodeController;
+import com.washflow.presentation.controllers.customer.VerifyCustomerCodeController;
+import com.washflow.presentation.controllers.customer.ViewServiceOrderTicketController;
+import com.washflow.presentation.controllers.user.IssueWasherBadgeController;
+import com.washflow.presentation.controllers.user.WasherBadgeLoginController;
+import com.washflow.presentation.controllers.user.WasherPinLoginController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
@@ -57,7 +65,7 @@ public final class AccessRoutes {
         @OpenApiResponse(status = "400", description = "Not a washer")
       })
   private static void registerIssueBadge(WasherBadge badge) {
-    post(USER_BADGE, JavalinRouteAdapter.adapt(AccessControllers.issueBadge(badge)));
+    post(USER_BADGE, JavalinRouteAdapter.adapt(new IssueWasherBadgeController(badge)));
   }
 
   @OpenApi(
@@ -73,7 +81,7 @@ public final class AccessRoutes {
   private static void registerPinLogin(WasherBadge badge, AuthTokenService tokens) {
     post(
         "/api/auth/washers/pin",
-        JavalinRouteAdapter.adaptAuthenticated(AccessControllers.pinLogin(badge), tokens));
+        JavalinRouteAdapter.adaptAuthenticated(new WasherPinLoginController(badge), tokens));
   }
 
   @OpenApi(
@@ -88,7 +96,7 @@ public final class AccessRoutes {
   private static void registerBadgeLogin(WasherBadge badge, AuthTokenService tokens) {
     post(
         "/api/auth/washers/badge",
-        JavalinRouteAdapter.adaptAuthenticated(AccessControllers.badgeLogin(badge), tokens));
+        JavalinRouteAdapter.adaptAuthenticated(new WasherBadgeLoginController(badge), tokens));
   }
 
   @OpenApi(
@@ -102,7 +110,7 @@ public final class AccessRoutes {
         @OpenApiResponse(status = "404", description = "Order not found")
       })
   private static void registerIssueTicket(ServiceOrderTicket ticket) {
-    post(TICKET_ISSUE, JavalinRouteAdapter.adapt(AccessControllers.issueTicket(ticket)));
+    post(TICKET_ISSUE, JavalinRouteAdapter.adapt(new IssueServiceOrderTicketController(ticket)));
   }
 
   @OpenApi(
@@ -116,7 +124,7 @@ public final class AccessRoutes {
         @OpenApiResponse(status = "404", description = "Unknown ticket")
       })
   private static void registerViewTicket(ServiceOrderTicket ticket) {
-    get(TICKET_VIEW, JavalinRouteAdapter.adapt(AccessControllers.viewTicket(ticket)));
+    get(TICKET_VIEW, JavalinRouteAdapter.adapt(new ViewServiceOrderTicketController(ticket)));
   }
 
   @OpenApi(
@@ -130,7 +138,9 @@ public final class AccessRoutes {
             content = @OpenApiContent(from = CustomerPasswordlessLogin.Options.class))
       })
   private static void registerOptions(CustomerPasswordlessLogin customer) {
-    get("/api/auth/options", JavalinRouteAdapter.adapt(AccessControllers.options(customer)));
+    get(
+        "/api/auth/options",
+        JavalinRouteAdapter.adapt(new CustomerLoginOptionsController(customer)));
   }
 
   @OpenApi(
@@ -146,7 +156,7 @@ public final class AccessRoutes {
   private static void registerRequestCode(CustomerPasswordlessLogin customer) {
     post(
         "/api/auth/customers/otp",
-        JavalinRouteAdapter.adapt(AccessControllers.requestCode(customer)));
+        JavalinRouteAdapter.adapt(new RequestCustomerCodeController(customer)));
   }
 
   @OpenApi(
@@ -163,7 +173,7 @@ public final class AccessRoutes {
       CustomerPasswordlessLogin customer, AuthTokenService tokens) {
     post(
         "/api/auth/customers/otp/verify",
-        JavalinRouteAdapter.adaptAuthenticated(AccessControllers.verifyCode(customer), tokens));
+        JavalinRouteAdapter.adaptAuthenticated(new VerifyCustomerCodeController(customer), tokens));
   }
 
   @OpenApi(
@@ -179,6 +189,7 @@ public final class AccessRoutes {
   private static void registerGoogle(CustomerPasswordlessLogin customer, AuthTokenService tokens) {
     post(
         "/api/auth/customers/google",
-        JavalinRouteAdapter.adaptAuthenticated(AccessControllers.google(customer), tokens));
+        JavalinRouteAdapter.adaptAuthenticated(
+            new GoogleCustomerLoginController(customer), tokens));
   }
 }

@@ -1,5 +1,5 @@
 /**
- * HTTP controllers of health check and hello endpoints. Framework-agnostic: HttpRequest in,
- * HttpResponse out.
+ * HTTP controller of the health check endpoint. Framework-agnostic: HttpRequest in, HttpResponse
+ * out.
  */
 package com.washflow.presentation.controllers.system;

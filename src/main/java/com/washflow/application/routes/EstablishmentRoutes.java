@@ -14,9 +14,10 @@ import com.washflow.domain.entities.establishment.Establishment;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
-import com.washflow.presentation.controllers.establishment.EstablishmentController;
+import com.washflow.presentation.controllers.establishment.GetEstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupEstablishmentController;
 import com.washflow.presentation.controllers.establishment.SetupStatusController;
+import com.washflow.presentation.controllers.establishment.UpdateEstablishmentController;
 import com.washflow.presentation.controllers.user.UpdateUserEmailController;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
@@ -88,7 +89,8 @@ public final class EstablishmentRoutes {
   private static void registerGetEstablishment(Jdbi jdbi) {
     get(
         ESTABLISHMENT,
-        JavalinRouteAdapter.adapt(EstablishmentController.get(EstablishmentModule.manage(jdbi))));
+        JavalinRouteAdapter.adapt(
+            new GetEstablishmentController(EstablishmentModule.manage(jdbi))));
   }
 
   @OpenApi(
@@ -104,7 +106,7 @@ public final class EstablishmentRoutes {
     put(
         ESTABLISHMENT,
         JavalinRouteAdapter.adapt(
-            EstablishmentController.update(EstablishmentModule.manage(jdbi))));
+            new UpdateEstablishmentController(EstablishmentModule.manage(jdbi))));
   }
 
   @OpenApi(

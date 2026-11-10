@@ -5,8 +5,8 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.modules.VehicleModule;
+import com.washflow.application.routes.requests.CreateVehicleRequest;
 import com.washflow.domain.entities.vehicle.Vehicle;
-import com.washflow.presentation.controllers.vehicle.CreateVehicleRequest;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;

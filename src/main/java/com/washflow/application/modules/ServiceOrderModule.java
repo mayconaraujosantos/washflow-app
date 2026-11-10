@@ -35,16 +35,16 @@ import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import com.washflow.presentation.controllers.serviceorder.CancelServiceOrderController;
 import com.washflow.presentation.controllers.serviceorder.CheckInServiceOrderController;
 import com.washflow.presentation.controllers.serviceorder.CompleteServiceOrderController;
-import com.washflow.presentation.controllers.serviceorder.DeletePhotoController;
+import com.washflow.presentation.controllers.serviceorder.DeleteServiceOrderPhotoController;
 import com.washflow.presentation.controllers.serviceorder.FinalizeServiceOrderController;
-import com.washflow.presentation.controllers.serviceorder.GetChecklistsController;
-import com.washflow.presentation.controllers.serviceorder.GetPhotosController;
 import com.washflow.presentation.controllers.serviceorder.GetServiceOrderByIdController;
+import com.washflow.presentation.controllers.serviceorder.ListServiceOrderChecklistsController;
+import com.washflow.presentation.controllers.serviceorder.ListServiceOrderPhotosController;
 import com.washflow.presentation.controllers.serviceorder.PauseServiceOrderController;
 import com.washflow.presentation.controllers.serviceorder.RefundServiceOrderController;
 import com.washflow.presentation.controllers.serviceorder.ResumeServiceOrderController;
-import com.washflow.presentation.controllers.serviceorder.SaveChecklistController;
-import com.washflow.presentation.controllers.serviceorder.SavePhotoController;
+import com.washflow.presentation.controllers.serviceorder.SaveServiceOrderChecklistController;
+import com.washflow.presentation.controllers.serviceorder.SaveServiceOrderPhotoController;
 import com.washflow.presentation.controllers.serviceorder.StartServiceOrderController;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.validation.protocols.Validation;
@@ -175,20 +175,20 @@ public final class ServiceOrderModule {
     return new CompleteServiceOrderController(completeServiceOrder(jdbi));
   }
 
-  public static Controller deletePhotoController(Jdbi jdbi) {
-    return new DeletePhotoController(deleteServiceOrderPhoto(jdbi));
+  public static Controller deleteServiceOrderPhotoController(Jdbi jdbi) {
+    return new DeleteServiceOrderPhotoController(deleteServiceOrderPhoto(jdbi));
   }
 
   public static Controller finalizeServiceOrderController(Jdbi jdbi) {
     return new FinalizeServiceOrderController(finalizeServiceOrder(jdbi));
   }
 
-  public static Controller getChecklistsController(Jdbi jdbi) {
-    return new GetChecklistsController(listServiceOrderChecklists(jdbi));
+  public static Controller listServiceOrderChecklistsController(Jdbi jdbi) {
+    return new ListServiceOrderChecklistsController(listServiceOrderChecklists(jdbi));
   }
 
-  public static Controller getPhotosController(Jdbi jdbi) {
-    return new GetPhotosController(listServiceOrderPhotos(jdbi));
+  public static Controller listServiceOrderPhotosController(Jdbi jdbi) {
+    return new ListServiceOrderPhotosController(listServiceOrderPhotos(jdbi));
   }
 
   public static Controller getServiceOrderByIdController(Jdbi jdbi) {
@@ -207,12 +207,12 @@ public final class ServiceOrderModule {
     return new ResumeServiceOrderController(resumeServiceOrder(jdbi));
   }
 
-  public static Controller saveChecklistController(Jdbi jdbi) {
-    return new SaveChecklistController(saveServiceOrderChecklist(jdbi));
+  public static Controller saveServiceOrderChecklistController(Jdbi jdbi) {
+    return new SaveServiceOrderChecklistController(saveServiceOrderChecklist(jdbi));
   }
 
-  public static Controller savePhotoController(Jdbi jdbi) {
-    return new SavePhotoController(saveServiceOrderPhoto(jdbi));
+  public static Controller saveServiceOrderPhotoController(Jdbi jdbi) {
+    return new SaveServiceOrderPhotoController(saveServiceOrderPhoto(jdbi));
   }
 
   public static Controller startServiceOrderController(Jdbi jdbi) {
