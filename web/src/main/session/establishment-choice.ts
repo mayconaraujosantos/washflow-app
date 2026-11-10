@@ -54,9 +54,10 @@ export function adoptEstablishmentFromUrl(
   if (current?.slug !== slug) saveEstablishmentChoice({ slug, name: '' })
   params.delete('lavajato')
   const query = params.toString()
+  const search = query ? '?' + query : ''
   window.history.replaceState(
     window.history.state,
     '',
-    `${location.pathname}${query ? `?${query}` : ''}${location.hash}`,
+    location.pathname + search + location.hash,
   )
 }

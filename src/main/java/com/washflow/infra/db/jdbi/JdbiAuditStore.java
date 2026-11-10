@@ -22,7 +22,7 @@ public class JdbiAuditStore implements AuditStore {
   }
 
   @Override
-  public void record(Entry entry) {
+  public void save(Entry entry) {
     jdbi.useHandle(
         handle ->
             handle

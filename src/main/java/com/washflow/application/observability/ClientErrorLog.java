@@ -27,7 +27,7 @@ public final class ClientErrorLog {
   }
 
   /** Returns false when the caller exceeded the rate limit (nothing is logged). */
-  public boolean record(String ip, Map<String, Object> body) {
+  public boolean report(String ip, Map<String, Object> body) {
     long minute = Instant.now(clock).getEpochSecond() / 60;
     Window window =
         windows.compute(
@@ -42,13 +42,15 @@ public final class ClientErrorLog {
     if (windows.size() > 10_000) {
       windows.entrySet().removeIf(entry -> entry.getValue().minute() != minute);
     }
-    LOGGER.warn(
-        "Browser error message=\"{}\" page={} source={} stack=\"{}\" agent=\"{}\"",
-        field(body, "message", MAX_MESSAGE),
-        field(body, "page", MAX_FIELD),
-        field(body, "source", MAX_FIELD),
-        field(body, "stack", MAX_STACK),
-        field(body, "userAgent", MAX_FIELD));
+    if (LOGGER.isWarnEnabled()) {
+      LOGGER.warn(
+          "Browser error message=\"{}\" page={} source={} stack=\"{}\" agent=\"{}\"",
+          field(body, "message", MAX_MESSAGE),
+          field(body, "page", MAX_FIELD),
+          field(body, "source", MAX_FIELD),
+          field(body, "stack", MAX_STACK),
+          field(body, "userAgent", MAX_FIELD));
+    }
     return true;
   }
 

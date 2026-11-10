@@ -52,12 +52,13 @@ class FinalizeServiceOrderControllerTest {
             Instant.now(),
             Instant.now(),
             Instant.now());
-    when(finalizeServiceOrder.finalize(any(FinalizeServiceOrder.Params.class))).thenReturn(saved);
+    when(finalizeServiceOrder.finalizeOrder(any(FinalizeServiceOrder.Params.class)))
+        .thenReturn(saved);
 
     HttpResponse response = sut.handle(request);
 
     assertEquals(200, response.statusCode());
-    verify(finalizeServiceOrder).finalize(any(FinalizeServiceOrder.Params.class));
+    verify(finalizeServiceOrder).finalizeOrder(any(FinalizeServiceOrder.Params.class));
   }
 
   @Test
@@ -87,7 +88,7 @@ class FinalizeServiceOrderControllerTest {
     body.put("paymentMethod", "PIX");
     HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
-    when(finalizeServiceOrder.finalize(any(FinalizeServiceOrder.Params.class)))
+    when(finalizeServiceOrder.finalizeOrder(any(FinalizeServiceOrder.Params.class)))
         .thenThrow(new ServiceOrderNotFoundError(serviceOrderId));
 
     HttpResponse response = sut.handle(request);
@@ -101,7 +102,7 @@ class FinalizeServiceOrderControllerTest {
     body.put("paymentMethod", "PIX");
     HttpRequest request = new HttpRequest(body, Map.of("id", serviceOrderId.toString()), Map.of());
 
-    when(finalizeServiceOrder.finalize(any(FinalizeServiceOrder.Params.class)))
+    when(finalizeServiceOrder.finalizeOrder(any(FinalizeServiceOrder.Params.class)))
         .thenThrow(
             new InvalidServiceOrderStatusError(
                 ServiceOrderStatus.SCHEDULED, ServiceOrderStatus.READY));

@@ -37,8 +37,8 @@ public final class ResourceAccessEvaluator {
       return true;
     }
 
-    // Customer resource paths: /api/customers/{customerId}/vehicles or
-    // /api/customers/{customerId}/service-orders
+    // A customer's own vehicles or service orders: the customer id in the path must be the
+    // caller's.
     if (isCustomerResourcePath(path)) {
       return pathCustomerId(path).equals(userId.toString());
     }

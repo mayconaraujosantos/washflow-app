@@ -33,7 +33,7 @@ public class FinalizeServiceOrderController implements Controller {
           PaymentMethod.valueOf(paymentMethodValue.toUpperCase(java.util.Locale.ROOT));
 
       var serviceOrder =
-          finalizeServiceOrder.finalize(
+          finalizeServiceOrder.finalizeOrder(
               new FinalizeServiceOrder.Params(serviceOrderId, paymentMethod));
 
       return HttpHelper.ok(serviceOrder);

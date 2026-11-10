@@ -110,7 +110,7 @@ class AuditTrailTest {
         new AuditTrail(
             new InMemoryStore() {
               @Override
-              public void record(Entry entry) {
+              public void save(Entry entry) {
                 throw new IllegalStateException("db down");
               }
             },
@@ -154,7 +154,7 @@ class AuditTrailTest {
     final List<Entry> entries = new ArrayList<>();
 
     @Override
-    public void record(Entry entry) {
+    public void save(Entry entry) {
       entries.add(entry);
     }
 

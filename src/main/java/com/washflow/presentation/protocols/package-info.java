@@ -1,5 +1,5 @@
 /**
  * Framework-agnostic HTTP contracts: {@code Controller}, {@code HttpRequest}, {@code HttpResponse}.
- * Implemented/consumed by {@code infra.http} adapters.
+ * Adapted to Javalin by {@code application.adapters.JavalinRouteAdapter}.
  */
 package com.washflow.presentation.protocols;

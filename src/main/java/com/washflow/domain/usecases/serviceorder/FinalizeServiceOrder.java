@@ -16,7 +16,7 @@ import java.util.UUID;
  */
 public interface FinalizeServiceOrder {
 
-  ServiceOrder finalize(Params params)
+  ServiceOrder finalizeOrder(Params params)
       throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError, ServicePriceNotFoundError;
 
   record Params(UUID serviceOrderId, PaymentMethod paymentMethod) {}

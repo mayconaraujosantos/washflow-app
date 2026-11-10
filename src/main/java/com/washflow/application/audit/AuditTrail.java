@@ -59,7 +59,7 @@ public final class AuditTrail {
       return;
     }
     try {
-      store.record(
+      store.save(
           new AuditStore.Entry(
               TenantContext.current().orElse(null),
               claims.userId(),
