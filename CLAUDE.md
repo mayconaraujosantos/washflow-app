@@ -187,6 +187,7 @@ Cliques duplos, reenvios após timeout e duas pessoas agindo ao mesmo tempo não
 * Cada requisição tem um ID (`X-Request-Id`), devolvido também como `requestId` nos corpos de erro (`HttpHelper.errorBody`); o app mostra o código nas falhas 5xx.
 * `GET /api/metrics`: métricas Prometheus (HTTP por rota, pool Hikari, JVM), exige `Authorization: Bearer METRICS_TOKEN`; sem a variável, responde 404.
 * `POST /api/client-errors` (público, limitado a 20 por minuto por IP): erros do navegador enviados pelo `ErrorReporter` e pelo `ErrorBoundary` do PWA.
+* Toda resposta (API, PWA e arquivos estáticos) leva `SecurityHeaders`: HSTS, CSP (só o próprio app e o Google Identity Services; imagens `data:`), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` e `Permissions-Policy` (câmera só para o leitor de QR). `/swagger` fica sem CSP por causa dos scripts inline.
 
 ### Bootstrap e limites de autenticação
 * Em produção, configure `AUTH_TOKEN_SECRET` (mínimo 32 caracteres).

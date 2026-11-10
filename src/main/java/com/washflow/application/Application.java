@@ -2,6 +2,7 @@ package com.washflow.application;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.washflow.application.adapters.SecurityHeaders;
 import com.washflow.application.adapters.SpaFallbackHandler;
 import com.washflow.application.adapters.StaticCachePolicy;
 import com.washflow.application.idempotency.IdempotencyGuard;
@@ -116,6 +117,9 @@ public class Application {
               addStaticFiles(
                   config, StaticCachePolicy::isHashedAsset, StaticCachePolicy.HASHED_ASSET_HEADERS);
               addStaticFiles(config, StaticCachePolicy::isOtherStatic, Map.of());
+
+              // HSTS, CSP, nosniff, frame and referrer rules on every response.
+              config.routes.before(SecurityHeaders::apply);
 
               config.routes.apiBuilder(
                   () -> {
