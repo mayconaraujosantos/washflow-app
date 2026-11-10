@@ -12,7 +12,11 @@ import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.serviceorder.FinalizeServiceOrder;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -46,10 +50,20 @@ public class DbFinalizeServiceOrder implements FinalizeServiceOrder {
       throw new InvalidServiceOrderStatusError(serviceOrder.status(), ServiceOrderStatus.READY);
     }
 
-    ServicePrice servicePrice =
-        loadServicePriceByIdRepository
-            .loadById(serviceOrder.servicePriceId())
-            .orElseThrow(() -> new ServicePriceNotFoundError(serviceOrder.servicePriceId()));
+    List<ServicePrice> servicePrices = new ArrayList<>();
+    for (int servicePriceId : serviceOrder.servicePriceIds()) {
+      servicePrices.add(
+          loadServicePriceByIdRepository
+              .loadById(servicePriceId)
+              .orElseThrow(() -> new ServicePriceNotFoundError(servicePriceId)));
+    }
+    BigDecimal totalPrice =
+        servicePrices.stream().map(ServicePrice::price).reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal totalCommission =
+        servicePrices.stream()
+            .map(ServicePrice::washerCommission)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
     Instant receivedAt = Instant.now();
     return finalizeServiceOrderRepository
@@ -59,13 +73,13 @@ public class DbFinalizeServiceOrder implements FinalizeServiceOrder {
                 UUID.randomUUID(),
                 serviceOrder.id(),
                 params.paymentMethod(),
-                servicePrice.price(),
+                totalPrice,
                 receivedAt),
             new WasherCommission(
                 UUID.randomUUID(),
                 serviceOrder.id(),
                 serviceOrder.washerId(),
-                servicePrice.washerCommission(),
+                totalCommission,
                 receivedAt))
         // Finalized by a concurrent request (double click): one payment only, this one is a 409.
         .orElseThrow(

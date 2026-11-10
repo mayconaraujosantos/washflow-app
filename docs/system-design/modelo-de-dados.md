@@ -18,7 +18,8 @@ erDiagram
 
     usuarios |o--o{ veiculos : "cliente_id (anulável)"
     veiculos ||--o{ atendimentos : ""
-    servicos_preco ||--o{ atendimentos : ""
+    servicos_preco ||--o{ atendimento_servicos : ""
+    atendimentos ||--|{ atendimento_servicos : "serviços selecionados"
     usuarios |o--o{ atendimentos : "lavador_id"
     atendimentos ||--o| pagamentos : "1 por atendimento"
     atendimentos ||--o{ comissoes_lavador : ""
@@ -77,7 +78,7 @@ erDiagram
         uuid id PK
         uuid estabelecimento_id FK
         uuid veiculo_id FK
-        int servico_preco_id FK
+        int servico_preco_id FK "primeiro serviço; compatibilidade"
         uuid lavador_id FK
         varchar status
         timestamptz data_agendamento
@@ -91,6 +92,11 @@ erDiagram
         uuid atendimento_id FK, UK
         varchar forma_pagamento
         decimal valor "preço do catálogo"
+    }
+    atendimento_servicos {
+        uuid atendimento_id PK, FK
+        int servico_preco_id PK, FK
+        int ordem "ordem escolhida"
     }
     chaves_idempotencia {
         uuid usuario_id PK
@@ -124,8 +130,14 @@ Tabelas não detalhadas no diagrama: `comissoes_lavador`, `pausas_atendimento` (
 | V1 | `V1__reset_legacy_schema.sql` | Remove, uma única vez, o esquema anterior à 1.5.0 (decisão do lançamento multi-lava-jato: dados descartados) |
 | V2 | `V2__baseline.sql` | Esquema completo da plataforma multi-lava-jato |
 | V3 | `V3__concurrency_and_idempotency.sql` | Índice de um atendimento aberto por veículo no pátio e tabela `chaves_idempotencia` |
+| V4 | `V4__audit_trail.sql` | Trilha de auditoria |
+| V5 | `V5__service_order_cancellation.sql` | Cancelamento de atendimentos |
+| V6 | `V6__service_order_refunds.sql` | Estorno de atendimentos |
+| V7 | `V7__sale_refunds.sql` | Estorno de vendas |
+| V8 | `V8__single_platform_administrator.sql` | Administrador único da plataforma |
+| V9 | `V9__multiple_services_per_service_order.sql` | Associação de um ou mais serviços a cada atendimento; migra os atendimentos existentes |
 
-Para criar uma migração nova, adicione `V4__descricao.sql` e não altere as já aplicadas. O app e os testes rodam as mesmas migrações. **Atenção ao subir a V3:** se o banco tiver um carro com dois atendimentos abertos, o índice não é criado e o app não sobe; finalize um deles antes.
+Para criar uma migração nova, use a próxima versão disponível e não altere as já aplicadas. O app e os testes rodam as mesmas migrações. **Atenção ao subir a V3:** se o banco tiver um carro com dois atendimentos abertos, o índice não é criado e o app não sobe; finalize um deles antes.
 
 ## Fuso horário
 
