@@ -201,18 +201,19 @@ public class ServiceOrderJdbiRepository
                 handle -> {
                   // One lock per lava-jato and hour, held until commit: concurrent bookings of
                   // the same slot count and insert one at a time; other slots aren't blocked.
-                  handle
-                      .createQuery(SLOT_LOCK_SQL)
-                      .bind("slotKey", slotStart.toString())
-                      .mapTo(Integer.class)
-                      .one();
-                  int booked =
-                      handle
-                          .createQuery(ServiceOrderRows.COUNT_SCHEDULED_BETWEEN_SQL)
-                          .bind("start", slotStart)
-                          .bind("end", slotEnd)
-                          .mapTo(Integer.class)
-                          .one();
+                  try (var query = handle.createQuery(SLOT_LOCK_SQL)) {
+                    query.bind("slotKey", slotStart.toString()).mapTo(Integer.class).one();
+                  }
+                  int booked;
+                  try (var query =
+                      handle.createQuery(ServiceOrderRows.COUNT_SCHEDULED_BETWEEN_SQL)) {
+                    booked =
+                        query
+                            .bind("start", slotStart)
+                            .bind("end", slotEnd)
+                            .mapTo(Integer.class)
+                            .one();
+                  }
                   if (booked >= capacity) {
                     return Optional.<ServiceOrder>empty();
                   }
@@ -239,19 +240,24 @@ public class ServiceOrderJdbiRepository
   @Override
   public Optional<ServiceOrder> loadById(UUID id) {
     return jdbi.withHandle(
-        handle ->
-            handle.createQuery(SELECT_SQL).bind("id", id).map(ServiceOrderRows::map).findOne());
+        handle -> {
+          try (var query = handle.createQuery(SELECT_SQL)) {
+            return query.bind("id", id).map(ServiceOrderRows::map).findOne();
+          }
+        });
   }
 
   @Override
   public List<ServiceOrder> loadByCustomerId(UUID customerId) {
     return jdbi.withHandle(
-        handle ->
-            handle
-                .createQuery(SELECT_BY_CUSTOMER_ID_SQL)
+        handle -> {
+          try (var query = handle.createQuery(SELECT_BY_CUSTOMER_ID_SQL)) {
+            return query
                 .bind("customerId", customerId)
                 .map(ServiceOrderRows::map)
-                .list());
+                .list();
+          }
+        });
   }
 
   @Override
@@ -273,12 +279,10 @@ public class ServiceOrderJdbiRepository
                   if (updated != 1) {
                     return Optional.<ServiceOrder>empty();
                   }
-                  return Optional.of(
-                      handle
-                          .createQuery(SELECT_SQL)
-                          .bind("id", id)
-                          .map(ServiceOrderRows::map)
-                          .one());
+                  try (var query = handle.createQuery(SELECT_SQL)) {
+                    return Optional.of(
+                        query.bind("id", id).map(ServiceOrderRows::map).one());
+                  }
                 }));
   }
 
@@ -382,8 +386,10 @@ public class ServiceOrderJdbiRepository
           if (updated != 1) {
             return Optional.<ServiceOrderRefund>empty();
           }
-          Map<String, Object> paid =
-              handle.createQuery(REFUND_SELECT_SQL).bind("id", orderId).mapToMap().one();
+          Map<String, Object> paid;
+          try (var query = handle.createQuery(REFUND_SELECT_SQL)) {
+            paid = query.bind("id", orderId).mapToMap().one();
+          }
           ServiceOrderRefund refund =
               new ServiceOrderRefund(
                   UUID.randomUUID(),
@@ -445,12 +451,10 @@ public class ServiceOrderJdbiRepository
               .bind(AMOUNT, commission.amount())
               .bind("creditedAt", commission.creditedAt())
               .execute();
-          return Optional.of(
-              handle
-                  .createQuery(SELECT_SQL)
-                  .bind("id", serviceOrder.id())
-                  .map(ServiceOrderRows::map)
-                  .one());
+          try (var query = handle.createQuery(SELECT_SQL)) {
+            return Optional.of(
+                query.bind("id", serviceOrder.id()).map(ServiceOrderRows::map).one());
+          }
         });
   }
 }

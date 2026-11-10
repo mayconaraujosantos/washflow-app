@@ -42,6 +42,7 @@ final class ServiceOrderRows {
 
   private ServiceOrderRows() {}
 
+  @SuppressWarnings("java:S1172") // Required by JDBI's RowMapper method signature.
   static ServiceOrder map(ResultSet rs, StatementContext ctx) throws SQLException {
     return new ServiceOrder(
         (UUID) rs.getObject("id"),
