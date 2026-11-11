@@ -24,6 +24,13 @@ public class AccessJdbiRepository
         OtpRepository,
         CustomerIdentityRepository {
 
+  private static final String AND_TENANT = " AND estabelecimento_id = :tenant";
+  private static final String PHONE = "phone";
+  private static final String USER_COLUMNS = "id, nome, telefone, email, perfil, criado_em, ativo";
+  private static final String ADDRESS = "address";
+  private static final String ADDRESS_MATCHES = " = :" + ADDRESS;
+  private static final String EMAIL = "email";
+
   private static final String SAVE_BADGE_UPDATE_SQL =
       """
       UPDATE usuarios
@@ -69,12 +76,6 @@ public class AccessJdbiRepository
         (id, estabelecimento_id, telefone, email, codigo_hash, tentativas, expira_em, criado_em)
       VALUES (:id, :tenant, :phone, :email, :hash, 0, :expiresAt, :createdAt)
       """;
-
-  private static final String AND_TENANT = " AND estabelecimento_id = :tenant";
-  private static final String PHONE = "phone";
-  private static final String ADDRESS = "address";
-
-  private static final String USER_COLUMNS = "id, nome, telefone, email, perfil, criado_em, ativo";
 
   private final Jdbi jdbi;
 
@@ -190,7 +191,7 @@ public class AccessJdbiRepository
               .createUpdate(
                   "DELETE FROM codigos_acesso WHERE "
                       + column(recipient)
-                      + " = :address"
+                      + ADDRESS_MATCHES
                       + AND_TENANT)
               .bind(ADDRESS, recipient.address())
               .execute();
@@ -198,7 +199,7 @@ public class AccessJdbiRepository
               .createUpdate(SAVE_INSERT_SQL)
               .bind("id", UUID.randomUUID())
               .bind(PHONE, recipient.isEmail() ? null : recipient.address())
-              .bind("email", recipient.isEmail() ? recipient.address() : null)
+              .bind(EMAIL, recipient.isEmail() ? recipient.address() : null)
               .bind("hash", codeHash)
               .bind("expiresAt", expiresAt)
               .bind("createdAt", createdAt)
@@ -215,7 +216,7 @@ public class AccessJdbiRepository
                     "SELECT id, codigo_hash, tentativas, expira_em, criado_em FROM codigos_acesso"
                         + " WHERE "
                         + column(recipient)
-                        + " = :address"
+                        + ADDRESS_MATCHES
                         + AND_TENANT
                         + " ORDER BY criado_em DESC")
                 .bind(ADDRESS, recipient.address())
@@ -250,7 +251,7 @@ public class AccessJdbiRepository
                 .createUpdate(
                     "DELETE FROM codigos_acesso WHERE "
                         + column(recipient)
-                        + " = :address"
+                        + ADDRESS_MATCHES
                         + AND_TENANT)
                 .bind(ADDRESS, recipient.address())
                 .execute());
@@ -258,7 +259,7 @@ public class AccessJdbiRepository
 
   /** Fixed column per channel, never user input. */
   private static String column(OtpRecipient recipient) {
-    return recipient.isEmail() ? "email" : "telefone";
+    return recipient.isEmail() ? EMAIL : "telefone";
   }
 
   // ------------------------------------------------------------ Google
@@ -282,7 +283,7 @@ public class AccessJdbiRepository
 
   @Override
   public Optional<User> loadByEmail(String email) {
-    return loadUser("email", email, AND_TENANT);
+    return loadUser(EMAIL, email, AND_TENANT);
   }
 
   // ------------------------------------------------------------ helpers
@@ -309,7 +310,7 @@ public class AccessJdbiRepository
                             UserProfile.fromDbValue(rs.getString("perfil")),
                             rs.getTimestamp("criado_em").toInstant(),
                             rs.getBoolean("ativo"),
-                            rs.getString("email")))
+                            rs.getString(EMAIL)))
                 .findOne());
   }
 
