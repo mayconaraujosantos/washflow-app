@@ -63,7 +63,6 @@ class RequestTracingTest {
         });
 
     verify(ctx).status(500);
-    @SuppressWarnings("unchecked")
     ArgumentCaptor<Object> body = ArgumentCaptor.forClass(Object.class);
     verify(ctx).json(body.capture());
     Map<?, ?> json = (Map<?, ?>) body.getValue();
