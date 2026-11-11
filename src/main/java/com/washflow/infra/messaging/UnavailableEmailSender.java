@@ -1,5 +1,6 @@
 package com.washflow.infra.messaging;
 
+import com.washflow.data.protocols.messaging.EmailDeliveryException;
 import com.washflow.data.protocols.messaging.EmailSender;
 
 /** Production without SMTP_HOST: no e-mail channel, so the app hides the e-mail reset. */

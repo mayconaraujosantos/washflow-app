@@ -1,6 +1,7 @@
 package com.washflow.infra.messaging;
 
 import com.washflow.application.AppConfig;
+import com.washflow.data.protocols.messaging.EmailDeliveryException;
 import com.washflow.data.protocols.messaging.EmailSender;
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;

@@ -10,10 +10,4 @@ public interface EmailSender {
 
   /** False when no channel is configured: the app hides the e-mail options. */
   boolean available();
-
-  class EmailDeliveryException extends RuntimeException {
-    public EmailDeliveryException(String message, Throwable cause) {
-      super(message, cause);
-    }
-  }
 }

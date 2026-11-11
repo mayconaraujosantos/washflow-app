@@ -1,5 +1,6 @@
 package com.washflow.infra.messaging;
 
+import com.washflow.data.protocols.messaging.EmailDeliveryException;
 import com.washflow.data.protocols.messaging.EmailSender;
 import com.washflow.data.protocols.messaging.OtpSender;
 import com.washflow.domain.errors.auth.OtpUnavailableError;
@@ -27,7 +28,7 @@ public class EmailOtpSender implements OtpSender {
     }
     try {
       emailSender.send(email, code + " é o seu código de acesso", body(code, magicLink));
-    } catch (EmailSender.EmailDeliveryException e) {
+    } catch (EmailDeliveryException e) {
       // The provider's reason goes to the log, never to the customer.
       LOGGER.error("event=otp_email_failed reason={}", e.getMessage(), e);
       throw new OtpUnavailableError("Não foi possível enviar o e-mail agora. Tente de novo.");

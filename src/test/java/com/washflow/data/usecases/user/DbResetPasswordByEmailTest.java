@@ -17,6 +17,7 @@ import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.user.PasswordResetRepository;
 import com.washflow.data.protocols.db.user.PasswordResetRepository.PendingCode;
 import com.washflow.data.protocols.db.user.SaveUserPasswordHashRepository;
+import com.washflow.data.protocols.messaging.EmailDeliveryException;
 import com.washflow.data.protocols.messaging.EmailSender;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
