@@ -19,11 +19,14 @@ export type TicketModel = {
 // GET /api/auth/options - which passwordless customer logins are enabled.
 export type AuthOptionsModel = {
   whatsappCode: boolean
+  /** E-mail channel on: sign in with a code by e-mail and reset a forgotten password by e-mail. */
+  emailCode: boolean
   googleClientId: string | null
-  /** A forgotten password can be reset with a code sent by e-mail. */
-  emailCode?: boolean
 }
 
 /** Who asks for a password-reset code: customers by phone, managers by login e-mail. */
 export type PasswordResetAccount =
   { kind: 'customer'; phone: string } | { kind: 'manager'; email: string }
+
+// Where the one-time code goes: a phone (WhatsApp) or an e-mail address.
+export type CodeRecipient = { phone: string } | { email: string }

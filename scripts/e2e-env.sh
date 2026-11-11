@@ -52,7 +52,7 @@ start() {
     -e DB_USER=washflow -e DB_PASSWORD=washflow \
     -e AUTH_TOKEN_SECRET="$(head -c 48 /dev/urandom | base64 | tr -d '\n')" \
     -e OTP_CHANNEL=log \
-    -e SMTP_HOST=127.0.0.1 -e SMTP_PORT=1025 -e SMTP_STARTTLS=false \
+    -e SMTP_HOST=127.0.0.1 -e SMTP_PORT=1025 -e SMTP_SECURITY=none \
     -e SMTP_FROM="Washflow <nao-responda@washflow.test>" \
     "$IMAGE" >/dev/null
 

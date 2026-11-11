@@ -4,6 +4,7 @@ import com.washflow.data.protocols.db.customer.CustomerIdentityRepository;
 import com.washflow.data.protocols.db.customer.OtpRepository;
 import com.washflow.data.protocols.db.customer.TicketRepository;
 import com.washflow.data.protocols.db.user.StaffCredentialsRepository;
+import com.washflow.domain.entities.customer.OtpRecipient;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.entities.serviceorder.TicketView;
 import com.washflow.domain.entities.user.User;
@@ -16,7 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.jdbi.v3.core.Jdbi;
 
-/** Persistence for badges/PINs, tickets, WhatsApp codes and Google-linked customers. */
+/** Persistence for badges/PINs, tickets, access codes and passwordless customers. */
 public class AccessJdbiRepository
     implements StaffCredentialsRepository,
         TicketRepository,
@@ -65,19 +66,13 @@ public class AccessJdbiRepository
   private static final String SAVE_INSERT_SQL =
       """
       INSERT INTO codigos_acesso
-        (id, estabelecimento_id, telefone, codigo_hash, tentativas, expira_em, criado_em)
-      VALUES (:id, :tenant, :phone, :hash, 0, :expiresAt, :createdAt)
-      """;
-
-  private static final String LOAD_PENDING_SELECT_SQL =
-      """
-      SELECT id, codigo_hash, tentativas, expira_em, criado_em
-      FROM codigos_acesso WHERE telefone = :phone AND estabelecimento_id = :tenant
-      ORDER BY criado_em DESC
+        (id, estabelecimento_id, telefone, email, codigo_hash, tentativas, expira_em, criado_em)
+      VALUES (:id, :tenant, :phone, :email, :hash, 0, :expiresAt, :createdAt)
       """;
 
   private static final String AND_TENANT = " AND estabelecimento_id = :tenant";
   private static final String PHONE = "phone";
+  private static final String ADDRESS = "address";
 
   private static final String USER_COLUMNS = "id, nome, telefone, email, perfil, criado_em, ativo";
 
@@ -185,20 +180,25 @@ public class AccessJdbiRepository
                 .findOne());
   }
 
-  // ------------------------------------------------------------ WhatsApp codes
+  // ------------------------------------------------------------ access codes (WhatsApp / e-mail)
 
   @Override
-  public void save(String phone, String codeHash, Instant expiresAt, Instant createdAt) {
+  public void save(OtpRecipient recipient, String codeHash, Instant expiresAt, Instant createdAt) {
     jdbi.useTransaction(
         handle -> {
           handle
-              .createUpdate("DELETE FROM codigos_acesso WHERE telefone = :phone" + AND_TENANT)
-              .bind(PHONE, phone)
+              .createUpdate(
+                  "DELETE FROM codigos_acesso WHERE "
+                      + column(recipient)
+                      + " = :address"
+                      + AND_TENANT)
+              .bind(ADDRESS, recipient.address())
               .execute();
           handle
               .createUpdate(SAVE_INSERT_SQL)
               .bind("id", UUID.randomUUID())
-              .bind(PHONE, phone)
+              .bind(PHONE, recipient.isEmail() ? null : recipient.address())
+              .bind("email", recipient.isEmail() ? recipient.address() : null)
               .bind("hash", codeHash)
               .bind("expiresAt", expiresAt)
               .bind("createdAt", createdAt)
@@ -207,12 +207,18 @@ public class AccessJdbiRepository
   }
 
   @Override
-  public Optional<PendingCode> loadPending(String phone) {
+  public Optional<PendingCode> loadPending(OtpRecipient recipient) {
     return jdbi.withHandle(
         handle ->
             handle
-                .createQuery(LOAD_PENDING_SELECT_SQL)
-                .bind(PHONE, phone)
+                .createQuery(
+                    "SELECT id, codigo_hash, tentativas, expira_em, criado_em FROM codigos_acesso"
+                        + " WHERE "
+                        + column(recipient)
+                        + " = :address"
+                        + AND_TENANT
+                        + " ORDER BY criado_em DESC")
+                .bind(ADDRESS, recipient.address())
                 .map(
                     (rs, ctx) ->
                         new PendingCode(
@@ -237,13 +243,22 @@ public class AccessJdbiRepository
   }
 
   @Override
-  public void delete(String phone) {
+  public void delete(OtpRecipient recipient) {
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate("DELETE FROM codigos_acesso WHERE telefone = :phone" + AND_TENANT)
-                .bind(PHONE, phone)
+                .createUpdate(
+                    "DELETE FROM codigos_acesso WHERE "
+                        + column(recipient)
+                        + " = :address"
+                        + AND_TENANT)
+                .bind(ADDRESS, recipient.address())
                 .execute());
+  }
+
+  /** Fixed column per channel, never user input. */
+  private static String column(OtpRecipient recipient) {
+    return recipient.isEmail() ? "email" : "telefone";
   }
 
   // ------------------------------------------------------------ Google
@@ -265,10 +280,15 @@ public class AccessJdbiRepository
                 .execute());
   }
 
+  @Override
+  public Optional<User> loadByEmail(String email) {
+    return loadUser("email", email, AND_TENANT);
+  }
+
   // ------------------------------------------------------------ helpers
 
   private Optional<User> loadUser(String column, String value, String scope) {
-    // column is one of two constants above, never user input.
+    // column is one of the constants above, never user input.
     return jdbi.withHandle(
         handle ->
             handle

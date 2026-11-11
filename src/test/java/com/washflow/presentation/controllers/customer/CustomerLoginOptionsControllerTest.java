@@ -26,7 +26,7 @@ class CustomerLoginOptionsControllerTest {
   void returnsTheEnabledSignInOptions() {
     CustomerPasswordlessLogin login = mock(CustomerPasswordlessLogin.class);
     CustomerPasswordlessLogin.Options options =
-        new CustomerPasswordlessLogin.Options(true, "client-id");
+        new CustomerPasswordlessLogin.Options(true, true, "client-id");
     when(login.options()).thenReturn(options);
 
     ResetPasswordByEmail reset = mock(ResetPasswordByEmail.class);

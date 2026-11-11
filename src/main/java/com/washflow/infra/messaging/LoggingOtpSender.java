@@ -5,16 +5,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Development stand-in for a WhatsApp provider: writes the code and magic link to the server log.
- * Never enabled in production (see AccessFactory).
+ * Development stand-in for a real provider (WhatsApp or e-mail): writes the code and magic link to
+ * the server log. Never enabled in production (see CustomerModule).
  */
 public class LoggingOtpSender implements OtpSender {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LoggingOtpSender.class);
 
+  private final String channel;
+
+  public LoggingOtpSender() {
+    this("WhatsApp");
+  }
+
+  public LoggingOtpSender(String channel) {
+    this.channel = channel;
+  }
+
   @Override
-  public void send(String phone, String code, String magicLink) {
-    LOGGER.info("[DEV] WhatsApp code for {}: {} - link: {}", phone, code, magicLink);
+  public void send(String address, String code, String magicLink) {
+    LOGGER.info("[DEV] {} code for {}: {} - link: {}", channel, address, code, magicLink);
   }
 
   @Override

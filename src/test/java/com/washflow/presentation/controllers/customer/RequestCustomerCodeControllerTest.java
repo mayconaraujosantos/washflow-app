@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.washflow.domain.entities.customer.OtpRecipient;
 import com.washflow.domain.errors.auth.OtpTooSoonError;
 import com.washflow.domain.errors.auth.OtpUnavailableError;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
@@ -27,7 +28,7 @@ class RequestCustomerCodeControllerTest {
   @Test
   void sendsACodeAndTellsWhenItExpires() throws Exception {
     CustomerPasswordlessLogin login = mock(CustomerPasswordlessLogin.class);
-    when(login.requestCode("92999990003")).thenReturn(600);
+    when(login.requestCode(OtpRecipient.phone("92999990003"))).thenReturn(600);
 
     HttpResponse response =
         new RequestCustomerCodeController(login).handle(request(Map.of(), "phone", "92999990003"));
@@ -44,8 +45,20 @@ class RequestCustomerCodeControllerTest {
         .thenThrow(new OtpUnavailableError());
     RequestCustomerCodeController sut = new RequestCustomerCodeController(login);
 
-    assertEquals(429, sut.handle(request(Map.of(), "phone", "1")).statusCode());
-    assertEquals(503, sut.handle(request(Map.of(), "phone", "1")).statusCode());
+    assertEquals(429, sut.handle(request(Map.of(), "phone", "92999990003")).statusCode());
+    assertEquals(503, sut.handle(request(Map.of(), "phone", "92999990003")).statusCode());
     assertEquals(400, sut.handle(request(Map.of(), "phone", 92999990003L)).statusCode());
+    assertEquals(400, sut.handle(request(Map.of(), "phone", "1")).statusCode());
+  }
+
+  @Test
+  void anEmailGoesToTheEmailChannel() throws Exception {
+    CustomerPasswordlessLogin login = mock(CustomerPasswordlessLogin.class);
+    when(login.requestCode(OtpRecipient.email("ana@email.com"))).thenReturn(600);
+    RequestCustomerCodeController sut = new RequestCustomerCodeController(login);
+
+    assertEquals(200, sut.handle(request(Map.of(), "email", " Ana@Email.com ")).statusCode());
+    assertEquals(400, sut.handle(request(Map.of(), "email", "not-an-email")).statusCode());
+    assertEquals(400, sut.handle(request(Map.of())).statusCode());
   }
 }

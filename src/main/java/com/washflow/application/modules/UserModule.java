@@ -181,10 +181,16 @@ public final class UserModule {
         Clock.systemUTC());
   }
 
+  /**
+   * The app's single e-mail channel (EMAIL_CHANNEL, see AppConfig.Smtp), shared by the customer
+   * access code and the password-reset code. The log stand-in never runs in production.
+   */
   static EmailSender emailSender(AppConfig appConfig) {
-    if (appConfig.smtp().configured()) {
-      return new SmtpEmailSender(appConfig.smtp());
-    }
-    return appConfig.isProduction() ? new UnavailableEmailSender() : new LoggingEmailSender();
+    return switch (appConfig.emailChannel()) {
+      case "smtp" -> new SmtpEmailSender(appConfig.smtp());
+      case "log" ->
+          appConfig.isProduction() ? new UnavailableEmailSender() : new LoggingEmailSender();
+      default -> new UnavailableEmailSender();
+    };
   }
 }

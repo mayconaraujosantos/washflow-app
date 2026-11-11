@@ -17,6 +17,7 @@ import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.identity.GoogleTokeninfoVerifier;
+import com.washflow.infra.messaging.EmailOtpSender;
 import com.washflow.infra.messaging.LoggingOtpSender;
 import com.washflow.infra.messaging.UnavailableOtpSender;
 import com.washflow.infra.security.BCryptPasswordHasher;
@@ -54,9 +55,9 @@ public final class CustomerModule {
     AccessJdbiRepository access = new AccessJdbiRepository(jdbi);
     return new DbCustomerPasswordlessLogin(
         access,
-        otpSender(appConfig),
+        whatsappSender(appConfig),
+        emailSender(appConfig),
         new HmacTokenHasher(appConfig.tokenSecret()),
-        users,
         users,
         users,
         access,
@@ -70,11 +71,16 @@ public final class CustomerModule {
    * Cloud API, Z-API...) selected by OTP_CHANNEL. The log channel is refused in production so codes
    * never end up in production logs.
    */
-  private static OtpSender otpSender(AppConfig appConfig) {
+  private static OtpSender whatsappSender(AppConfig appConfig) {
     if ("log".equalsIgnoreCase(appConfig.otpChannel()) && !appConfig.isProduction()) {
       return new LoggingOtpSender();
     }
     return new UnavailableOtpSender();
+  }
+
+  /** E-mail codes go through the app's single e-mail channel (EMAIL_CHANNEL + SMTP_*). */
+  private static OtpSender emailSender(AppConfig appConfig) {
+    return new EmailOtpSender(UserModule.emailSender(appConfig));
   }
 
   /**

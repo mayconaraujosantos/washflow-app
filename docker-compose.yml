@@ -16,6 +16,15 @@ services:
       timeout: 5s
       retries: 10
 
+  # Caixa de e-mail falsa para desenvolvimento: recebe tudo o que o app envia por SMTP
+  # (porta 1025) e mostra em http://localhost:8025. Nada sai para a internet.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+
   washflow:
     build:
       context: .
@@ -31,6 +40,11 @@ services:
       DB_NAME: washflow
       DB_USER: washflow
       DB_PASSWORD: washflow
+      EMAIL_CHANNEL: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_SECURITY: none
+      SMTP_FROM: nao-responda@washflow.local
     depends_on:
       postgres:
         condition: service_healthy

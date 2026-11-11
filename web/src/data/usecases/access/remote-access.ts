@@ -2,6 +2,7 @@ import type { HttpClient } from '@/data/protocols/http/http-client'
 import type {
   AuthOptionsModel,
   PasswordResetAccount,
+  CodeRecipient,
   TicketModel,
   WasherBadgeModel,
 } from '@/domain/models/access-model'
@@ -47,22 +48,22 @@ export class RemoteAccess implements Access {
     return this.request('/api/auth/options', 'get')
   }
 
-  async requestCode(phone: string): Promise<number> {
+  async requestCode(to: CodeRecipient): Promise<number> {
     const body = await this.request<{ expiresInSeconds: number }>(
       '/api/auth/customers/otp',
       'post',
-      { phone },
+      to,
     )
     return body.expiresInSeconds
   }
 
   verifyCode(
-    phone: string,
+    to: CodeRecipient,
     code: string,
     name?: string,
   ): Promise<AuthenticatedSessionModel> {
     return this.request('/api/auth/customers/otp/verify', 'post', {
-      phone,
+      ...to,
       code,
       name,
     })
