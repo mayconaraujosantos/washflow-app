@@ -4,6 +4,7 @@ import {
   formatPhone,
   greeting,
   maskPhoneInput,
+  isValidPlate,
   normalizePlate,
   parseMoney,
   phoneDigitsFromInput,
@@ -25,6 +26,13 @@ describe('format helpers', () => {
       expect(parseMoney(typed)).toBeNull()
     },
   )
+
+  it('accepts old and Mercosul plates only', () => {
+    expect(isValidPlate('ABC1234')).toBe(true)
+    expect(isValidPlate('ABC1D23')).toBe(true)
+    expect(isValidPlate('ABC12')).toBe(false)
+    expect(isValidPlate('1BC1D23')).toBe(false)
+  })
 
   it('normalizes plates to upper-case alphanumerics', () => {
     expect(normalizePlate('abc-1d23x')).toBe('ABC1D23')
