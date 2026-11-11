@@ -104,7 +104,8 @@ class DbStartServiceOrderTest {
             waitingServiceOrder.createdAt(),
             waitingServiceOrder.updatedAt());
     when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
-        .thenReturn(Optional.of(waitingServiceOrder), Optional.of(takenByOther));
+        .thenReturn(Optional.of(waitingServiceOrder))
+        .thenReturn(Optional.of(takenByOther));
     when(updateServiceOrderStatusRepository.updateStatus(
             params.serviceOrderId(),
             ServiceOrderStatus.WAITING_IN_YARD,
