@@ -121,6 +121,7 @@ export function TextField({
   autoComplete,
   inputMode,
   maxLength = 100,
+  required = true,
 }: Readonly<{
   label: string
   value: string
@@ -128,6 +129,7 @@ export function TextField({
   autoComplete?: string
   inputMode?: 'text' | 'email'
   maxLength?: number
+  required?: boolean
 }>) {
   const id = useId()
   return (
@@ -145,7 +147,7 @@ export function TextField({
         maxLength={maxLength}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        required
+        required={required}
       />
     </div>
   )

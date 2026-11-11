@@ -1,23 +1,30 @@
 package com.washflow.application.routes;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.patch;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import com.washflow.application.AppConfig;
 import com.washflow.application.adapters.JavalinRouteAdapter;
 import com.washflow.application.modules.CustomerModule;
+import com.washflow.application.modules.UserModule;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.domain.entities.serviceorder.TicketView;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
+import com.washflow.domain.usecases.customer.CustomerRecoveryEmail;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
+import com.washflow.domain.usecases.user.ResetPasswordByEmail;
 import com.washflow.domain.usecases.user.WasherBadge;
 import com.washflow.presentation.controllers.customer.CustomerLoginOptionsController;
+import com.washflow.presentation.controllers.customer.CustomerRecoveryEmailController;
 import com.washflow.presentation.controllers.customer.GoogleCustomerLoginController;
 import com.washflow.presentation.controllers.customer.IssueServiceOrderTicketController;
 import com.washflow.presentation.controllers.customer.RequestCustomerCodeController;
 import com.washflow.presentation.controllers.customer.VerifyCustomerCodeController;
 import com.washflow.presentation.controllers.customer.ViewServiceOrderTicketController;
 import com.washflow.presentation.controllers.user.IssueWasherBadgeController;
+import com.washflow.presentation.controllers.user.PasswordResetController;
+import com.washflow.presentation.controllers.user.PasswordResetController.Who;
 import com.washflow.presentation.controllers.user.WasherBadgeLoginController;
 import com.washflow.presentation.controllers.user.WasherPinLoginController;
 import io.javalin.openapi.HttpMethod;
@@ -40,13 +47,16 @@ public final class AccessRoutes {
     WasherBadge badge = CustomerModule.washerBadge(jdbi, appConfig);
     ServiceOrderTicket ticket = CustomerModule.ticket(jdbi);
     CustomerPasswordlessLogin customer = CustomerModule.customerLogin(jdbi, appConfig);
+    ResetPasswordByEmail passwordReset = UserModule.resetPasswordByEmail(jdbi, appConfig);
     AuthTokenService tokens = new AuthTokenService(appConfig.tokenSecret());
     registerIssueBadge(badge);
     registerPinLogin(badge, tokens);
     registerBadgeLogin(badge, tokens);
     registerIssueTicket(ticket);
     registerViewTicket(ticket);
-    registerOptions(customer);
+    registerOptions(customer, passwordReset);
+    registerPasswordReset(passwordReset);
+    registerRecoveryEmail(CustomerModule.recoveryEmail(jdbi));
     registerRequestCode(customer);
     registerVerifyCode(customer, tokens);
     registerGoogle(customer, tokens);
@@ -137,21 +147,24 @@ public final class AccessRoutes {
             status = "200",
             content = @OpenApiContent(from = CustomerPasswordlessLogin.Options.class))
       })
-  private static void registerOptions(CustomerPasswordlessLogin customer) {
+  private static void registerOptions(
+      CustomerPasswordlessLogin customer, ResetPasswordByEmail passwordReset) {
     get(
         "/api/auth/options",
-        JavalinRouteAdapter.adapt(new CustomerLoginOptionsController(customer)));
+        JavalinRouteAdapter.adapt(new CustomerLoginOptionsController(customer, passwordReset)));
   }
 
   @OpenApi(
       path = "/api/auth/customers/otp",
       methods = HttpMethod.POST,
-      summary = "Send a one-time code (and magic link) to the customer's WhatsApp",
+      summary = "Send a one-time code (and magic link) to the customer's e-mail or WhatsApp",
       tags = {"Access"},
       responses = {
         @OpenApiResponse(status = "200", description = "{expiresInSeconds}"),
         @OpenApiResponse(status = "429", description = "Asked again too soon"),
-        @OpenApiResponse(status = "503", description = "No WhatsApp provider configured")
+        @OpenApiResponse(
+            status = "503",
+            description = "Channel not configured or e-mail delivery failed")
       })
   private static void registerRequestCode(CustomerPasswordlessLogin customer) {
     post(
@@ -162,11 +175,11 @@ public final class AccessRoutes {
   @OpenApi(
       path = "/api/auth/customers/otp/verify",
       methods = HttpMethod.POST,
-      summary = "Sign in (or sign up, with name) with the WhatsApp code",
+      summary = "Sign in (or sign up, with name) with the e-mail or WhatsApp code",
       tags = {"Access"},
       responses = {
         @OpenApiResponse(status = "200", description = "Session"),
-        @OpenApiResponse(status = "400", description = "New phone: name required"),
+        @OpenApiResponse(status = "400", description = "New account: name required"),
         @OpenApiResponse(status = "401", description = "Wrong or expired code")
       })
   private static void registerVerifyCode(
@@ -191,5 +204,52 @@ public final class AccessRoutes {
         "/api/auth/customers/google",
         JavalinRouteAdapter.adaptAuthenticated(
             new GoogleCustomerLoginController(customer), tokens));
+  }
+
+  @OpenApi(
+      path = "/api/auth/customers/password-reset",
+      methods = HttpMethod.POST,
+      summary =
+          "Forgot password: e-mail a 6-digit code to the customer's recovery e-mail (by phone,"
+              + " inside the lava-jato); same answer whether the account exists",
+      tags = {"Access"},
+      responses = {
+        @OpenApiResponse(status = "202", description = "{expiresInSeconds}"),
+        @OpenApiResponse(status = "400", description = "Invalid phone or no lava-jato"),
+        @OpenApiResponse(status = "503", description = "No e-mail channel or mail server down")
+      })
+  private static void registerPasswordReset(ResetPasswordByEmail reset) {
+    post(
+        "/api/auth/customers/password-reset",
+        JavalinRouteAdapter.adapt(PasswordResetController.request(reset, Who.CUSTOMER)));
+    post(
+        "/api/auth/customers/password-reset/confirm",
+        JavalinRouteAdapter.adapt(PasswordResetController.confirm(reset, Who.CUSTOMER)));
+    post(
+        "/api/auth/managers/password-reset",
+        JavalinRouteAdapter.adapt(PasswordResetController.request(reset, Who.MANAGER)));
+    post(
+        "/api/auth/managers/password-reset/confirm",
+        JavalinRouteAdapter.adapt(PasswordResetController.confirm(reset, Who.MANAGER)));
+  }
+
+  @OpenApi(
+      path = "/api/customers/{id}/recovery-email",
+      methods = {HttpMethod.GET, HttpMethod.PATCH},
+      summary = "The customer's own e-mail for password-reset codes (\"Meus dados\")",
+      tags = {"Access"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(status = "200", description = "{email}"),
+        @OpenApiResponse(status = "400", description = "Invalid e-mail"),
+        @OpenApiResponse(status = "403", description = "Not your account")
+      })
+  private static void registerRecoveryEmail(CustomerRecoveryEmail recoveryEmail) {
+    get(
+        "/api/customers/{id}/recovery-email",
+        JavalinRouteAdapter.adapt(CustomerRecoveryEmailController.load(recoveryEmail)));
+    patch(
+        "/api/customers/{id}/recovery-email",
+        JavalinRouteAdapter.adapt(CustomerRecoveryEmailController.update(recoveryEmail)));
   }
 }

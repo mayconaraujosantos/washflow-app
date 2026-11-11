@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { mailbox } from './support/mailbox'
 import { cardWith, expectMessage, Phones } from './support/phones'
 
 /**
@@ -17,6 +18,7 @@ import { cardWith, expectMessage, Phones } from './support/phones'
  */
 
 const PASSWORD = 'senha-forte-123'
+const ANA_SOL_EMAIL = 'ana.sol@mail.test'
 
 type Shop = {
   name: string
@@ -199,7 +201,9 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     await customerPhone.getByRole('link', { name: 'Veículos' }).click()
     await customerPhone.getByLabel('Placa').fill(customer.plate)
     await customerPhone.getByLabel('Modelo (opcional)').fill(customer.model)
-    await customerPhone.getByLabel('Cor (opcional)').fill(customer.color)
+    await customerPhone
+      .getByRole('radio', { name: customer.color, exact: true })
+      .click()
     await customerPhone
       .getByRole('button', { name: 'Adicionar veículo' })
       .click()
@@ -384,6 +388,31 @@ test('4. Lava Sol: cliente sem app acompanha pelo ticket, lavador entra pelo QR'
       }),
     ).toBeVisible()
   })
+  await test.step('Carlos cria a conta e adiciona o carro do balcão com um toque', async () => {
+    await visitor.goto(`/?lavajato=${sol.slug}`)
+    await visitor.getByRole('button', { name: 'Criar conta' }).click()
+    await visitor.getByLabel('Nome', { exact: true }).fill(walkIn.name)
+    await visitor.getByLabel('Telefone').fill(walkIn.phone)
+    await visitor.getByLabel('Senha (mínimo 8 caracteres)').fill(PASSWORD)
+    await visitor.getByRole('button', { name: 'Criar uma conta' }).click()
+    await visitor
+      .getByRole('button', { name: 'Perfeito, entendi, vou começar' })
+      .click()
+    await visitor.getByRole('link', { name: 'Veículos' }).click()
+
+    const counterCars = visitor.getByRole('region', {
+      name: 'Carros do balcão',
+    })
+    await expect(counterCars).toContainText(walkIn.plate)
+    await expect(counterCars).toContainText(`${walkIn.model} · ${walkIn.color}`)
+    await counterCars.getByRole('button', { name: 'É meu' }).click()
+    await expect(counterCars).toHaveCount(0)
+    await expect(cardWith(visitor, walkIn.plate)).toContainText(walkIn.model)
+
+    // O atendimento feito no balcão aparece no histórico da conta nova.
+    await visitor.getByRole('link', { name: 'Agendamentos' }).click()
+    await expect(cardWith(visitor, walkIn.plate)).toBeVisible()
+  })
 })
 
 test('5. cada lava-jato é isolado do outro', async () => {
@@ -427,11 +456,19 @@ test('5. cada lava-jato é isolado do outro', async () => {
     await other.getByLabel('Nome', { exact: true }).fill(customer.name)
     await other.getByLabel('Telefone').fill(customer.phone)
     await other.getByLabel('Senha (mínimo 8 caracteres)').fill(PASSWORD)
+    await other
+      .getByLabel('E-mail (opcional, para recuperar a senha)')
+      .fill(ANA_SOL_EMAIL)
     await other.getByRole('button', { name: 'Criar uma conta' }).click()
     await other
       .getByRole('button', { name: 'Perfeito, entendi, vou começar' })
       .click()
     await expect(other.getByText('Lava-jato:')).toContainText(sol.name)
+    await other.getByRole('link', { name: 'Meus dados' }).click()
+    await expect(other.getByLabel('E-mail para recuperar a senha')).toHaveValue(
+      ANA_SOL_EMAIL,
+    ) // salvo já no cadastro
+    await other.getByRole('link', { name: 'Voltar' }).click()
     await other.getByRole('link', { name: 'Veículos' }).click()
     await expect(other.getByText(customer.plate)).toHaveCount(0) // carros são por lava-jato
   })
@@ -554,5 +591,80 @@ test('6. quem esqueceu a senha volta a entrar', async () => {
     await expect(
       manager.getByText(`Bem-vindo, ${sol.manager.name}!`),
     ).toBeVisible()
+  })
+})
+
+test('7. sem balcão: o código chega por e-mail e a pessoa troca a senha', async () => {
+  const ANA_EMAIL = 'ana@mail.test'
+  const EMAIL_PASSWORD = 'senha-por-email-789'
+  const ana = await phones.of('cliente-ana-email')
+
+  await test.step('Ana cadastra o e-mail em "Meus dados"', async () => {
+    await ana.goto(`/?lavajato=${raio.slug}`)
+    await ana.getByLabel('Telefone').fill(customer.phone)
+    await ana.getByLabel('Senha', { exact: true }).fill('senha-nova-456')
+    await ana.getByRole('button', { name: 'Entrar', exact: true }).click()
+    await ana.getByRole('link', { name: 'Meus dados' }).click()
+    await ana.getByLabel('E-mail para recuperar a senha').fill(ANA_EMAIL)
+    await ana.getByRole('button', { name: 'Salvar e-mail' }).click()
+    await expectMessage(ana, `enviamos um código para ${ANA_EMAIL}`)
+    await ana.getByRole('link', { name: 'Voltar' }).click()
+    await ana.getByRole('button', { name: 'Sair' }).click()
+  })
+
+  await test.step('esqueceu a senha: pede o código pelo telefone e troca', async () => {
+    const seen = await mailbox.count(ANA_EMAIL)
+    await ana
+      .getByRole('button', { name: 'Entrar', exact: true })
+      .first()
+      .waitFor()
+    await ana.getByRole('button', { name: 'Esqueci a senha' }).click()
+    await ana.getByLabel('Telefone').fill(customer.phone)
+    await ana.getByRole('button', { name: 'Enviar código por e-mail' }).click()
+    const code = await mailbox.nextCode(ANA_EMAIL, seen)
+    await ana.getByLabel('Código do e-mail').fill(code)
+    await ana
+      .getByLabel('Nova senha (mínimo 8 caracteres)')
+      .fill(EMAIL_PASSWORD)
+    await ana.getByRole('button', { name: 'Trocar senha' }).click()
+    await expect(ana).toHaveURL(/\/cliente$/) // já entra com a senha nova
+    await expect(ana.getByText('Lava-jato:')).toContainText(raio.name)
+  })
+
+  await test.step('telefone sem conta recebe a mesma resposta e nenhum e-mail', async () => {
+    const stranger = await phones.of('telefone-sem-conta')
+    const before = await mailbox.count(ANA_EMAIL)
+    await stranger.goto(`/login/cliente?lavajato=${raio.slug}`)
+    await stranger.goto(`/?lavajato=${raio.slug}`)
+    await stranger
+      .getByRole('button', { name: 'Entrar', exact: true })
+      .first()
+      .waitFor()
+    await stranger.getByRole('button', { name: 'Esqueci a senha' }).click()
+    await stranger.getByLabel('Telefone').fill('92900001111')
+    await stranger
+      .getByRole('button', { name: 'Enviar código por e-mail' })
+      .click()
+    await expect(stranger.getByLabel('Código do e-mail')).toBeVisible()
+    expect(await mailbox.count(ANA_EMAIL)).toBe(before)
+  })
+
+  await test.step('gerente do Lava Sol troca a senha pelo e-mail de acesso', async () => {
+    const manager = await phones.of('gerente-lava-sol-email')
+    const seen = await mailbox.count(sol.manager.email)
+    await manager.goto('/login/gerente')
+    await manager.getByRole('button', { name: 'Esqueci a senha' }).click()
+    await manager.getByLabel('E-mail de acesso').fill(sol.manager.email)
+    await manager
+      .getByRole('button', { name: 'Enviar código por e-mail' })
+      .click()
+    const code = await mailbox.nextCode(sol.manager.email, seen)
+    await manager.getByLabel('Código do e-mail').fill(code)
+    await manager
+      .getByLabel('Nova senha (mínimo 8 caracteres)')
+      .fill(EMAIL_PASSWORD)
+    await manager.getByRole('button', { name: 'Trocar senha' }).click()
+    await expect(manager).toHaveURL(/:\d+\/gerente$/)
+    await expect(manager.getByRole('link', { name: 'Pátio' })).toBeVisible()
   })
 })

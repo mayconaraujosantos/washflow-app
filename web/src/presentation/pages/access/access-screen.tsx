@@ -12,6 +12,7 @@ import {
   saveEstablishmentChoice,
   type EstablishmentChoice,
 } from '@/main/session/establishment-choice'
+import { EmailPasswordReset } from '@/presentation/components/email-password-reset'
 import { UiIcon } from '@/presentation/components/ui-icon'
 import { BrandLogo } from '@/presentation/components/ui/app-chrome'
 import {
@@ -23,9 +24,11 @@ import { Notice } from '@/presentation/components/ui/blocks'
 import { usePwaInstall } from '@/presentation/components/ui/use-pwa-install'
 import { errorMessage } from '@/presentation/helpers/format'
 import { EstablishmentPicker } from './establishment-picker'
-import { GoogleButton, WhatsAppLogin } from './passwordless'
+import { CodeLogin, GoogleButton } from './passwordless'
 
-type Mode = 'signup' | 'signin' | 'forgot' | 'whatsapp'
+type Mode = 'signup' | 'signin' | 'forgot' | 'whatsapp' | 'email'
+
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 type Props = Readonly<{
   authenticateCustomer: AuthenticateCustomer
@@ -60,6 +63,7 @@ export function AccessScreen({
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [welcome, setWelcome] = useState(false)
@@ -138,12 +142,22 @@ export function AccessScreen({
     setLoading(true)
     try {
       if (mode === 'signup') {
+        const recoveryEmail = email.trim()
+        if (recoveryEmail && !EMAIL_SHAPE.test(recoveryEmail)) {
+          throw new Error('E-mail inválido')
+        }
         const session = await authenticateCustomer.auth({
           name: name.trim(),
           phone,
           password,
         })
         saveCustomerSession(session)
+        if (recoveryEmail && access) {
+          // The account already exists: a failure here is fixed in "Meus dados".
+          await access
+            .saveRecoveryEmail(session.user.id, recoveryEmail, session.token)
+            .catch(() => undefined)
+        }
         setWelcome(true)
       } else {
         saveCustomerSession(
@@ -172,8 +186,10 @@ export function AccessScreen({
     signin: 'Entrar',
     forgot: 'Esqueci a senha',
     whatsapp: 'Entrar com WhatsApp',
+    email: 'Entrar com e-mail',
   }[mode]
   const whatsappEnabled = Boolean(access && options?.whatsappCode)
+  const emailEnabled = Boolean(access && options?.emailCode)
   const googleClientId = access ? options?.googleClientId : null
   const staff = staffLinks && (
     <p className="auth-staff">
@@ -219,11 +235,27 @@ export function AccessScreen({
           </p>
         )}
 
-        {mode === 'forgot' ? (
+        {mode === 'forgot' && access && options?.emailCode ? (
+          <EmailPasswordReset
+            access={access}
+            kind="customer"
+            initialAccount={phone}
+            onDone={async (resetPhone, newPassword) => {
+              saveCustomerSession(
+                await authenticateCustomer.auth({
+                  phone: resetPhone,
+                  password: newPassword,
+                }),
+              )
+              navigate('/cliente')
+            }}
+            onCancel={() => switchMode('signin')}
+          />
+        ) : mode === 'forgot' ? (
           <>
             <p className="subtitle">
-              {whatsappEnabled
-                ? 'Entre com um código enviado ao seu WhatsApp, sem precisar da senha.'
+              {whatsappEnabled || emailEnabled
+                ? `Entre com um código enviado ao seu ${whatsappEnabled ? 'WhatsApp' : 'e-mail'}${whatsappEnabled && emailEnabled ? ' ou e-mail' : ''}, sem precisar da senha.`
                 : 'Peça uma nova senha no balcão: o gerente do lava-jato cria na hora e você entra com ela.'}
             </p>
             {whatsappEnabled && (
@@ -235,15 +267,26 @@ export function AccessScreen({
                 Receber código no WhatsApp
               </button>
             )}
+            {emailEnabled && (
+              <button
+                type="button"
+                className={whatsappEnabled ? 'btn btn-outline' : 'btn btn-dark'}
+                onClick={() => switchMode('email')}
+              >
+                Receber código por e-mail
+              </button>
+            )}
             <div className="auth-links">
               <button type="button" onClick={() => switchMode('signin')}>
                 Voltar para entrar
               </button>
             </div>
           </>
-        ) : mode === 'whatsapp' && access ? (
-          <WhatsAppLogin
+        ) : (mode === 'whatsapp' || mode === 'email') && access ? (
+          <CodeLogin
+            key={mode}
             access={access}
+            channel={mode}
             onSession={onPasswordless}
             onCancel={() => switchMode('signin')}
           />
@@ -268,6 +311,17 @@ export function AccessScreen({
                 mode === 'signup' ? 'new-password' : 'current-password'
               }
             />
+            {mode === 'signup' && (
+              <TextField
+                label="E-mail (opcional, para recuperar a senha)"
+                value={email}
+                onChange={setEmail}
+                autoComplete="email"
+                inputMode="email"
+                maxLength={254}
+                required={false}
+              />
+            )}
             {mode === 'signup' && (
               <p className="auth-note">
                 Ao continuar, sua conta de cliente é criada com este telefone.
@@ -295,7 +349,7 @@ export function AccessScreen({
                 </button>
               )}
             </div>
-            {(whatsappEnabled || googleClientId) && access && (
+            {(whatsappEnabled || emailEnabled || googleClientId) && access && (
               <>
                 <p className="auth-divider">ou</p>
                 {whatsappEnabled && (
@@ -306,6 +360,16 @@ export function AccessScreen({
                   >
                     <UiIcon name="phone" size={18} />
                     Entrar com WhatsApp (sem senha)
+                  </button>
+                )}
+                {emailEnabled && (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => switchMode('email')}
+                  >
+                    <UiIcon name="mail" size={18} />
+                    Entrar com e-mail (sem senha)
                   </button>
                 )}
                 {googleClientId && (

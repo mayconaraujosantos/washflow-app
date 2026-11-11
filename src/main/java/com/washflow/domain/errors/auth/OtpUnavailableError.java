@@ -3,6 +3,10 @@ package com.washflow.domain.errors.auth;
 public class OtpUnavailableError extends Exception {
 
   public OtpUnavailableError() {
-    super("Envio de código por WhatsApp não está configurado");
+    this("Envio de código por WhatsApp não está configurado");
+  }
+
+  public OtpUnavailableError(String message) {
+    super(message);
   }
 }

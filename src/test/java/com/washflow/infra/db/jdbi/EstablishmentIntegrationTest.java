@@ -8,12 +8,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.washflow.application.AppConfig;
+import com.washflow.data.protocols.messaging.EmailSender;
 import com.washflow.data.tenancy.TenantContext;
+import com.washflow.data.usecases.customer.DbCustomerRecoveryEmail;
 import com.washflow.data.usecases.establishment.DbManageEstablishment;
 import com.washflow.data.usecases.establishment.DbManagePlatform;
 import com.washflow.data.usecases.establishment.DbSetupEstablishment;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.data.usecases.user.DbAuthenticateUser;
+import com.washflow.data.usecases.user.DbResetPasswordByEmail;
 import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserEmail;
 import com.washflow.data.usecases.user.DbWasherBadge;
@@ -24,6 +27,7 @@ import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.entities.vehicle.Vehicle;
+import com.washflow.domain.errors.auth.InvalidOtpError;
 import com.washflow.domain.errors.common.TenantRequiredError;
 import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
 import com.washflow.domain.errors.establishment.EstablishmentNotFoundError;
@@ -45,13 +49,17 @@ import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
+import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import com.washflow.infra.security.BCryptPasswordHasher;
 import com.washflow.infra.security.HmacTokenHasher;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
@@ -316,6 +324,94 @@ class EstablishmentIntegrationTest {
     }
     assertThrows(AccountLockedError.class, () -> badges.signInWithPin(phone, wrong));
     assertThrows(AccountLockedError.class, () -> badges.signInWithPin(phone, pins[0]));
+  }
+
+  @Test
+  void forgottenPasswordsAreResetWithACodeSentByEmail() throws Exception {
+    Jdbi jdbi = createJdbi();
+    DbManagePlatform platform = platform(jdbi);
+    EstablishmentSummary centro =
+        platform.create(newEstablishment("Lava Centro", "ana@centro.com"));
+    EstablishmentSummary bairro =
+        platform.create(newEstablishment("Lava Bairro", "bia@bairro.com"));
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    PasswordResetJdbiRepository resets = new PasswordResetJdbiRepository(jdbi);
+    BCryptPasswordHasher hasher = new BCryptPasswordHasher();
+    List<String[]> outbox = new ArrayList<>();
+    EmailSender mail =
+        new EmailSender() {
+          @Override
+          public void send(String to, String subject, String body) {
+            outbox.add(new String[] {to, body.replaceAll("(?s).*?\\b(\\d{6})\\b.*", "$1")});
+          }
+
+          @Override
+          public boolean available() {
+            return true;
+          }
+        };
+    DbResetPasswordByEmail reset =
+        new DbResetPasswordByEmail(
+            users,
+            users,
+            resets,
+            users,
+            hasher,
+            new HmacTokenHasher("test-secret-0123456789abcdef"),
+            mail,
+            Clock.systemUTC());
+    DbCustomerRecoveryEmail recovery = new DbCustomerRecoveryEmail(resets);
+
+    // Same person, one account per lava-jato, both with the same recovery e-mail.
+    String phone = "92991234567";
+    UUID[] accounts = new UUID[2];
+    EstablishmentSummary[] shops = {centro, bairro};
+    for (int i = 0; i < 2; i++) {
+      TenantContext.set(shops[i].id());
+      accounts[i] =
+          users
+              .create(
+                  new User(
+                      UUID.randomUUID(), "Ana", phone, UserProfile.CUSTOMER, Instant.now(), true),
+                  hasher.hash("senha-antiga-1"))
+              .id();
+      assertEquals(Optional.of("ana@mail.test"), recovery.update(accounts[i], " Ana@Mail.test "));
+    }
+
+    TenantContext.set(centro.id());
+    reset.requestForCustomer(phone);
+    assertEquals("ana@mail.test", outbox.getLast()[0]);
+    reset.confirmForCustomer(phone, outbox.getLast()[1], "senha-nova-456");
+    assertTrue(hasher.matches("senha-nova-456", users.loadPasswordHash(accounts[0]).orElseThrow()));
+    assertThrows(
+        InvalidOtpError.class,
+        () -> reset.confirmForCustomer(phone, outbox.getLast()[1], "outra-senha-789"));
+
+    TenantContext.set(bairro.id());
+    assertTrue(
+        hasher.matches("senha-antiga-1", users.loadPasswordHash(accounts[1]).orElseThrow()),
+        "the other lava-jato's account keeps its password");
+
+    // Manager: by login e-mail, no lava-jato needed.
+    TenantContext.clear();
+    reset.requestForManager("ANA@centro.com");
+    assertEquals("ana@centro.com", outbox.getLast()[0]);
+    reset.confirmForManager("ana@centro.com", outbox.getLast()[1], "gerente-nova-456");
+    DbAuthenticateUser auth =
+        new DbAuthenticateUser(
+            users,
+            users,
+            users,
+            users,
+            hasher,
+            AppConfig.load(Map.of("APP_ENV", "production-like"), Map.of()),
+            users);
+    assertEquals(
+        UserProfile.MANAGER,
+        auth.authenticate(
+                new AuthenticateUser.Params(
+                    null, null, "gerente-nova-456", UserProfile.MANAGER, "ana@centro.com"))
+            .profile());
   }
 
   @Test

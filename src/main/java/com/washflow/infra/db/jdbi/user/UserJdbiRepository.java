@@ -281,8 +281,12 @@ public class UserJdbiRepository
     return jdbi.withHandle(
         handle ->
             handle
-                // E-mail login is global (it says which lava-jato); a suspended one can't sign in.
-                .createQuery(SELECT_SQL + " WHERE email = :email" + ACTIVE_ESTABLISHMENT)
+                // Staff e-mail login is global (it says which lava-jato); a suspended one can't
+                // sign in. Customer e-mails are unique only inside their lava-jato.
+                .createQuery(
+                    SELECT_SQL
+                        + " WHERE email = :email AND perfil <> 'CLIENTE'"
+                        + ACTIVE_ESTABLISHMENT)
                 .bind(EMAIL, email)
                 .map(this::mapRow)
                 .findOne());
@@ -290,6 +294,10 @@ public class UserJdbiRepository
 
   @Override
   public User updateEmail(UUID userId, String email) {
+    return UniqueViolations.translate(() -> updateEmailRow(userId, email));
+  }
+
+  private User updateEmailRow(UUID userId, String email) {
     return jdbi.inTransaction(
         handle -> {
           handle

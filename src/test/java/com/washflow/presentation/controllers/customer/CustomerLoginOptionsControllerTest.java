@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
+import com.washflow.domain.usecases.user.ResetPasswordByEmail;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.HashMap;
@@ -25,12 +26,18 @@ class CustomerLoginOptionsControllerTest {
   void returnsTheEnabledSignInOptions() {
     CustomerPasswordlessLogin login = mock(CustomerPasswordlessLogin.class);
     CustomerPasswordlessLogin.Options options =
-        new CustomerPasswordlessLogin.Options(true, "client-id");
+        new CustomerPasswordlessLogin.Options(true, true, "client-id");
     when(login.options()).thenReturn(options);
 
-    HttpResponse response = new CustomerLoginOptionsController(login).handle(request(Map.of()));
+    ResetPasswordByEmail reset = mock(ResetPasswordByEmail.class);
+    when(reset.available()).thenReturn(true);
+
+    HttpResponse response =
+        new CustomerLoginOptionsController(login, reset).handle(request(Map.of()));
 
     assertEquals(200, response.statusCode());
-    assertEquals(options, response.body());
+    assertEquals(
+        Map.of("whatsappCode", true, "googleClientId", "client-id", "emailCode", true),
+        response.body());
   }
 }

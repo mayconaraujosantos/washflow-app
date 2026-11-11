@@ -1,6 +1,7 @@
 package com.washflow.infra.db.jdbi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,12 +11,14 @@ import com.washflow.data.protocols.messaging.OtpSender;
 import com.washflow.data.usecases.customer.DbCustomerPasswordlessLogin;
 import com.washflow.data.usecases.customer.DbServiceOrderTicket;
 import com.washflow.data.usecases.user.DbWasherBadge;
+import com.washflow.domain.entities.customer.OtpRecipient;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.entities.serviceorder.TicketView;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.auth.InvalidOtpError;
 import com.washflow.domain.errors.auth.OtpTooSoonError;
+import com.washflow.domain.errors.auth.OtpUnavailableError;
 import com.washflow.domain.errors.common.TicketNotFoundError;
 import com.washflow.domain.errors.user.AccountLockedError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
@@ -23,6 +26,7 @@ import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.usecases.user.WasherBadge;
 import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.infra.messaging.UnavailableOtpSender;
 import com.washflow.infra.security.BCryptPasswordHasher;
 import com.washflow.infra.security.HmacTokenHasher;
 import java.time.Clock;
@@ -39,6 +43,7 @@ class AccessIntegrationTest {
   private static final UUID DEMO_WASHER = UUID.fromString("33333333-3333-3333-3333-333333333333");
   private static final String DEMO_WASHER_PHONE = "11999991111";
   private static final HmacTokenHasher HASHER = new HmacTokenHasher("test-secret-0123456789abcdef");
+  private static final OtpRecipient PHONE = OtpRecipient.phone("92991234567");
 
   @Test
   void managerIssuesABadgeAndTheWasherSignsInWithPinOrQr() throws Exception {
@@ -128,28 +133,89 @@ class AccessIntegrationTest {
     CapturingSender sender = new CapturingSender();
     DbCustomerPasswordlessLogin login = login(jdbi, sender, new FakeGoogle(null));
 
-    login.requestCode("(92) 99123-4567");
+    login.requestCode(OtpRecipient.phone("(92) 99123-4567"));
     assertTrue(sender.link.endsWith("/entrar/whatsapp?telefone=92991234567&codigo=" + sender.code));
-    assertThrows(OtpTooSoonError.class, () -> login.requestCode("92991234567"));
-    assertThrows(InvalidOtpError.class, () -> login.verifyCode("92991234567", "000000x", null));
+    assertThrows(OtpTooSoonError.class, () -> login.requestCode(PHONE));
+    assertThrows(InvalidOtpError.class, () -> login.verifyCode(PHONE, "000000x", null));
 
     // Right code, new phone, no name yet: the code stays usable for the retry.
-    assertThrows(
-        IllegalArgumentException.class, () -> login.verifyCode("92991234567", sender.code, null));
-    User created = login.verifyCode("92991234567", sender.code, "Joana");
+    assertThrows(IllegalArgumentException.class, () -> login.verifyCode(PHONE, sender.code, null));
+    User created = login.verifyCode(PHONE, sender.code, "Joana");
     assertEquals(UserProfile.CUSTOMER, created.profile());
     assertEquals("92991234567", created.phone());
     assertThrows(
         InvalidOtpError.class,
-        () -> login.verifyCode("92991234567", sender.code, "Joana"),
+        () -> login.verifyCode(PHONE, sender.code, "Joana"),
         "a code works once");
 
     // Staff phones never sign in through the customer code.
     DbCustomerPasswordlessLogin later = login(jdbi, sender, new FakeGoogle(null));
-    later.requestCode(DEMO_WASHER_PHONE);
-    assertThrows(
-        UserProfileMismatchError.class,
-        () -> later.verifyCode(DEMO_WASHER_PHONE, sender.code, null));
+    OtpRecipient washer = OtpRecipient.phone(DEMO_WASHER_PHONE);
+    later.requestCode(washer);
+    assertThrows(UserProfileMismatchError.class, () -> later.verifyCode(washer, sender.code, null));
+  }
+
+  @Test
+  void emailCodeSignsUpNewCustomersAndSignsInExistingOnes() throws Exception {
+    Jdbi jdbi = createJdbi();
+    CapturingSender email = new CapturingSender();
+    DbCustomerPasswordlessLogin login = login(jdbi, new CapturingSender(), email, null);
+    OtpRecipient ana = OtpRecipient.email(" Ana@Email.com ");
+
+    login.requestCode(ana);
+    assertEquals("ana@email.com", email.address);
+    assertTrue(email.link.endsWith("/entrar/email?email=ana%40email.com&codigo=" + email.code));
+    assertThrows(OtpTooSoonError.class, () -> login.requestCode(ana));
+
+    assertThrows(IllegalArgumentException.class, () -> login.verifyCode(ana, email.code, null));
+    User created = login.verifyCode(ana, email.code, "Ana");
+    assertEquals(UserProfile.CUSTOMER, created.profile());
+    assertEquals("ana@email.com", created.email());
+    assertNull(created.phone());
+
+    // A later code signs in to the same account, without asking the name again.
+    DbCustomerPasswordlessLogin later = login(jdbi, new CapturingSender(), email, null);
+    later.requestCode(ana);
+    assertEquals(created.id(), later.verifyCode(ana, email.code, null).id());
+  }
+
+  @Test
+  void anEmailCodeIsNotAPhoneCode() throws Exception {
+    Jdbi jdbi = createJdbi();
+    CapturingSender whatsapp = new CapturingSender();
+    CapturingSender email = new CapturingSender();
+    DbCustomerPasswordlessLogin login = login(jdbi, whatsapp, email, null);
+
+    login.requestCode(OtpRecipient.email("ana@email.com"));
+    login.requestCode(PHONE);
+
+    assertThrows(InvalidOtpError.class, () -> login.verifyCode(PHONE, email.code, "Ana"));
+    assertEquals("92991234567", login.verifyCode(PHONE, whatsapp.code, "Ana").phone());
+  }
+
+  @Test
+  void aFailedEmailCanBeAskedAgainRightAway() throws Exception {
+    Jdbi jdbi = createJdbi();
+    CapturingSender email = new CapturingSender();
+    email.failNext = true;
+    DbCustomerPasswordlessLogin login = login(jdbi, new CapturingSender(), email, null);
+    OtpRecipient ana = OtpRecipient.email("ana@email.com");
+
+    assertThrows(OtpUnavailableError.class, () -> login.requestCode(ana));
+    assertEquals(600, login.requestCode(ana), "no 60 s wait after a delivery failure");
+  }
+
+  @Test
+  void emailIsRefusedWhenItsChannelIsOff() {
+    DbCustomerPasswordlessLogin login =
+        login(createJdbi(), new CapturingSender(), new UnavailableOtpSender("off"), null);
+
+    assertFalse(login.options().emailCode());
+    OtpUnavailableError error =
+        assertThrows(
+            OtpUnavailableError.class,
+            () -> login.requestCode(OtpRecipient.email("ana@email.com")));
+    assertEquals("Envio de código por e-mail não está configurado", error.getMessage());
   }
 
   @Test
@@ -157,13 +223,13 @@ class AccessIntegrationTest {
     Jdbi jdbi = createJdbi();
     CapturingSender sender = new CapturingSender();
     DbCustomerPasswordlessLogin login = login(jdbi, sender, new FakeGoogle(null));
-    login.requestCode("92991234567");
+    login.requestCode(PHONE);
     String wrong = sender.code.equals("000000") ? "111111" : "000000";
 
     for (int i = 0; i < 5; i++) {
-      assertThrows(InvalidOtpError.class, () -> login.verifyCode("92991234567", wrong, "Ana"));
+      assertThrows(InvalidOtpError.class, () -> login.verifyCode(PHONE, wrong, "Ana"));
     }
-    assertThrows(InvalidOtpError.class, () -> login.verifyCode("92991234567", sender.code, "Ana"));
+    assertThrows(InvalidOtpError.class, () -> login.verifyCode(PHONE, sender.code, "Ana"));
   }
 
   @Test
@@ -189,31 +255,44 @@ class AccessIntegrationTest {
 
     assertNull(login.options().googleClientId());
     assertTrue(login.options().whatsappCode());
+    assertTrue(login.options().emailCode());
   }
 
   private static DbCustomerPasswordlessLogin login(
       Jdbi jdbi, OtpSender sender, GoogleTokenVerifier google) {
+    return login(jdbi, sender, new CapturingSender(), google);
+  }
+
+  private static DbCustomerPasswordlessLogin login(
+      Jdbi jdbi, OtpSender whatsapp, OtpSender email, GoogleTokenVerifier google) {
     UserJdbiRepository users = new UserJdbiRepository(jdbi);
     AccessJdbiRepository access = new AccessJdbiRepository(jdbi);
     return new DbCustomerPasswordlessLogin(
         access,
-        sender,
+        whatsapp,
+        email,
         HASHER,
         users,
         users,
-        users,
         access,
-        google,
+        google == null ? new FakeGoogle(null) : google,
         "https://app.test/",
         Clock.fixed(Instant.now(), ZoneOffset.UTC));
   }
 
   private static final class CapturingSender implements OtpSender {
+    String address;
     String code;
     String link;
+    boolean failNext;
 
     @Override
-    public void send(String phone, String code, String magicLink) {
+    public void send(String address, String code, String magicLink) throws OtpUnavailableError {
+      if (failNext) {
+        failNext = false;
+        throw new OtpUnavailableError("SMTP fora do ar");
+      }
+      this.address = address;
       this.code = code;
       this.link = magicLink;
     }

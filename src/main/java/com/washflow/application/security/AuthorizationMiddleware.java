@@ -36,7 +36,9 @@ public final class AuthorizationMiddleware {
           "/api/auth/customers",
           "/api/auth/customers/otp",
           "/api/auth/customers/otp/verify",
-          "/api/auth/customers/google");
+          "/api/auth/customers/google",
+          "/api/auth/customers/password-reset",
+          "/api/auth/customers/password-reset/confirm");
 
   public static final String ESTABLISHMENT_HEADER = "X-Establishment";
   // Login entry points (POST): each one fixes the profile it can sign into.
@@ -52,6 +54,10 @@ public final class AuthorizationMiddleware {
           "/api/auth/customers/otp/verify",
           "/api/auth/customers/google",
           "/api/auth/admins",
+          "/api/auth/customers/password-reset",
+          "/api/auth/customers/password-reset/confirm",
+          "/api/auth/managers/password-reset",
+          "/api/auth/managers/password-reset/confirm",
           "/api/client-errors");
   public static final String ERROR = "error";
 

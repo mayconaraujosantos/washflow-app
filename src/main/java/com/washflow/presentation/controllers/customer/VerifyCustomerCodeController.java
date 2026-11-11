@@ -1,5 +1,6 @@
 package com.washflow.presentation.controllers.customer;
 
+import com.washflow.domain.entities.customer.OtpRecipient;
 import com.washflow.domain.errors.auth.InvalidOtpError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
@@ -11,8 +12,8 @@ import com.washflow.presentation.protocols.HttpResponse;
 import java.util.Map;
 
 /**
- * {@code POST /api/auth/customers/otp/verify}: signs in with the code; a new phone also needs the
- * name.
+ * {@code POST /api/auth/customers/otp/verify}: signs in with the code sent to the {@code email} or
+ * {@code phone}; a new account also needs the name.
  */
 public class VerifyCustomerCodeController implements Controller {
 
@@ -24,21 +25,21 @@ public class VerifyCustomerCodeController implements Controller {
 
   @Override
   public HttpResponse handle(HttpRequest request) {
-    String phone;
+    OtpRecipient recipient;
     String code;
     String name;
     try {
       Map<String, Object> body = request.body() == null ? Map.of() : request.body();
-      phone = BodyValues.text(body, "phone");
+      recipient = OtpRecipients.from(body);
       code = BodyValues.text(body, "code");
       name = BodyValues.text(body, "name");
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
     }
     try {
-      return HttpHelper.ok(login.verifyCode(phone, code, name));
+      return HttpHelper.ok(login.verifyCode(recipient, code, name));
     } catch (IllegalArgumentException e) {
-      // Valid code for a new phone: the app asks for the customer's name.
+      // Valid code for a new account: the app asks for the customer's name.
       return new HttpResponse(400, Map.of("error", e.getMessage(), "needsName", true));
     } catch (InvalidOtpError e) {
       return HttpHelper.unauthorized(e);

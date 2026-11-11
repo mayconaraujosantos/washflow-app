@@ -1,6 +1,8 @@
 import type { HttpClient } from '@/data/protocols/http/http-client'
 import type {
   AuthOptionsModel,
+  PasswordResetAccount,
+  CodeRecipient,
   TicketModel,
   WasherBadgeModel,
 } from '@/domain/models/access-model'
@@ -46,22 +48,22 @@ export class RemoteAccess implements Access {
     return this.request('/api/auth/options', 'get')
   }
 
-  async requestCode(phone: string): Promise<number> {
+  async requestCode(to: CodeRecipient): Promise<number> {
     const body = await this.request<{ expiresInSeconds: number }>(
       '/api/auth/customers/otp',
       'post',
-      { phone },
+      to,
     )
     return body.expiresInSeconds
   }
 
   verifyCode(
-    phone: string,
+    to: CodeRecipient,
     code: string,
     name?: string,
   ): Promise<AuthenticatedSessionModel> {
     return this.request('/api/auth/customers/otp/verify', 'post', {
-      phone,
+      ...to,
       code,
       name,
     })
@@ -71,15 +73,60 @@ export class RemoteAccess implements Access {
     return this.request('/api/auth/customers/google', 'post', { credential })
   }
 
+  async requestPasswordReset(account: PasswordResetAccount): Promise<number> {
+    const body = await this.request<{ expiresInSeconds: number }>(
+      resetPath(account),
+      'post',
+      accountBody(account),
+    )
+    return body.expiresInSeconds
+  }
+
+  async confirmPasswordReset(
+    account: PasswordResetAccount,
+    code: string,
+    password: string,
+  ): Promise<void> {
+    await this.request(`${resetPath(account)}/confirm`, 'post', {
+      ...accountBody(account),
+      code,
+      password,
+    })
+  }
+
+  async loadRecoveryEmail(customerId: string): Promise<string | null> {
+    const body = await this.request<{ email: string | null }>(
+      `/api/customers/${encodeURIComponent(customerId)}/recovery-email`,
+      'get',
+    )
+    return body.email
+  }
+
+  async saveRecoveryEmail(
+    customerId: string,
+    email: string | null,
+    accessToken?: string,
+  ): Promise<string | null> {
+    const body = await this.request<{ email: string | null }>(
+      `/api/customers/${encodeURIComponent(customerId)}/recovery-email`,
+      'patch',
+      { email },
+      accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    )
+    return body.email
+  }
+
   private async request<T>(
     path: string,
-    method: 'get' | 'post',
+    method: 'get' | 'post' | 'patch',
     body?: unknown,
+    headers?: Record<string, string>,
   ): Promise<T> {
     const response = await this.httpClient.request({
       url: `${this.baseUrl}${path}`,
       method,
       body,
+      ...(headers ? { headers } : {}),
     })
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return response.body as T
@@ -89,3 +136,13 @@ export class RemoteAccess implements Access {
     throw new Error(error?.error ?? 'Não foi possível concluir a operação')
   }
 }
+
+const resetPath = (account: PasswordResetAccount) =>
+  account.kind === 'customer'
+    ? '/api/auth/customers/password-reset'
+    : '/api/auth/managers/password-reset'
+
+const accountBody = (account: PasswordResetAccount) =>
+  account.kind === 'customer'
+    ? { phone: account.phone }
+    : { email: account.email }

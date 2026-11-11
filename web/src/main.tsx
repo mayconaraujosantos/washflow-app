@@ -42,6 +42,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/configurar" element={makeSetupPage()} />
           <Route path="/ticket/:token" element={makeTicketPage()} />
           <Route path="/entrar/whatsapp" element={makeMagicLinkPage()} />
+          <Route path="/entrar/email" element={makeMagicLinkPage()} />
           <Route path="/qrcodes/cliente" element={makeCustomerQrCodePage()} />
           <Route path="/login/cliente" element={makeCustomerLoginPage()} />
           <Route path="/cliente/*" element={makeCustomerDashboardPage()} />

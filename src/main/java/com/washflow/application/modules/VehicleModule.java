@@ -1,14 +1,17 @@
 package com.washflow.application.modules;
 
 import com.washflow.data.usecases.vehicle.DbCreateVehicle;
+import com.washflow.data.usecases.vehicle.DbListUnclaimedVehicles;
 import com.washflow.data.usecases.vehicle.DbListVehiclesByCustomer;
 import com.washflow.data.usecases.vehicle.DbSearchVehicles;
 import com.washflow.domain.usecases.vehicle.CreateVehicle;
+import com.washflow.domain.usecases.vehicle.ListUnclaimedVehicles;
 import com.washflow.domain.usecases.vehicle.ListVehiclesByCustomer;
 import com.washflow.domain.usecases.vehicle.SearchVehicles;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import com.washflow.presentation.controllers.vehicle.CreateVehicleController;
+import com.washflow.presentation.controllers.vehicle.ListUnclaimedVehiclesController;
 import com.washflow.presentation.controllers.vehicle.ListVehiclesByCustomerController;
 import com.washflow.presentation.controllers.vehicle.SearchVehiclesController;
 import com.washflow.presentation.protocols.Controller;
@@ -30,7 +33,8 @@ public final class VehicleModule {
    */
   public static CreateVehicle createVehicle(Jdbi jdbi) {
     VehicleJdbiRepository vehicleRepository = new VehicleJdbiRepository(jdbi);
-    return new DbCreateVehicle(new UserJdbiRepository(jdbi), vehicleRepository, vehicleRepository);
+    return new DbCreateVehicle(
+        new UserJdbiRepository(jdbi), vehicleRepository, vehicleRepository, vehicleRepository);
   }
 
   /**
@@ -40,6 +44,11 @@ public final class VehicleModule {
    */
   public static ListVehiclesByCustomer listVehiclesByCustomer(Jdbi jdbi) {
     return new DbListVehiclesByCustomer(
+        new UserJdbiRepository(jdbi), new VehicleJdbiRepository(jdbi));
+  }
+
+  public static ListUnclaimedVehicles listUnclaimedVehicles(Jdbi jdbi) {
+    return new DbListUnclaimedVehicles(
         new UserJdbiRepository(jdbi), new VehicleJdbiRepository(jdbi));
   }
 
@@ -58,6 +67,10 @@ public final class VehicleModule {
 
   public static Controller listVehiclesByCustomerController(Jdbi jdbi) {
     return new ListVehiclesByCustomerController(listVehiclesByCustomer(jdbi));
+  }
+
+  public static Controller listUnclaimedVehiclesController(Jdbi jdbi) {
+    return new ListUnclaimedVehiclesController(listUnclaimedVehicles(jdbi));
   }
 
   public static Controller searchVehiclesController(Jdbi jdbi) {

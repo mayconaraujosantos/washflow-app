@@ -56,10 +56,27 @@ class RoutePermissionMatcherTest {
   }
 
   @Test
+  void onlyTheCustomerReadsAndChangesTheRecoveryEmail() {
+    assertEquals(
+        UserProfile.CUSTOMER,
+        RoutePermissionMatcher.requiredProfile("GET", "/api/customers/abc-123/recovery-email"));
+    assertEquals(
+        UserProfile.CUSTOMER,
+        RoutePermissionMatcher.requiredProfile("PATCH", "/api/customers/abc-123/recovery-email"));
+  }
+
+  @Test
   void returnsCustomerForListCustomerVehicles() {
     assertEquals(
         UserProfile.CUSTOMER,
         RoutePermissionMatcher.requiredProfile("GET", "/api/customers/abc-123/vehicles"));
+  }
+
+  @Test
+  void returnsCustomerForListUnclaimedVehicles() {
+    assertEquals(
+        UserProfile.CUSTOMER,
+        RoutePermissionMatcher.requiredProfile("GET", "/api/customers/abc-123/unclaimed-vehicles"));
   }
 
   @Test
