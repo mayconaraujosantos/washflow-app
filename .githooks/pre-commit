@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Git flow: main and develop only change through `git flow ... finish` merges.
+# Enable once per clone with `make hooks`. See .claude/skills/git-flow/SKILL.md.
+set -euo pipefail
+
+branch="$(git symbolic-ref --short -q HEAD || true)"
+
+# Concluding a merge (e.g. a conflict during `git flow ... finish`) is allowed.
+if [ -f "$(git rev-parse --git-path MERGE_HEAD)" ]; then
+  exit 0
+fi
+
+case "$branch" in
+  main | develop)
+    cat >&2 <<EOF
+Commit direto em '$branch' não é permitido (git flow).
+Crie a branch de apoio; as mudanças não commitadas vão junto:
+
+  git flow feature start <assunto>   # ou: bugfix start <assunto>, hotfix start <x.y.z>
+
+EOF
+    exit 1
+    ;;
+  *)
+    exit 0
+    ;;
+esac

@@ -210,12 +210,27 @@ db-down:
 db-logs:
 	docker-compose logs -f postgres
 
-## Versioned git hooks (.githooks): pre-push runs the fast checks (formatting,
-## compilation, lint, types) so a broken build is caught before it reaches
-## develop/main. Once per clone.
+## Versioned git hooks (.githooks) and git-flow (AVH) settings, once per clone:
+## pre-commit refuses commits on main/develop (only `git flow ... finish` merges
+## land there), pre-push runs the fast checks (formatting, compilation, lint,
+## types) so a broken build is caught before it reaches develop/main.
 hooks:
 	git config core.hooksPath .githooks
-	@echo "Git hooks enabled (.githooks). Skip once with: git push --no-verify"
+	git config gitflow.branch.master main
+	git config gitflow.branch.develop develop
+	git config gitflow.prefix.feature feature/
+	git config gitflow.prefix.bugfix fix/
+	git config gitflow.prefix.release release/
+	git config gitflow.prefix.hotfix hotfix/
+	git config gitflow.prefix.support support/
+	git config gitflow.prefix.versiontag v
+	git config gitflow.feature.finish.no-ff true
+	git config gitflow.bugfix.finish.no-ff true
+	git config gitflow.feature.finish.fetch true
+	git config gitflow.bugfix.finish.fetch true
+	git config gitflow.release.finish.fetch true
+	git config gitflow.hotfix.finish.fetch true
+	@echo "Git hooks and git flow configured. Check with: git flow config"
 
 ## End-to-end journey (web/e2e, Playwright): two lava-jatos set up from
 ## scratch, managers, washers (PIN and badge QR) and customers (app and
