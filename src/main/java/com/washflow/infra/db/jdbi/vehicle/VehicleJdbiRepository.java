@@ -1,5 +1,6 @@
 package com.washflow.infra.db.jdbi.vehicle;
 
+import com.washflow.data.protocols.db.vehicle.ClaimVehicleRepository;
 import com.washflow.data.protocols.db.vehicle.CreateVehicleRepository;
 import com.washflow.data.protocols.db.vehicle.LoadVehicleByIdRepository;
 import com.washflow.data.protocols.db.vehicle.LoadVehicleByPlateRepository;
@@ -20,7 +21,8 @@ public class VehicleJdbiRepository
         LoadVehicleByPlateRepository,
         LoadVehiclesByCustomerIdRepository,
         CreateVehicleRepository,
-        SearchVehiclesRepository {
+        SearchVehiclesRepository,
+        ClaimVehicleRepository {
 
   private static final String SELECT_SQL =
       "SELECT id, cliente_id, placa, modelo, cor, contato_nome, contato_telefone FROM veiculos";
@@ -53,6 +55,14 @@ public class VehicleJdbiRepository
              AND COALESCE(c.telefone, v.contato_telefone, '') LIKE :digitsPattern))
       ORDER BY v.placa
       LIMIT :limit
+      """;
+
+  private static final String CLAIM_SQL =
+      """
+      UPDATE veiculos
+      SET cliente_id = :customerId, modelo = COALESCE(:model, modelo), cor = COALESCE(:color, cor),
+          contato_nome = NULL, contato_telefone = NULL
+      WHERE id = :id AND estabelecimento_id = :tenant AND cliente_id IS NULL
       """;
 
   private final Jdbi jdbi;
@@ -111,6 +121,34 @@ public class VehicleJdbiRepository
                 .execute());
 
     return vehicle;
+  }
+
+  @Override
+  public List<Vehicle> loadUnclaimedByContactPhone(String phone) {
+    return jdbi.withHandle(
+        handle ->
+            handle
+                .createQuery(
+                    SELECT_SQL
+                        + " WHERE cliente_id IS NULL AND contato_telefone = :phone"
+                        + " AND estabelecimento_id = :tenant ORDER BY placa")
+                .bind("phone", phone)
+                .map(this::mapRow)
+                .list());
+  }
+
+  @Override
+  public boolean claim(UUID vehicleId, UUID customerId, String model, String color) {
+    return jdbi.withHandle(
+            handle ->
+                handle
+                    .createUpdate(CLAIM_SQL)
+                    .bind("id", vehicleId)
+                    .bind("customerId", customerId)
+                    .bind("model", model)
+                    .bind("color", color)
+                    .execute())
+        == 1;
   }
 
   private Vehicle mapRow(ResultSet rs, StatementContext ctx) throws SQLException {
