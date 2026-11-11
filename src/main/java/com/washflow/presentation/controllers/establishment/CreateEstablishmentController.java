@@ -1,7 +1,6 @@
 package com.washflow.presentation.controllers.establishment;
 
 import com.washflow.domain.errors.establishment.EstablishmentSlugTakenError;
-import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -38,7 +37,7 @@ public class CreateEstablishmentController implements Controller {
                   BodyValues.text(body, "managerPassword"))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (EstablishmentSlugTakenError | EmailAlreadyRegisteredError e) {
+    } catch (EstablishmentSlugTakenError e) {
       return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

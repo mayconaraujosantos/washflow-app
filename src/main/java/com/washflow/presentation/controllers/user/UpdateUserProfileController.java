@@ -1,8 +1,6 @@
 package com.washflow.presentation.controllers.user;
 
 import com.washflow.domain.entities.user.UserProfile;
-import com.washflow.domain.errors.user.UserHasActiveWashesError;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.user.UpdateUserProfile;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -45,10 +43,6 @@ public class UpdateUserProfileController implements Controller {
       return HttpHelper.ok(user);
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (UserNotFoundError e) {
-      return HttpHelper.notFound(e);
-    } catch (UserHasActiveWashesError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

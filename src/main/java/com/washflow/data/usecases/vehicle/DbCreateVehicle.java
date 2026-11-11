@@ -38,7 +38,7 @@ public class DbCreateVehicle implements CreateVehicle {
 
   @Override
   public Vehicle create(Params params)
-      throws UserNotFoundError, InvalidPlateError, VehiclePlateAlreadyRegisteredError {
+      throws InvalidPlateError, VehiclePlateAlreadyRegisteredError {
     User customer =
         loadUserByIdRepository
             .loadById(params.customerId())

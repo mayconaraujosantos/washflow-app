@@ -5,20 +5,17 @@ import com.washflow.domain.entities.establishment.EstablishmentSummary;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.establishment.EstablishmentNotFoundError;
 import com.washflow.domain.errors.establishment.EstablishmentSlugTakenError;
-import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
-import com.washflow.domain.errors.user.InvalidCredentialsError;
 import java.util.List;
 import java.util.UUID;
 
 /** The platform administrator's work: sign in, create, list and suspend lava-jatos. */
 public interface ManagePlatform {
 
-  User signIn(String email, String password) throws InvalidCredentialsError;
+  User signIn(String email, String password);
 
   List<EstablishmentSummary> list();
 
-  EstablishmentSummary create(NewEstablishment params)
-      throws EstablishmentSlugTakenError, EmailAlreadyRegisteredError;
+  EstablishmentSummary create(NewEstablishment params) throws EstablishmentSlugTakenError;
 
   EstablishmentSummary setActive(UUID establishmentId, boolean active)
       throws EstablishmentNotFoundError;

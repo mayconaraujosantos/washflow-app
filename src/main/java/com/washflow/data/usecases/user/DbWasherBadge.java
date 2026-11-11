@@ -61,7 +61,7 @@ public class DbWasherBadge implements WasherBadge {
   }
 
   @Override
-  public Issued issue(UUID washerId) throws UserNotFoundError {
+  public Issued issue(UUID washerId) {
     User user =
         loadUserByIdRepository
             .loadById(washerId)
@@ -81,8 +81,7 @@ public class DbWasherBadge implements WasherBadge {
    * badge that did not match counts the failure towards its own lockout.
    */
   @Override
-  public User signInWithPin(String phone, String pin)
-      throws InvalidCredentialsError, AccountLockedError {
+  public User signInWithPin(String phone, String pin) throws AccountLockedError {
     if (phone == null || pin == null || !PIN_FORMAT.matcher(pin).matches()) {
       throw new InvalidCredentialsError();
     }
@@ -108,7 +107,7 @@ public class DbWasherBadge implements WasherBadge {
   }
 
   @Override
-  public User signInWithBadge(String badgeToken) throws InvalidCredentialsError {
+  public User signInWithBadge(String badgeToken) {
     if (badgeToken == null || badgeToken.isBlank()) {
       throw new InvalidCredentialsError();
     }

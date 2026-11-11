@@ -37,7 +37,7 @@ public class DbManagePlatform implements ManagePlatform {
   }
 
   @Override
-  public User signIn(String email, String password) throws InvalidCredentialsError {
+  public User signIn(String email, String password) {
     String normalized = ContactRules.normalizeEmail(email);
     if (normalized == null || password == null) {
       throw new InvalidCredentialsError();
@@ -57,8 +57,7 @@ public class DbManagePlatform implements ManagePlatform {
   }
 
   @Override
-  public EstablishmentSummary create(NewEstablishment params)
-      throws EstablishmentSlugTakenError, EmailAlreadyRegisteredError {
+  public EstablishmentSummary create(NewEstablishment params) throws EstablishmentSlugTakenError {
     String name = EstablishmentRules.name(params.name());
     EstablishmentRules.hours(params.openingHour(), params.closingHour());
     EstablishmentRules.capacity(params.maxVehiclesPerHour());

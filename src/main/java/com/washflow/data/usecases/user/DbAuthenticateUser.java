@@ -68,11 +68,7 @@ public class DbAuthenticateUser implements AuthenticateUser {
   }
 
   @Override
-  public User authenticate(Params params)
-      throws UserProfileMismatchError,
-          ManagerSelfRegistrationNotAllowedError,
-          WasherSelfRegistrationNotAllowedError,
-          InvalidCredentialsError {
+  public User authenticate(Params params) {
     if (params.email() != null && !params.email().isBlank()) {
       // E-mail login never self-registers: unknown e-mails are just wrong credentials.
       String email = params.email().trim().toLowerCase(java.util.Locale.ROOT);
@@ -117,8 +113,7 @@ public class DbAuthenticateUser implements AuthenticateUser {
     }
   }
 
-  private User verifyExisting(User user, Params params)
-      throws UserProfileMismatchError, InvalidCredentialsError {
+  private User verifyExisting(User user, Params params) {
     if (!user.active()) {
       throw new InvalidCredentialsError();
     }

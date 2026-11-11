@@ -1,8 +1,6 @@
 package com.washflow.domain.usecases.user;
 
 import com.washflow.domain.entities.user.User;
-import com.washflow.domain.errors.user.PasswordResetNotAllowedError;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.UUID;
 
 /**
@@ -11,6 +9,5 @@ import java.util.UUID;
  */
 public interface ResetUserPassword {
 
-  User reset(UUID userId, String newPassword)
-      throws UserNotFoundError, PasswordResetNotAllowedError;
+  User reset(UUID userId, String newPassword);
 }

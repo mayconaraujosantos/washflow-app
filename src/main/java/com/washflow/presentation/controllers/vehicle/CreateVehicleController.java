@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.vehicle;
 
-import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.errors.vehicle.InvalidPlateError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
 import com.washflow.domain.usecases.vehicle.CreateVehicle;
@@ -40,8 +39,6 @@ public class CreateVehicleController implements Controller {
       return HttpHelper.ok(vehicle);
     } catch (IllegalArgumentException | InvalidPlateError e) {
       return HttpHelper.badRequest(e);
-    } catch (UserNotFoundError e) {
-      return HttpHelper.notFound(e);
     } catch (VehiclePlateAlreadyRegisteredError e) {
       return HttpHelper.conflict(e);
     } catch (Exception e) {

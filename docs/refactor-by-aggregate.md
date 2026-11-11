@@ -408,7 +408,7 @@ text
 - [x] Mover cada `*Error.java`
 - [x] Ajustar imports em `data/usecases/**`, `presentation/**`, `application/**`
 - [x] `./gradlew test` deve passar
-- [ ] Migrar cada agregado para as categorias de `DomainError` (feito: `serviceorder`)
+- [ ] Migrar cada agregado para as categorias de `DomainError` (feito: `serviceorder` e `user`; `AccountLockedError` (429) e os erros de e-mail (503) seguem checked, sem categoria)
 
 ---
 

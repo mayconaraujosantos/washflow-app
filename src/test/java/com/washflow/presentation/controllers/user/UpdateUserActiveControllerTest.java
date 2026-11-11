@@ -83,7 +83,7 @@ class UpdateUserActiveControllerTest {
     HttpRequest request = new HttpRequest(body, Map.of("id", userId.toString()), Map.of());
 
     when(updateUserActive.update(any(UpdateUserActive.Params.class)))
-        .thenThrow(new UserHasActiveWashesError(userId));
+        .thenThrow(new UserHasActiveWashesError());
 
     HttpResponse response = sut.handle(request);
 

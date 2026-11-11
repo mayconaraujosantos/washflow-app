@@ -1,8 +1,6 @@
 package com.washflow.presentation.controllers.customer;
 
 import com.washflow.domain.errors.auth.GoogleLoginUnavailableError;
-import com.washflow.domain.errors.user.InvalidCredentialsError;
-import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -29,10 +27,6 @@ public class GoogleCustomerLoginController implements Controller {
       return HttpHelper.badRequest(e);
     } catch (GoogleLoginUnavailableError e) {
       return new HttpResponse(503, Map.of("error", e.getMessage()));
-    } catch (InvalidCredentialsError e) {
-      return HttpHelper.unauthorized(e);
-    } catch (UserProfileMismatchError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

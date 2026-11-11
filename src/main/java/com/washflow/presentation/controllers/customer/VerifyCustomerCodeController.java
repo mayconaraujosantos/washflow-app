@@ -2,7 +2,6 @@ package com.washflow.presentation.controllers.customer;
 
 import com.washflow.domain.entities.customer.OtpRecipient;
 import com.washflow.domain.errors.auth.InvalidOtpError;
-import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -43,8 +42,6 @@ public class VerifyCustomerCodeController implements Controller {
       return new HttpResponse(400, Map.of("error", e.getMessage(), "needsName", true));
     } catch (InvalidOtpError e) {
       return HttpHelper.unauthorized(e);
-    } catch (UserProfileMismatchError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

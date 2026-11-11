@@ -104,8 +104,7 @@ public class DbCustomerPasswordlessLogin implements CustomerPasswordlessLogin {
   }
 
   @Override
-  public User verifyCode(OtpRecipient recipient, String code, String name)
-      throws InvalidOtpError, UserProfileMismatchError {
+  public User verifyCode(OtpRecipient recipient, String code, String name) throws InvalidOtpError {
     OtpRepository.PendingCode pending =
         otpRepository.loadPending(recipient).orElseThrow(InvalidOtpError::new);
     Instant now = Instant.now(clock);
@@ -150,8 +149,7 @@ public class DbCustomerPasswordlessLogin implements CustomerPasswordlessLogin {
   }
 
   @Override
-  public User signInWithGoogle(String idToken)
-      throws GoogleLoginUnavailableError, InvalidCredentialsError, UserProfileMismatchError {
+  public User signInWithGoogle(String idToken) throws GoogleLoginUnavailableError {
     if (googleTokenVerifier.clientId() == null) {
       throw new GoogleLoginUnavailableError();
     }
@@ -186,7 +184,7 @@ public class DbCustomerPasswordlessLogin implements CustomerPasswordlessLogin {
     return created;
   }
 
-  private static void requireCustomer(User user, String login) throws UserProfileMismatchError {
+  private static void requireCustomer(User user, String login) {
     if (user.profile() != UserProfile.CUSTOMER || !user.active()) {
       throw new UserProfileMismatchError(login, user.profile(), UserProfile.CUSTOMER);
     }

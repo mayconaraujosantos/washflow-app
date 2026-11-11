@@ -1,7 +1,5 @@
 package com.washflow.presentation.controllers.user;
 
-import com.washflow.domain.errors.user.PasswordResetNotAllowedError;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.user.ResetUserPassword;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -28,10 +26,6 @@ public class ResetUserPasswordController implements Controller {
       return HttpHelper.ok(resetUserPassword.reset(userId, BodyValues.text(body, "password")));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (UserNotFoundError e) {
-      return HttpHelper.notFound(e);
-    } catch (PasswordResetNotAllowedError e) {
-      return HttpHelper.forbidden(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

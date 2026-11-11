@@ -208,7 +208,7 @@ public class UserJdbiRepository
                           .one()
                       > 0;
               if (hasActiveWashes) {
-                throw new UserHasActiveWashesError(id);
+                throw new UserHasActiveWashesError();
               }
             }
           }
@@ -252,7 +252,7 @@ public class UserJdbiRepository
                         .one()
                     > 0;
             if (hasActiveWashes) {
-              throw new UserHasActiveWashesError(id);
+              throw new UserHasActiveWashesError();
             }
           }
           handle

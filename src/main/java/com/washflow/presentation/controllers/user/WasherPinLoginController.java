@@ -1,7 +1,6 @@
 package com.washflow.presentation.controllers.user;
 
 import com.washflow.domain.errors.user.AccountLockedError;
-import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.usecases.user.WasherBadge;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -30,8 +29,6 @@ public class WasherPinLoginController implements Controller {
           washerBadge.signInWithPin(BodyValues.text(body, "phone"), BodyValues.text(body, "pin")));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (InvalidCredentialsError e) {
-      return HttpHelper.unauthorized(e);
     } catch (AccountLockedError e) {
       return new HttpResponse(429, Map.of("error", e.getMessage()));
     } catch (Exception e) {

@@ -2,8 +2,6 @@ package com.washflow.domain.usecases.user;
 
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.errors.user.AccountLockedError;
-import com.washflow.domain.errors.user.InvalidCredentialsError;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.UUID;
 
 /**
@@ -13,11 +11,11 @@ import java.util.UUID;
  */
 public interface WasherBadge {
 
-  Issued issue(UUID washerId) throws UserNotFoundError;
+  Issued issue(UUID washerId);
 
-  User signInWithPin(String phone, String pin) throws InvalidCredentialsError, AccountLockedError;
+  User signInWithPin(String phone, String pin) throws AccountLockedError;
 
-  User signInWithBadge(String badgeToken) throws InvalidCredentialsError;
+  User signInWithBadge(String badgeToken);
 
   record Issued(String pin, String badgeToken) {}
 }

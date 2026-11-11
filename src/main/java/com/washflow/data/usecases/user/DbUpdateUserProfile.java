@@ -25,7 +25,7 @@ public class DbUpdateUserProfile implements UpdateUserProfile {
   }
 
   @Override
-  public User update(Params params) throws UserNotFoundError, ForbiddenError {
+  public User update(Params params) throws ForbiddenError {
     User requestedBy =
         loadUserByIdRepository
             .loadById(params.requestedByUserId())
