@@ -28,7 +28,6 @@ public class AccessJdbiRepository
   private static final String PHONE = "phone";
   private static final String USER_COLUMNS = "id, nome, telefone, email, perfil, criado_em, ativo";
   private static final String ADDRESS = "address";
-  private static final String ADDRESS_MATCHES = " = :" + ADDRESS;
   private static final String EMAIL = "email";
 
   private static final String SAVE_BADGE_UPDATE_SQL =
@@ -188,11 +187,7 @@ public class AccessJdbiRepository
     jdbi.useTransaction(
         handle -> {
           handle
-              .createUpdate(
-                  "DELETE FROM codigos_acesso WHERE "
-                      + column(recipient)
-                      + ADDRESS_MATCHES
-                      + AND_TENANT)
+              .createUpdate("DELETE FROM codigos_acesso WHERE " + recipientFilter(recipient))
               .bind(ADDRESS, recipient.address())
               .execute();
           handle
@@ -215,9 +210,7 @@ public class AccessJdbiRepository
                 .createQuery(
                     "SELECT id, codigo_hash, tentativas, expira_em, criado_em FROM codigos_acesso"
                         + " WHERE "
-                        + column(recipient)
-                        + ADDRESS_MATCHES
-                        + AND_TENANT
+                        + recipientFilter(recipient)
                         + " ORDER BY criado_em DESC")
                 .bind(ADDRESS, recipient.address())
                 .map(
@@ -248,13 +241,14 @@ public class AccessJdbiRepository
     jdbi.useHandle(
         handle ->
             handle
-                .createUpdate(
-                    "DELETE FROM codigos_acesso WHERE "
-                        + column(recipient)
-                        + ADDRESS_MATCHES
-                        + AND_TENANT)
+                .createUpdate("DELETE FROM codigos_acesso WHERE " + recipientFilter(recipient))
                 .bind(ADDRESS, recipient.address())
                 .execute());
+  }
+
+  /** {@code email = :address} or {@code telefone = :address}, inside the current lava-jato. */
+  private static String recipientFilter(OtpRecipient recipient) {
+    return column(recipient) + " = :" + ADDRESS + AND_TENANT;
   }
 
   /** Fixed column per channel, never user input. */
