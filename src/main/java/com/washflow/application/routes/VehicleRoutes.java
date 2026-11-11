@@ -19,6 +19,7 @@ public final class VehicleRoutes {
 
   private static final String VEHICLES_PATH = "/api/vehicles";
   private static final String CUSTOMER_VEHICLES_PATH = "/api/customers/{id}/vehicles";
+  private static final String UNCLAIMED_VEHICLES_PATH = "/api/customers/{id}/unclaimed-vehicles";
 
   private VehicleRoutes() {}
 
@@ -26,6 +27,7 @@ public final class VehicleRoutes {
   public static void register(Jdbi jdbi) {
     registerCreate(jdbi);
     registerListByCustomer(jdbi);
+    registerListUnclaimed(jdbi);
   }
 
   @OpenApi(
@@ -37,7 +39,7 @@ public final class VehicleRoutes {
           @OpenApiRequestBody(content = @OpenApiContent(from = CreateVehicleRequest.class)),
       responses = {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = Vehicle.class)),
-        @OpenApiResponse(status = "400", description = "Missing or malformed field"),
+        @OpenApiResponse(status = "400", description = "Missing or malformed field, invalid plate"),
         @OpenApiResponse(status = "404", description = "Customer not found"),
         @OpenApiResponse(status = "409", description = "Plate already registered")
       })
@@ -60,5 +62,24 @@ public final class VehicleRoutes {
     get(
         CUSTOMER_VEHICLES_PATH,
         JavalinRouteAdapter.adapt(VehicleModule.listVehiclesByCustomerController(jdbi)));
+  }
+
+  @OpenApi(
+      path = UNCLAIMED_VEHICLES_PATH,
+      methods = HttpMethod.GET,
+      summary =
+          "Cars entered at the counter with the customer's phone as contact and no account yet;"
+              + " registering the same plate links them to the customer",
+      tags = {"Vehicles"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = Vehicle[].class)),
+        @OpenApiResponse(status = "400", description = "Malformed customer id"),
+        @OpenApiResponse(status = "404", description = "Customer not found")
+      })
+  private static void registerListUnclaimed(Jdbi jdbi) {
+    get(
+        UNCLAIMED_VEHICLES_PATH,
+        JavalinRouteAdapter.adapt(VehicleModule.listUnclaimedVehiclesController(jdbi)));
   }
 }

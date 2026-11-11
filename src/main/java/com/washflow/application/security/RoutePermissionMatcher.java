@@ -39,7 +39,7 @@ public final class RoutePermissionMatcher {
     return (HTTP_POST.equals(method) && path.equals("/api/vehicles"))
         || (HTTP_POST.equals(method) && path.equals("/api/service-orders"))
         || (HTTP_GET.equals(method)
-            && path.matches("/api/customers/[^/]+/(vehicles|service-orders)"))
+            && path.matches("/api/customers/[^/]+/(vehicles|unclaimed-vehicles|service-orders)"))
         || (HTTP_GET.equals(method) && path.matches("/api/service-orders/[^/]+"));
   }
 
