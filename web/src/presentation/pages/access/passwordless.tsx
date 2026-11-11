@@ -1,5 +1,6 @@
 import { SubmitEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import type { CodeRecipient } from '@/domain/models/access-model'
 import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-session-model'
 import { NeedsNameError, type Access } from '@/domain/usecases/access'
 import { saveCustomerSession } from '@/main/session/customer-session'
@@ -10,13 +11,23 @@ import { errorMessage } from '@/presentation/helpers/format'
 
 type OnSession = (session: AuthenticatedSessionModel, isNew: boolean) => void
 
-/** Phone -> 6-digit code by WhatsApp -> session (asks the name for a new phone). */
-export function WhatsAppLogin({
+export type CodeChannel = 'whatsapp' | 'email'
+
+/**
+ * Phone (WhatsApp) or e-mail -> 6-digit code -> session (asks the name for a new account).
+ */
+export function CodeLogin({
   access,
+  channel,
   onSession,
   onCancel,
-}: Readonly<{ access: Access; onSession: OnSession; onCancel: () => void }>) {
-  const [phone, setPhone] = useState('')
+}: Readonly<{
+  access: Access
+  channel: CodeChannel
+  onSession: OnSession
+  onCancel: () => void
+}>) {
+  const [address, setAddress] = useState('')
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [sent, setSent] = useState(false)
@@ -24,16 +35,19 @@ export function WhatsAppLogin({
   const [info, setInfo] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const to: CodeRecipient =
+    channel === 'email' ? { email: address.trim() } : { phone: address }
 
   const send = async (event?: SubmitEvent) => {
     event?.preventDefault()
     setError(null)
     setLoading(true)
     try {
-      const seconds = await access.requestCode(phone)
+      const seconds = await access.requestCode(to)
       setSent(true)
+      const where = channel === 'email' ? 'e-mail' : 'WhatsApp'
       setInfo(
-        `Enviamos um código para o seu WhatsApp. Ele vale por ${Math.round(seconds / 60)} minutos.`,
+        `Enviamos um código para o seu ${where}. Ele vale por ${Math.round(seconds / 60)} minutos.`,
       )
     } catch (cause) {
       setError(errorMessage(cause, 'Não foi possível enviar o código'))
@@ -48,7 +62,7 @@ export function WhatsAppLogin({
     setLoading(true)
     try {
       const session = await access.verifyCode(
-        phone,
+        to,
         code,
         needsName ? name.trim() : undefined,
       )
@@ -69,7 +83,22 @@ export function WhatsAppLogin({
   if (!sent) {
     return (
       <form className="form" onSubmit={(event) => void send(event)}>
-        <PhoneField label="Seu WhatsApp" value={phone} onChange={setPhone} />
+        {channel === 'email' ? (
+          <TextField
+            label="Seu e-mail"
+            value={address}
+            onChange={setAddress}
+            autoComplete="email"
+            inputMode="email"
+            maxLength={254}
+          />
+        ) : (
+          <PhoneField
+            label="Seu WhatsApp"
+            value={address}
+            onChange={setAddress}
+          />
+        )}
         <Notice tone="error">{error}</Notice>
         <button type="submit" className="btn btn-dark" disabled={loading}>
           {loading ? 'Enviando...' : 'Enviar código'}
@@ -216,11 +245,17 @@ export function GoogleButton({
   return <div ref={container} className="google-button" />
 }
 
-/** Target of the WhatsApp magic link: /entrar/whatsapp?telefone=...&codigo=... */
+/**
+ * Target of the magic links: /entrar/whatsapp?telefone=...&codigo=... and
+ * /entrar/email?email=...&codigo=...
+ */
 export function MagicLinkPage({ access }: Readonly<{ access: Access }>) {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const phone = params.get('telefone') ?? ''
+  const email = params.get('email')
+  const to: CodeRecipient = email
+    ? { email }
+    : { phone: params.get('telefone') ?? '' }
   const code = params.get('codigo') ?? ''
   const [needsName, setNeedsName] = useState(false)
   const [name, setName] = useState('')
@@ -232,7 +267,7 @@ export function MagicLinkPage({ access }: Readonly<{ access: Access }>) {
     setError(null)
     setLoading(true)
     try {
-      saveCustomerSession(await access.verifyCode(phone, code, withName))
+      saveCustomerSession(await access.verifyCode(to, code, withName))
       navigate('/cliente', { replace: true })
     } catch (cause) {
       if (cause instanceof NeedsNameError) setNeedsName(true)
@@ -251,7 +286,7 @@ export function MagicLinkPage({ access }: Readonly<{ access: Access }>) {
 
   return (
     <AuthLayout
-      title="Entrando pelo WhatsApp"
+      title={email ? 'Entrando pelo e-mail' : 'Entrando pelo WhatsApp'}
       footer={
         <a href="/login/cliente" className="auth-back">
           Entrar de outro jeito

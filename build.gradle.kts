@@ -60,8 +60,9 @@ dependencies {
     implementation("io.github.cdimascio:dotenv-java:3.2.0")
     implementation("com.auth0:java-jwt:4.5.0")
     implementation("at.favre.lib:bcrypt:0.10.2")
-    // SMTP for password-reset codes by e-mail (Jakarta Mail implementation)
-    implementation("org.eclipse.angus:angus-mail:2.0.3")
+
+    // E-mail (SMTP): código de acesso do cliente e códigos de troca de senha (Jakarta Mail / Angus).
+    implementation("org.eclipse.angus:angus-mail:2.0.5")
 
     // Testes
     testImplementation(platform("org.junit:junit-bom:5.11.0"))

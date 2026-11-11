@@ -2,11 +2,12 @@ import type { AuthenticatedSessionModel } from '@/domain/models/authenticated-se
 import type {
   AuthOptionsModel,
   PasswordResetAccount,
+  CodeRecipient,
   TicketModel,
   WasherBadgeModel,
 } from '@/domain/models/access-model'
 
-/** The code was right but the phone has no account yet: ask the customer's name. */
+/** The code was right but the phone/e-mail has no account yet: ask the customer's name. */
 export class NeedsNameError extends Error {
   constructor(message = 'Informe seu nome para criar a conta') {
     super(message)
@@ -24,10 +25,10 @@ export interface Access {
   issueTicket: (serviceOrderId: string) => Promise<string>
   loadTicket: (token: string) => Promise<TicketModel>
   options: () => Promise<AuthOptionsModel>
-  requestCode: (phone: string) => Promise<number>
-  /** Rejects with NeedsNameError for a new phone without name. */
+  requestCode: (to: CodeRecipient) => Promise<number>
+  /** Rejects with NeedsNameError for a new phone/e-mail without name. */
   verifyCode: (
-    phone: string,
+    to: CodeRecipient,
     code: string,
     name?: string,
   ) => Promise<AuthenticatedSessionModel>

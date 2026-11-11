@@ -1,5 +1,6 @@
 package com.washflow.data.usecases.user;
 
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
 import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.user.LoadUserByIdRepository;
 import com.washflow.data.protocols.db.user.UpdateUserEmailRepository;
@@ -36,6 +37,11 @@ public class DbUpdateUserEmail implements UpdateUserEmail {
         throw new EmailAlreadyRegisteredError();
       }
     }
-    return updateUserEmailRepository.updateEmail(userId, email);
+    try {
+      return updateUserEmailRepository.updateEmail(userId, email);
+    } catch (DuplicateKeyError e) {
+      // A customer of this lava-jato already uses it (customer e-mails are unique per lava-jato).
+      throw new EmailAlreadyRegisteredError();
+    }
   }
 }

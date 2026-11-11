@@ -128,11 +128,13 @@ Other access settings:
 | `OTP_CHANNEL` | `log` (dev), `none` (prod) | Customer WhatsApp codes. `log` prints the code/magic link to the server log and is refused in production; plug a WhatsApp provider in `AccessFactory.otpSender`. |
 | `GOOGLE_CLIENT_ID` | empty | Google Identity Services client ID; empty hides "Entrar com Google". |
 | `APP_PUBLIC_URL` | empty | Public origin used in WhatsApp magic links (e.g. `https://app.lavajato.com`). |
-| `SMTP_HOST` | empty | SMTP relay for "Esqueci a senha" codes (customers by phone → their recovery e-mail; managers by login e-mail). Empty: development logs the e-mail, production hides the option. Any relay works (Brevo, Resend, Amazon SES, Gmail with an app password). |
-| `SMTP_PORT` | `587` | `587` uses STARTTLS, `465` uses TLS from the start. |
+| `EMAIL_CHANNEL` | `smtp` when `SMTP_HOST` is set, else `log` (dev) / `none` (prod) | The app's single e-mail channel, used by the customer access code and by "Esqueci a senha" codes (customers by phone → their recovery e-mail; managers by login e-mail). `log` prints the e-mail to the server log and is refused in production; `none` hides both options. |
+| `SMTP_HOST` | empty | SMTP relay (Brevo, Resend, Amazon SES, Gmail with an app password; Mailpit locally). |
+| `SMTP_PORT` | `587` | Relay port. |
+| `SMTP_SECURITY` | `starttls` | `starttls` (587), `ssl` (465, TLS from the start) or `none` (only for a local inbox such as Mailpit). |
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | empty | Relay credentials; empty username sends without authentication (e.g. a local test inbox). |
-| `SMTP_FROM` | empty | Sender, required with `SMTP_HOST`, e.g. `Washflow <nao-responda@seudominio.com>`; use a domain the relay is allowed to send for (SPF/DKIM). |
-| `SMTP_STARTTLS` | `true` | `false` only for a local relay without TLS (the e2e Mailpit). |
+| `SMTP_FROM` | empty | Sender address, required with `EMAIL_CHANNEL=smtp`; use a domain the relay is allowed to send for (SPF/DKIM). |
+| `SMTP_FROM_NAME` | `Washflow` | Sender name shown in the inbox. |
 
 ## Backup
 

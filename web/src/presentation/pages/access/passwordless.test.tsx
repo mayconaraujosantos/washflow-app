@@ -6,7 +6,7 @@ import { NeedsNameError, type Access } from '@/domain/usecases/access'
 import { TicketPage } from '@/presentation/pages/ticket/ticket-page'
 import { badgeTokenFrom } from '@/presentation/pages/washer-login/badge-token'
 import { WasherLogin } from '@/presentation/pages/washer-login/washer-login'
-import { MagicLinkPage, WhatsAppLogin } from './passwordless'
+import { CodeLogin, MagicLinkPage } from './passwordless'
 
 const saveCustomerSession = vi.hoisted(() => vi.fn())
 const saveWasherSession = vi.hoisted(() => vi.fn())
@@ -31,9 +31,11 @@ const makeAccess = (overrides: Partial<Access> = {}): Access => ({
   washerBadgeLogin: vi.fn().mockResolvedValue(session),
   issueTicket: vi.fn(),
   loadTicket: vi.fn(),
-  options: vi
-    .fn()
-    .mockResolvedValue({ whatsappCode: true, googleClientId: null }),
+  options: vi.fn().mockResolvedValue({
+    whatsappCode: true,
+    emailCode: true,
+    googleClientId: null,
+  }),
   requestCode: vi.fn().mockResolvedValue(600),
   verifyCode: vi.fn().mockResolvedValue(session),
   googleLogin: vi.fn(),
@@ -44,7 +46,7 @@ const makeAccess = (overrides: Partial<Access> = {}): Access => ({
   ...overrides,
 })
 
-describe('WhatsAppLogin', () => {
+describe('CodeLogin', () => {
   it('sends the code, asks the name for a new phone and signs up', async () => {
     const access = makeAccess({
       verifyCode: vi
@@ -54,8 +56,9 @@ describe('WhatsAppLogin', () => {
     })
     const onSession = vi.fn()
     render(
-      <WhatsAppLogin
+      <CodeLogin
         access={access}
+        channel="whatsapp"
         onSession={onSession}
         onCancel={vi.fn()}
       />,
@@ -63,7 +66,7 @@ describe('WhatsAppLogin', () => {
 
     await userEvent.type(screen.getByLabelText('Seu WhatsApp'), '92991234567')
     await userEvent.click(screen.getByRole('button', { name: 'Enviar código' }))
-    expect(access.requestCode).toHaveBeenCalledWith('92991234567')
+    expect(access.requestCode).toHaveBeenCalledWith({ phone: '92991234567' })
     expect(await screen.findByText(/vale por 10 minutos/)).toBeInTheDocument()
 
     await userEvent.type(screen.getByLabelText('Código'), '123456')
@@ -72,12 +75,42 @@ describe('WhatsAppLogin', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
     expect(access.verifyCode).toHaveBeenLastCalledWith(
-      '92991234567',
+      { phone: '92991234567' },
       '123456',
       'Ana',
     )
     expect(saveCustomerSession).toHaveBeenCalledWith(session)
     expect(onSession).toHaveBeenCalledWith(session, true)
+  })
+
+  it('sends the code to an e-mail and signs in', async () => {
+    const access = makeAccess()
+    const onSession = vi.fn()
+    render(
+      <CodeLogin
+        access={access}
+        channel="email"
+        onSession={onSession}
+        onCancel={vi.fn()}
+      />,
+    )
+
+    await userEvent.type(screen.getByLabelText('Seu e-mail'), ' ana@email.com ')
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar código' }))
+    expect(access.requestCode).toHaveBeenCalledWith({ email: 'ana@email.com' })
+    expect(
+      await screen.findByText(/código para o seu e-mail/),
+    ).toBeInTheDocument()
+
+    await userEvent.type(screen.getByLabelText('Código'), '123456')
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+
+    expect(access.verifyCode).toHaveBeenLastCalledWith(
+      { email: 'ana@email.com' },
+      '123456',
+      undefined,
+    )
+    expect(onSession).toHaveBeenCalledWith(session, false)
   })
 })
 
@@ -100,7 +133,31 @@ describe('MagicLinkPage', () => {
 
     expect(await screen.findByText('painel do cliente')).toBeInTheDocument()
     expect(access.verifyCode).toHaveBeenCalledWith(
-      '92991234567',
+      { phone: '92991234567' },
+      '654321',
+      undefined,
+    )
+  })
+
+  it('verifies the code from the e-mail link', async () => {
+    const access = makeAccess()
+    render(
+      <MemoryRouter
+        initialEntries={['/entrar/email?email=ana%40email.com&codigo=654321']}
+      >
+        <Routes>
+          <Route
+            path="/entrar/email"
+            element={<MagicLinkPage access={access} />}
+          />
+          <Route path="/cliente" element={<p>painel do cliente</p>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('painel do cliente')).toBeInTheDocument()
+    expect(access.verifyCode).toHaveBeenCalledWith(
+      { email: 'ana@email.com' },
       '654321',
       undefined,
     )

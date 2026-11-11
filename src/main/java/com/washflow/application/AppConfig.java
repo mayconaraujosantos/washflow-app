@@ -4,7 +4,9 @@ import io.github.cdimascio.dotenv.Dotenv;
 import io.github.cdimascio.dotenv.DotenvEntry;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /** Immutable application configuration, resolved once at startup. */
 public record AppConfig(
@@ -25,23 +27,37 @@ public record AppConfig(
     String googleClientId,
     String publicAppUrl,
     String metricsToken,
+    String emailChannel,
     Smtp smtp) {
 
   /**
-   * Outgoing e-mail (password-reset codes). Without SMTP_HOST, development writes the codes to the
-   * log and production offers no e-mail reset. Works with any SMTP relay: Brevo, Resend, Amazon
-   * SES, Gmail (app password)...
+   * Outgoing e-mail: customer access codes and password-reset codes share it. {@code emailChannel}
+   * is "smtp", "log" (development only) or "none"; when EMAIL_CHANNEL is not set it is "smtp" as
+   * soon as SMTP_HOST is, otherwise "log" in development and "none" in production. Works with any
+   * SMTP relay (Brevo, Resend, Amazon SES, Gmail app password; Mailpit locally).
+   *
+   * @param security "ssl" (implicit TLS, port 465), "starttls" (587) or "none" (local catcher)
    */
   public record Smtp(
-      String host, int port, String username, String password, String from, boolean startTls) {
-
-    public boolean configured() {
-      return !host.isBlank();
-    }
+      String host,
+      int port,
+      String username,
+      String password,
+      String security,
+      String from,
+      String fromName) {
 
     @Override
     public String toString() {
-      return "Smtp[host=" + host + ", port=" + port + ", from=" + from + ", password=[redacted]]";
+      return "Smtp[host="
+          + host
+          + ", port="
+          + port
+          + ", security="
+          + security
+          + ", from="
+          + from
+          + ", password=[redacted]]";
     }
   }
 
@@ -105,18 +121,28 @@ public record AppConfig(
             value(processEnv, dotenvValues, useDotenv, "APP_PUBLIC_URL", ""),
             // Bearer token for GET /api/metrics; empty keeps the endpoint off.
             value(processEnv, dotenvValues, useDotenv, "METRICS_TOKEN", ""),
+            emailChannel(processEnv, dotenvValues, useDotenv, environment),
             new Smtp(
                 value(processEnv, dotenvValues, useDotenv, "SMTP_HOST", ""),
                 parsePort(
                     value(processEnv, dotenvValues, useDotenv, "SMTP_PORT", "587"), "SMTP_PORT"),
                 value(processEnv, dotenvValues, useDotenv, "SMTP_USERNAME", ""),
                 value(processEnv, dotenvValues, useDotenv, "SMTP_PASSWORD", ""),
+                value(processEnv, dotenvValues, useDotenv, "SMTP_SECURITY", "starttls")
+                    .trim()
+                    .toLowerCase(Locale.ROOT),
                 value(processEnv, dotenvValues, useDotenv, "SMTP_FROM", ""),
-                !"false"
-                    .equalsIgnoreCase(
-                        value(processEnv, dotenvValues, useDotenv, "SMTP_STARTTLS", "true"))));
-    if (config.smtp().configured() && config.smtp().from().isBlank()) {
-      throw new IllegalStateException("SMTP_HOST requires SMTP_FROM (the sender address)");
+                value(processEnv, dotenvValues, useDotenv, "SMTP_FROM_NAME", "Washflow")));
+
+    if (!Set.of("smtp", "log", "none").contains(config.emailChannel())) {
+      throw new IllegalStateException("EMAIL_CHANNEL must be smtp, log or none");
+    }
+    if (!Set.of("ssl", "starttls", "none").contains(config.smtp().security())) {
+      throw new IllegalStateException("SMTP_SECURITY must be ssl, starttls or none");
+    }
+    if ("smtp".equals(config.emailChannel())
+        && (config.smtp().host().isBlank() || config.smtp().from().isBlank())) {
+      throw new IllegalStateException("EMAIL_CHANNEL=smtp requires SMTP_HOST and SMTP_FROM");
     }
 
     if (isProduction(environment)
@@ -159,6 +185,10 @@ public record AppConfig(
         + maxVehiclesPerHour
         + ", tokenSecret=[redacted]"
         + ", bootstrapManagerPassword=[redacted]"
+        + ", emailChannel="
+        + emailChannel
+        + ", smtp="
+        + smtp
         + "]";
   }
 
@@ -197,6 +227,22 @@ public record AppConfig(
       return second;
     }
     return fallback;
+  }
+
+  private static String emailChannel(
+      Map<String, String> processEnv,
+      Map<String, String> dotenvValues,
+      boolean useDotenv,
+      String environment) {
+    String fallback;
+    if (!value(processEnv, dotenvValues, useDotenv, "SMTP_HOST", "").isBlank()) {
+      fallback = "smtp";
+    } else {
+      fallback = isProduction(environment) ? "none" : "log";
+    }
+    return value(processEnv, dotenvValues, useDotenv, "EMAIL_CHANNEL", fallback)
+        .trim()
+        .toLowerCase(Locale.ROOT);
   }
 
   private static boolean blank(String value) {

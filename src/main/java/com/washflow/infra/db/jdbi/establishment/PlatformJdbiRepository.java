@@ -29,7 +29,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
 
   private static final String EMAIL_IN_USE_SELECT_SQL =
       """
-      SELECT (SELECT COUNT(*) FROM usuarios WHERE email = :email)
+      SELECT (SELECT COUNT(*) FROM usuarios WHERE email = :email AND perfil <> 'CLIENTE')
            + (SELECT COUNT(*) FROM administradores WHERE email = :email)
       """;
 

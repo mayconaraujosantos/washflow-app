@@ -10,8 +10,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * {@code GET /api/auth/options}: which passwordless sign-ins (WhatsApp code, Google) are enabled
- * and whether a forgotten password can be reset by e-mail code ({@code emailCode}).
+ * {@code GET /api/auth/options}: which passwordless sign-ins (WhatsApp code, Google) are enabled,
+ * and {@code emailCode}: the e-mail channel is on, so the customer can both sign in with a code by
+ * e-mail and reset a forgotten password by e-mail (one channel serves both, see
+ * UserModule.emailSender).
  */
 public class CustomerLoginOptionsController implements Controller {
 
@@ -31,7 +33,7 @@ public class CustomerLoginOptionsController implements Controller {
       Map<String, Object> body = new HashMap<>();
       body.put("whatsappCode", options.whatsappCode());
       body.put("googleClientId", options.googleClientId());
-      body.put("emailCode", passwordReset.available());
+      body.put("emailCode", options.emailCode() && passwordReset.available());
       return HttpHelper.ok(body);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

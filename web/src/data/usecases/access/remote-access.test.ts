@@ -26,6 +26,18 @@ describe('RemoteAccess', () => {
     await expect(sut.issueTicket('order-1')).resolves.toBe('abc')
   })
 
+  it('sends the code request and verification to the e-mail', async () => {
+    const { request, sut } = make({ statusCode: 200, body: { token: 't' } })
+
+    await sut.verifyCode({ email: 'ana@email.com' }, '123456', 'Ana')
+
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://w.test/api/auth/customers/otp/verify',
+      method: 'post',
+      body: { email: 'ana@email.com', code: '123456', name: 'Ana' },
+    })
+  })
+
   it('asks for the name when the code is right but the phone is new', async () => {
     const { sut } = make({
       statusCode: 400,
@@ -33,7 +45,7 @@ describe('RemoteAccess', () => {
     })
 
     await expect(
-      sut.verifyCode('92991234567', '123456'),
+      sut.verifyCode({ phone: '92991234567' }, '123456'),
     ).rejects.toBeInstanceOf(NeedsNameError)
   })
 
@@ -107,7 +119,7 @@ describe('RemoteAccess', () => {
       body: { error: 'Código inválido ou expirado' },
     })
 
-    const failure = sut.verifyCode('92991234567', '000000')
+    const failure = sut.verifyCode({ phone: '92991234567' }, '000000')
     await expect(failure).rejects.toThrow('Código inválido ou expirado')
     await expect(failure).rejects.not.toBeInstanceOf(NeedsNameError)
   })

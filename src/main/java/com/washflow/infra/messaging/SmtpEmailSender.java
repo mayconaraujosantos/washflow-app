@@ -12,31 +12,23 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Properties;
 
-/** Sends through any SMTP relay configured by SMTP_HOST/PORT/USERNAME/PASSWORD/FROM. */
+/**
+ * The one SMTP transport of the app (access codes and password-reset codes), configured by the
+ * {@code SMTP_*} variables: Mailpit locally; Brevo, Resend, Amazon SES, Gmail... in production.
+ */
 public class SmtpEmailSender implements EmailSender {
 
-  private static final String TIMEOUT_MS = "10000";
+  private static final String TIMEOUT_MILLIS = "10000";
 
   private final Session session;
   private final InternetAddress from;
 
   public SmtpEmailSender(AppConfig.Smtp smtp) {
-    Properties props = new Properties();
-    props.put("mail.smtp.host", smtp.host());
-    props.put("mail.smtp.port", String.valueOf(smtp.port()));
-    props.put("mail.smtp.connectiontimeout", TIMEOUT_MS);
-    props.put("mail.smtp.timeout", TIMEOUT_MS);
-    props.put("mail.smtp.writetimeout", TIMEOUT_MS);
-    if (smtp.port() == 465) {
-      props.put("mail.smtp.ssl.enable", "true");
-    } else if (smtp.startTls()) {
-      props.put("mail.smtp.starttls.enable", "true");
-      props.put("mail.smtp.starttls.required", "true");
-    }
     boolean auth = !smtp.username().isBlank();
-    props.put("mail.smtp.auth", String.valueOf(auth));
+    Properties props = properties(smtp, Security.parse(smtp.security()), auth);
     this.session =
         auth
             ? Session.getInstance(
@@ -50,7 +42,10 @@ public class SmtpEmailSender implements EmailSender {
             : Session.getInstance(props);
     try {
       this.from = new InternetAddress(smtp.from(), true);
-    } catch (MessagingException e) {
+      if (!smtp.fromName().isBlank()) {
+        this.from.setPersonal(smtp.fromName(), StandardCharsets.UTF_8.name());
+      }
+    } catch (Exception e) {
       throw new IllegalStateException("SMTP_FROM is not a valid address", e);
     }
   }
@@ -73,5 +68,46 @@ public class SmtpEmailSender implements EmailSender {
   @Override
   public boolean available() {
     return true;
+  }
+
+  private static Properties properties(AppConfig.Smtp smtp, Security security, boolean auth) {
+    Properties props = new Properties();
+    props.put("mail.transport.protocol", "smtp");
+    props.put("mail.smtp.host", smtp.host());
+    props.put("mail.smtp.port", String.valueOf(smtp.port()));
+    props.put("mail.smtp.auth", String.valueOf(auth));
+    props.put("mail.smtp.connectiontimeout", TIMEOUT_MILLIS);
+    props.put("mail.smtp.timeout", TIMEOUT_MILLIS);
+    props.put("mail.smtp.writetimeout", TIMEOUT_MILLIS);
+    switch (security) {
+      case SSL -> {
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.ssl.checkserveridentity", "true");
+      }
+      case STARTTLS -> {
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.starttls.required", "true");
+        props.put("mail.smtp.ssl.checkserveridentity", "true");
+      }
+      case NONE -> {
+        // Plain SMTP: only for a local catcher such as Mailpit.
+      }
+    }
+    return props;
+  }
+
+  /** How the connection is protected: implicit TLS (465), STARTTLS (587) or none (Mailpit). */
+  public enum Security {
+    SSL,
+    STARTTLS,
+    NONE;
+
+    public static Security parse(String value) {
+      try {
+        return valueOf(value.trim().toUpperCase(Locale.ROOT));
+      } catch (IllegalArgumentException | NullPointerException e) {
+        throw new IllegalArgumentException("SMTP_SECURITY deve ser ssl, starttls ou none", e);
+      }
+    }
   }
 }

@@ -157,12 +157,14 @@ public final class AccessRoutes {
   @OpenApi(
       path = "/api/auth/customers/otp",
       methods = HttpMethod.POST,
-      summary = "Send a one-time code (and magic link) to the customer's WhatsApp",
+      summary = "Send a one-time code (and magic link) to the customer's e-mail or WhatsApp",
       tags = {"Access"},
       responses = {
         @OpenApiResponse(status = "200", description = "{expiresInSeconds}"),
         @OpenApiResponse(status = "429", description = "Asked again too soon"),
-        @OpenApiResponse(status = "503", description = "No WhatsApp provider configured")
+        @OpenApiResponse(
+            status = "503",
+            description = "Channel not configured or e-mail delivery failed")
       })
   private static void registerRequestCode(CustomerPasswordlessLogin customer) {
     post(
@@ -173,11 +175,11 @@ public final class AccessRoutes {
   @OpenApi(
       path = "/api/auth/customers/otp/verify",
       methods = HttpMethod.POST,
-      summary = "Sign in (or sign up, with name) with the WhatsApp code",
+      summary = "Sign in (or sign up, with name) with the e-mail or WhatsApp code",
       tags = {"Access"},
       responses = {
         @OpenApiResponse(status = "200", description = "Session"),
-        @OpenApiResponse(status = "400", description = "New phone: name required"),
+        @OpenApiResponse(status = "400", description = "New account: name required"),
         @OpenApiResponse(status = "401", description = "Wrong or expired code")
       })
   private static void registerVerifyCode(

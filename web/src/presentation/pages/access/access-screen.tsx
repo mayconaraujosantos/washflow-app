@@ -24,9 +24,9 @@ import { Notice } from '@/presentation/components/ui/blocks'
 import { usePwaInstall } from '@/presentation/components/ui/use-pwa-install'
 import { errorMessage } from '@/presentation/helpers/format'
 import { EstablishmentPicker } from './establishment-picker'
-import { GoogleButton, WhatsAppLogin } from './passwordless'
+import { CodeLogin, GoogleButton } from './passwordless'
 
-type Mode = 'signup' | 'signin' | 'forgot' | 'whatsapp'
+type Mode = 'signup' | 'signin' | 'forgot' | 'whatsapp' | 'email'
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -186,8 +186,10 @@ export function AccessScreen({
     signin: 'Entrar',
     forgot: 'Esqueci a senha',
     whatsapp: 'Entrar com WhatsApp',
+    email: 'Entrar com e-mail',
   }[mode]
   const whatsappEnabled = Boolean(access && options?.whatsappCode)
+  const emailEnabled = Boolean(access && options?.emailCode)
   const googleClientId = access ? options?.googleClientId : null
   const staff = staffLinks && (
     <p className="auth-staff">
@@ -252,8 +254,8 @@ export function AccessScreen({
         ) : mode === 'forgot' ? (
           <>
             <p className="subtitle">
-              {whatsappEnabled
-                ? 'Entre com um código enviado ao seu WhatsApp, sem precisar da senha.'
+              {whatsappEnabled || emailEnabled
+                ? `Entre com um código enviado ao seu ${whatsappEnabled ? 'WhatsApp' : 'e-mail'}${whatsappEnabled && emailEnabled ? ' ou e-mail' : ''}, sem precisar da senha.`
                 : 'Peça uma nova senha no balcão: o gerente do lava-jato cria na hora e você entra com ela.'}
             </p>
             {whatsappEnabled && (
@@ -265,15 +267,26 @@ export function AccessScreen({
                 Receber código no WhatsApp
               </button>
             )}
+            {emailEnabled && (
+              <button
+                type="button"
+                className={whatsappEnabled ? 'btn btn-outline' : 'btn btn-dark'}
+                onClick={() => switchMode('email')}
+              >
+                Receber código por e-mail
+              </button>
+            )}
             <div className="auth-links">
               <button type="button" onClick={() => switchMode('signin')}>
                 Voltar para entrar
               </button>
             </div>
           </>
-        ) : mode === 'whatsapp' && access ? (
-          <WhatsAppLogin
+        ) : (mode === 'whatsapp' || mode === 'email') && access ? (
+          <CodeLogin
+            key={mode}
             access={access}
+            channel={mode}
             onSession={onPasswordless}
             onCancel={() => switchMode('signin')}
           />
@@ -336,7 +349,7 @@ export function AccessScreen({
                 </button>
               )}
             </div>
-            {(whatsappEnabled || googleClientId) && access && (
+            {(whatsappEnabled || emailEnabled || googleClientId) && access && (
               <>
                 <p className="auth-divider">ou</p>
                 {whatsappEnabled && (
@@ -347,6 +360,16 @@ export function AccessScreen({
                   >
                     <UiIcon name="phone" size={18} />
                     Entrar com WhatsApp (sem senha)
+                  </button>
+                )}
+                {emailEnabled && (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => switchMode('email')}
+                  >
+                    <UiIcon name="mail" size={18} />
+                    Entrar com e-mail (sem senha)
                   </button>
                 )}
                 {googleClientId && (
