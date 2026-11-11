@@ -68,7 +68,6 @@ export function Home({
     <AccessScreen
       authenticateCustomer={authenticateCustomer}
       access={access}
-      initialMode="signin"
       staffLinks
       directory={directory}
     />

@@ -43,12 +43,21 @@ const setup = () => {
 }
 
 describe('AccessScreen', () => {
-  it('shows the Washflow brand and the create-account form first', () => {
+  it('shows the Washflow brand and opens on sign-in, with sign-up one tap away', async () => {
     setup()
 
     expect(
       screen.getByRole('heading', { name: 'Washflow', level: 1 }),
     ).toBeInTheDocument()
+    expect(screen.getByText('Área do cliente')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Já tenho conta' }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByLabelText('Nome')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Criar conta' }))
+
     expect(
       screen.getByRole('heading', { name: 'Criar uma conta' }),
     ).toBeInTheDocument()
@@ -59,6 +68,7 @@ describe('AccessScreen', () => {
   it('creates a customer account with the phone digits and shows the first steps', async () => {
     const { authenticateCustomer } = setup()
 
+    await userEvent.click(screen.getByRole('button', { name: 'Criar conta' }))
     await userEvent.type(screen.getByLabelText('Nome'), 'Bia Souza')
     await userEvent.type(screen.getByLabelText('Telefone'), '92991234567')
     await userEvent.type(
@@ -88,7 +98,12 @@ describe('AccessScreen', () => {
   it('signs a returning customer in with phone and password only', async () => {
     const { authenticateCustomer } = setup()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Já tenho conta' }),
+    )
+    expect(
+      screen.getByRole('button', { name: 'Já tenho conta' }),
+    ).toHaveAttribute('aria-pressed', 'true')
     expect(screen.queryByLabelText('Nome')).not.toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Telefone'), '92991234567')
     await userEvent.type(screen.getByLabelText('Senha'), 'senha-forte')
@@ -103,7 +118,7 @@ describe('AccessScreen', () => {
 
   it('reveals the password on demand', async () => {
     setup()
-    const password = screen.getByLabelText('Senha (mínimo 8 caracteres)')
+    const password = screen.getByLabelText('Senha')
 
     expect(password).toHaveAttribute('type', 'password')
     await userEvent.click(screen.getByRole('button', { name: 'Mostrar senha' }))
@@ -131,6 +146,7 @@ describe('AccessScreen', () => {
       </MemoryRouter>,
     )
 
+    await userEvent.click(screen.getByRole('button', { name: 'Criar conta' }))
     await userEvent.type(screen.getByLabelText('Nome'), 'Bia Souza')
     await userEvent.type(screen.getByLabelText('Telefone'), '92991234567')
     await userEvent.type(
