@@ -11,6 +11,7 @@ import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserActive;
 import com.washflow.data.usecases.user.DbUpdateUserProfile;
 import com.washflow.data.usecases.user.DbWasherBadge;
+import com.washflow.data.usecases.user.PasswordResetCodes;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.usecases.user.AuthenticateUser;
 import com.washflow.domain.usecases.user.CreateWasher;
@@ -184,15 +185,16 @@ public final class UserModule {
    */
   public static ResetPasswordByEmail resetPasswordByEmail(Jdbi jdbi, AppConfig appConfig) {
     UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    PasswordResetJdbiRepository resets = new PasswordResetJdbiRepository(jdbi);
     return new DbResetPasswordByEmail(
         users,
         users,
-        new PasswordResetJdbiRepository(jdbi),
+        resets,
         users,
         new BCryptPasswordHasher(),
-        new HmacTokenHasher(appConfig.tokenSecret()),
         emailSender(appConfig),
-        Clock.systemUTC());
+        new PasswordResetCodes(
+            resets, new HmacTokenHasher(appConfig.tokenSecret()), Clock.systemUTC()));
   }
 
   /**

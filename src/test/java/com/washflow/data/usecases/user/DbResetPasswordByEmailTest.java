@@ -109,7 +109,13 @@ class DbResetPasswordByEmailTest {
         };
     sut =
         new DbResetPasswordByEmail(
-            byPhone, byEmail, resets, passwords, hasher, value -> "h:" + value, outbox, clock);
+            byPhone,
+            byEmail,
+            resets,
+            passwords,
+            hasher,
+            outbox,
+            new PasswordResetCodes(resets, value -> "h:" + value, clock));
     when(byPhone.loadByPhone(PHONE)).thenReturn(Optional.of(ana));
     when(byEmail.loadByEmail("rita@lavaraio.test")).thenReturn(Optional.of(rita));
     when(resets.loadRecoveryEmail(ana.id())).thenReturn(Optional.of("ana@mail.test"));

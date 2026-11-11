@@ -20,6 +20,7 @@ import com.washflow.data.usecases.user.DbResetPasswordByEmail;
 import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserEmail;
 import com.washflow.data.usecases.user.DbWasherBadge;
+import com.washflow.data.usecases.user.PasswordResetCodes;
 import com.washflow.domain.entities.establishment.Establishment;
 import com.washflow.domain.entities.establishment.EstablishmentSummary;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
@@ -357,9 +358,9 @@ class EstablishmentIntegrationTest {
             resets,
             users,
             hasher,
-            new HmacTokenHasher("test-secret-0123456789abcdef"),
             mail,
-            Clock.systemUTC());
+            new PasswordResetCodes(
+                resets, new HmacTokenHasher("test-secret-0123456789abcdef"), Clock.systemUTC()));
     DbCustomerRecoveryEmail recovery = new DbCustomerRecoveryEmail(resets);
 
     // Same person, one account per lava-jato, both with the same recovery e-mail.
