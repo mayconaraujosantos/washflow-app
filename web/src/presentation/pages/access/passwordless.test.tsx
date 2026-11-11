@@ -37,6 +37,10 @@ const makeAccess = (overrides: Partial<Access> = {}): Access => ({
   requestCode: vi.fn().mockResolvedValue(600),
   verifyCode: vi.fn().mockResolvedValue(session),
   googleLogin: vi.fn(),
+  requestPasswordReset: vi.fn(),
+  confirmPasswordReset: vi.fn(),
+  loadRecoveryEmail: vi.fn(),
+  saveRecoveryEmail: vi.fn(),
   ...overrides,
 })
 

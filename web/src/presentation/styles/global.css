@@ -2245,6 +2245,24 @@ select option {
   color: var(--danger);
 }
 
+/* "Meus dados": label / value pairs of the customer account. */
+.account-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.account-facts dt {
+  color: var(--text-muted);
+}
+
+.account-facts dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 /* Vehicle form: color buttons with a swatch, plain fieldset, inline field error. */
 fieldset.field {
   margin: 0;

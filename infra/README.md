@@ -128,6 +128,11 @@ Other access settings:
 | `OTP_CHANNEL` | `log` (dev), `none` (prod) | Customer WhatsApp codes. `log` prints the code/magic link to the server log and is refused in production; plug a WhatsApp provider in `AccessFactory.otpSender`. |
 | `GOOGLE_CLIENT_ID` | empty | Google Identity Services client ID; empty hides "Entrar com Google". |
 | `APP_PUBLIC_URL` | empty | Public origin used in WhatsApp magic links (e.g. `https://app.lavajato.com`). |
+| `SMTP_HOST` | empty | SMTP relay for "Esqueci a senha" codes (customers by phone → their recovery e-mail; managers by login e-mail). Empty: development logs the e-mail, production hides the option. Any relay works (Brevo, Resend, Amazon SES, Gmail with an app password). |
+| `SMTP_PORT` | `587` | `587` uses STARTTLS, `465` uses TLS from the start. |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | empty | Relay credentials; empty username sends without authentication (e.g. a local test inbox). |
+| `SMTP_FROM` | empty | Sender, required with `SMTP_HOST`, e.g. `Washflow <nao-responda@seudominio.com>`; use a domain the relay is allowed to send for (SPF/DKIM). |
+| `SMTP_STARTTLS` | `true` | `false` only for a local relay without TLS (the e2e Mailpit). |
 
 ## Backup
 
@@ -284,7 +289,8 @@ Production environment variables (Render → Environment): `APP_ENV=production`,
 `DATABASE_URL` (from the Render Postgres), `AUTH_TOKEN_SECRET` (≥ 32 chars),
 `SETUP_CODE` (needed once, to create the platform admin in `/configurar`),
 `METRICS_TOKEN` (optional, enables `/api/metrics`), `APP_PUBLIC_URL`, and
-optionally `GOOGLE_CLIENT_ID` / `OTP_CHANNEL`.
+optionally `GOOGLE_CLIENT_ID` / `OTP_CHANNEL` and `SMTP_HOST` / `SMTP_PORT` /
+`SMTP_USERNAME` / `SMTP_PASSWORD` / `SMTP_FROM` ("Esqueci a senha" by e-mail code).
 
 ## Tearing down
 

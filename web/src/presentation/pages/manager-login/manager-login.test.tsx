@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import type { Access } from '@/domain/usecases/access'
 import { AuthenticateManager } from '@/domain/usecases/authenticate-manager'
 import { UserModel } from '@/domain/models/user-model'
 import { ManagerLogin } from './manager-login'
@@ -82,5 +83,33 @@ describe('ManagerLogin', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument()
+  })
+
+  it('offers the e-mail code reset only when the API enables it', async () => {
+    const authenticateManager: AuthenticateManager = { auth: vi.fn() }
+    const access = {
+      options: vi.fn().mockResolvedValue({
+        whatsappCode: false,
+        googleClientId: null,
+        emailCode: true,
+      }),
+    } as unknown as Access
+    const { unmount } = render(
+      <ManagerLogin
+        authenticateManager={authenticateManager}
+        access={access}
+      />,
+    )
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Esqueci a senha' }),
+    )
+    expect(screen.getByLabelText('E-mail de acesso')).toBeInTheDocument()
+    unmount()
+
+    render(<ManagerLogin authenticateManager={authenticateManager} />)
+    expect(
+      screen.queryByRole('button', { name: 'Esqueci a senha' }),
+    ).not.toBeInTheDocument()
   })
 })

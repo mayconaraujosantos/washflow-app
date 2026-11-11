@@ -44,7 +44,15 @@ public final class LoginThrottle {
           "/api/auth/washers",
           "/api/auth/washers/pin",
           "/api/auth/managers",
-          "/api/auth/admins");
+          "/api/auth/admins",
+          "/api/auth/customers/password-reset/confirm",
+          "/api/auth/managers/password-reset/confirm");
+
+  // A new password set with an e-mail code also clears the lockout of the login it unlocks.
+  private static final Map<String, String> LOGIN_UNLOCKED_BY_RESET =
+      Map.of(
+          "/api/auth/customers/password-reset/confirm", "/api/auth/customers",
+          "/api/auth/managers/password-reset/confirm", "/api/auth/managers");
 
   private final Clock clock;
   private final Map<String, Failures> failures = new ConcurrentHashMap<>();
@@ -85,6 +93,10 @@ public final class LoginThrottle {
       }
     } else if (status >= 200 && status < 300 && accountKey != null) {
       failures.remove(accountKey);
+      String login = LOGIN_UNLOCKED_BY_RESET.get(route);
+      if (login != null) {
+        failures.remove(accountKey.replace("|" + route + "|", "|" + login + "|"));
+      }
     }
   }
 

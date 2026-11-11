@@ -2,7 +2,8 @@
 # Throwaway environment for the Playwright end-to-end tests (web/e2e).
 #
 #   scripts/e2e-env.sh up     build the image from the working tree and start
-#                             a fresh PostgreSQL + app pod on http://localhost:7100
+#                             a fresh PostgreSQL + app pod on http://localhost:7100,
+#                             with a Mailpit inbox (SMTP sink) on http://localhost:7125
 #   scripts/e2e-env.sh reset  empty database again, same image (no rebuild)
 #   scripts/e2e-env.sh down   remove the pod (and every byte of its data)
 #
@@ -14,6 +15,8 @@ set -euo pipefail
 POD=washflow-e2e
 IMAGE=washflow-api:e2e
 PORT="${E2E_PORT:-7100}"
+MAIL_PORT="${E2E_MAIL_PORT:-7125}"
+MAILPIT_IMAGE=docker.io/axllent/mailpit:v1.27.3
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNTIME="${CONTAINER_RUNTIME:-podman}"
 
@@ -30,7 +33,9 @@ up() {
 start() {
   down
   echo "==> starting PostgreSQL and the app on http://localhost:$PORT"
-  "$RUNTIME" pod create --name "$POD" -p "127.0.0.1:$PORT:7000" >/dev/null
+  "$RUNTIME" pod create --name "$POD" -p "127.0.0.1:$PORT:7000" -p "127.0.0.1:$MAIL_PORT:8025" >/dev/null
+  # Catches every e-mail the app sends (SMTP :1025); the tests read it over HTTP.
+  "$RUNTIME" run -d --pod "$POD" --name "$POD-mail" "$MAILPIT_IMAGE" >/dev/null
   "$RUNTIME" run -d --pod "$POD" --name "$POD-db" \
     -e POSTGRES_DB=washflow -e POSTGRES_USER=washflow -e POSTGRES_PASSWORD=washflow \
     docker.io/library/postgres:16-alpine >/dev/null
@@ -47,6 +52,8 @@ start() {
     -e DB_USER=washflow -e DB_PASSWORD=washflow \
     -e AUTH_TOKEN_SECRET="$(head -c 48 /dev/urandom | base64 | tr -d '\n')" \
     -e OTP_CHANNEL=log \
+    -e SMTP_HOST=127.0.0.1 -e SMTP_PORT=1025 -e SMTP_STARTTLS=false \
+    -e SMTP_FROM="Washflow <nao-responda@washflow.test>" \
     "$IMAGE" >/dev/null
 
   for _ in $(seq 1 120); do
