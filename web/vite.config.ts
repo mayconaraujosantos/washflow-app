@@ -106,6 +106,8 @@ export default defineConfig({
     },
   },
   test: {
+    // web/e2e holds the Playwright tests (bun run e2e), not Vitest's.
+    include: ['src/**/*.test.{ts,tsx}'],
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     coverage: {

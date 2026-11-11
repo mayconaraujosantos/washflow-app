@@ -56,13 +56,13 @@ Catálogo de tipos de lavagem oferecidos pelo estabelecimento.
 * `id`: INT (Chave Primária)
 * `nome`: VARCHAR(50) (Ex: Lavagem Simples, Completa, Higienização)
 * `preco`: DECIMAL(10,2)
-* `comissao_lavador`: DECIMAL(10,2) (Valor fixo ou percentual que vai para o lavador)
+* `comissao_lavador`: DECIMAL(10,2) (Valor fixo creditado ao lavador)
 
 ### 2.4 Tabela: `atendimentos` (A Fila Operacional)
 A tabela central que dita o fluxo físico e financeiro do lava-jato.
 * `id`: UUID ou BIGINT (Chave Primária)
 * `veiculo_id`: BIGINT (Chave Estrangeira -> `veiculos.id`)
-* `servico_preco_id`: INT (Chave Estrangeira -> `servicos_preco.id`)
+* `servico_preco_id`: INT (Chave Estrangeira -> `servicos_preco.id`, primeiro serviço para compatibilidade)
 * `lavador_id`: BIGINT (Chave Estrangeira -> `usuarios.id`, anulável até que um lavador assuma o serviço)
 * `status`: VARCHAR(25) (Padrão: `AGENDADO`)
 * `data_agendamento`: TIMESTAMP (Data/Hora que o cliente escolheu)
@@ -73,6 +73,8 @@ A tabela central que dita o fluxo físico e financeiro do lava-jato.
 * `previsao_entrega`: TIMESTAMP (opcional, combinada na entrada)
 * `observacoes`: VARCHAR(500) (opcional)
 * `cancelado_em`, `cancelado_por` (-> `usuarios.id`), `motivo_cancelamento` (`CUSTOMER_GAVE_UP`, `NO_SHOW`, `REGISTERED_BY_MISTAKE`, `OTHER`) e `descricao_cancelamento` (VARCHAR(200), obrigatória para `OTHER`): preenchidos ao cancelar (V5)
+
+`atendimento_servicos` relaciona um ou mais serviços do catálogo ao atendimento, em ordem de seleção. O total cobrado e a comissão são, respectivamente, a soma de `preco` e de `comissao_lavador` dos serviços selecionados; cada atendimento continua reservando uma única vaga.
 
 ### 2.5 Tabela: `pagamentos`
 Registra o recebimento manual no balcão, no momento em que o gerente finaliza o atendimento.
@@ -135,7 +137,7 @@ Para garantir que a lógica funcione igual no banco físico ou em listas Java/Ko
 
 ## 4. Atores, autorização e operações
 Somente clientes podem se cadastrar publicamente. O login de lavador e gerente exige telefone e senha de uma conta provisionada ou promovida por gerente; informar um telefone novo nesses endpoints não concede perfil operacional.
-O campo nome é exigido no cadastro de cliente; para entrar (cliente, lavador ou gerente), bastam telefone e senha. A página inicial segue o layout de referência: logo e cartão "Entrar" (telefone e senha do cliente) com troca para "Criar uma conta", "Esqueci a senha", instalação do app e, no rodapé, links para o login do lavador e do gerente. Antes do cartão, o cliente escolhe o lava-jato (busca por nome ou link `/?lavajato=<slug>` do balcão, lembrado no aparelho) e pode trocá-lo; os links da equipe ficam sempre visíveis. Uma instalação nova vai antes para `/configurar`. O telefone é enviado só com dígitos.
+O campo nome é exigido no cadastro de cliente; para entrar (cliente, lavador ou gerente), bastam telefone e senha. A página inicial segue o layout de referência: logo e cartão "Entrar" (telefone e senha do cliente) com troca para "Criar uma conta", "Esqueci a senha", instalação do app e, no rodapé, links para o login do lavador e do gerente. Antes do cartão, o cliente escolhe o lava-jato (busca por nome ou link `/?lavajato=<slug>` do balcão, lembrado no aparelho) e pode trocá-lo; os links da equipe ficam sempre visíveis. Já dentro da conta, o painel do cliente mostra "Lava-jato: <nome>" com "Trocar" (sai da conta e volta à escolha) e o agendamento começa com "Agendando no <nome>". Uma instalação nova vai antes para `/configurar`. O telefone é enviado só com dígitos.
 
 O login exige telefone e senha (mínimo de 8 caracteres); o nome só é exigido para criar a conta de cliente. A senha é armazenada com BCrypt. Após autenticar, a API emite um token HMAC assinado, com expiração de 8 horas e perfil fixado pelo endpoint de login. Rotas operacionais exigem `Authorization: Bearer <token>` e verificam o perfil atual do usuário.
 
@@ -156,6 +158,7 @@ Endpoints operacionais:
 * `GET /api/operations/vehicles?query=`: busca veículos por início da placa, nome ou telefone do dono (mínimo 2 caracteres, até 10 resultados).
 * `GET /api/schedule/availability?date=YYYY-MM-DD` (público): horários do dia com vagas restantes (`booked`/`capacity`), já marcando horários lotados, passados ou dia fechado - as telas de agendamento do gerente e do cliente só oferecem horários aceitos pela API.
 * `GET /api/operations/agenda?from=YYYY-MM-DD&to=YYYY-MM-DD`: atendimentos por data de agendamento (data Manaus, qualquer status), intervalo máximo de 62 dias.
+* `POST /api/service-orders`: cliente agenda um veículo com `servicePriceIds` (um ou mais serviços), `scheduledAt`; um atendimento ocupa uma única vaga, cobra a soma dos preços e credita ao lavador a soma das comissões fixas.
 * `POST /api/sales`: registra venda rápida ou orçamento (`type` = `QUICK_SALE` ou `BUDGET`, `items` com `servicePriceId` e `quantity`, `discount`, `payments` com `method` e `amount`). Preços vêm do catálogo; desconto entre zero e o subtotal; pagamentos não excedem o total. A resposta traz `paidAmount` e `outstandingAmount`.
 * `GET /api/sales?from=YYYY-MM-DD&to=YYYY-MM-DD[&type=]`: vendas/orçamentos por data Manaus de criação, com `refunds` e `refundedAmount`.
 * `POST /api/sales/{id}/refunds` (gerente): estorna `amount` (até 2 casas) na forma `method`, com `reason` e `description`; acima do que a forma ainda tem → 409 ("Pix só tem R$ 20,00 para estornar nesta venda"), orçamento → 409. A venda fica travada (`FOR UPDATE`) durante a conta, então estornos simultâneos nunca passam do pago. Responde a venda atualizada.
@@ -172,22 +175,23 @@ Endpoints operacionais:
 * `POST /api/users`: cria uma conta `LAVADOR` com `name`, `phone` e `password`.
 * `PATCH /api/users/{id}/profile`: altera o perfil para `CUSTOMER`, `WASHER` ou `MANAGER`.
 * `PATCH /api/users/{id}/active`: recebe `{"active": false}` para desativar ou `true` para reativar a conta.
+* `PATCH /api/users/{id}/password` (gerente): recebe `password` (mínimo 8) e define a nova senha de um cliente ou lavador do próprio lava-jato que perdeu a sua; conta de gerente → 403 (quem redefine é o administrador). Na tela "Equipe e acessos", botão "Redefinir senha"; o "Esqueci a senha" do cliente orienta a pedir a nova senha no balcão.
 
 O cliente mantém o painel aberto com atualização automática a cada 3 segundos. Quando o status é `PRONTO`, o painel mostra uma orientação persistente para retirada enquanto o atendimento não for finalizado. Não há envio de push com o app fechado.
 
 ### Plataforma, lava-jatos e primeiro acesso
 * **Isolamento:** cada requisição roda dentro de um lava-jato (`TenantContext`): o da conta autenticada ou, nas telas públicas do cliente, o escolhido na tela inicial (cabeçalho `X-Establishment: <slug>`). Toda consulta usa `estabelecimento_id = :tenant`, preenchido automaticamente pelo `TenantBindingCustomizer` do JDBI; sem lava-jato a consulta falha (400 "Escolha o lava-jato"). O middleware ainda recusa (403) ids de atendimento, conta ou caixa de outro lava-jato.
-* Catálogo, `/api/establishment`, agenda pública e login/cadastro de cliente exigem o lava-jato (400 sem cabeçalho, 404 para endereço inexistente ou suspenso). Logins da equipe dispensam: e-mail do gerente, crachá e PIN do lavador (telefone de conta da equipe com correspondência única) identificam o lava-jato.
+* Catálogo, `/api/establishment`, agenda pública e login/cadastro de cliente exigem o lava-jato (400 sem cabeçalho, 404 para endereço inexistente ou suspenso). Logins da equipe dispensam: e-mail do gerente, crachá e PIN do lavador (o PIN entra na conta de lavador, com aquele telefone, cujo crachá ele confere) identificam o lava-jato.
 * `GET /api/setup` (público) informa se a plataforma já tem administrador; a página inicial redireciona para `/configurar` enquanto não tiver.
 * `POST /api/setup` (público, uma única vez: `ownerName`, `ownerEmail`, `ownerPassword`, `setupCode`) cria o administrador da plataforma e devolve a sessão (perfil `ADMIN`). Em produção exige o `SETUP_CODE`.
-* `POST /api/auth/admins` (e-mail e senha) e a página `/login/admin`; o painel `/admin` lista os lava-jatos, cria (`POST /api/admin/establishments`: nome, horário, capacidade e gerente inicial com e-mail e senha; cria também o catálogo inicial de serviços e categorias de despesa) e suspende/reativa (`PATCH /api/admin/establishments/{id}/active`). Rotas `/api/admin/**` são exclusivas do administrador, que não acessa dados de lava-jato.
+* `POST /api/auth/admins` (e-mail e senha) e a página `/login/admin`; o painel `/admin` lista os lava-jatos, cria (`POST /api/admin/establishments`: nome, horário, capacidade e gerente inicial com e-mail e senha; cria também o catálogo inicial de serviços e categorias de despesa) e suspende/reativa (`PATCH /api/admin/establishments/{id}/active`). `PATCH /api/admin/establishments/{id}/manager-password` (`password`, mínimo 8) define a nova senha do gerente mostrado no cartão ("Redefinir senha do gerente"). Rotas `/api/admin/**` são exclusivas do administrador, que não acessa dados de lava-jato.
 * `GET /api/establishments?query=` (público): lava-jatos ativos por nome, para o seletor do cliente.
 * `GET /api/establishment` (público, dentro do lava-jato) e `PUT /api/establishment` (gerente): nome, horário, domingos e capacidade do pátio.
 * O gerente entra com e-mail e senha (`POST /api/auth/managers` com `email` ou, para contas antigas, `phone`). `PATCH /api/users/{id}/email` define o e-mail de acesso.
 
 ### Acesso por perfil
 * **Gerente:** e-mail + senha (contas antigas ainda entram pelo telefone).
-* **Lavador:** crachá emitido pelo gerente (`POST /api/users/{id}/badge`, mostrado uma única vez): telefone + PIN de 6 dígitos (`POST /api/auth/washers/pin`; 5 erros bloqueiam por 15 minutos) ou leitura do QR do crachá (`POST /api/auth/washers/badge`; o QR abre `/login/lavador?cracha=...`). Gerar de novo invalida o crachá anterior. A senha do lavador passou a ser opcional.
+* **Lavador:** crachá emitido pelo gerente (`POST /api/users/{id}/badge`, mostrado uma única vez): telefone + PIN de 6 dígitos (`POST /api/auth/washers/pin`; 5 erros bloqueiam por 15 minutos; o mesmo telefone pode ter crachá em mais de um lava-jato e cada PIN abre a sua conta) ou leitura do QR do crachá (`POST /api/auth/washers/badge`; o QR abre `/login/lavador?cracha=...`). Gerar de novo invalida o crachá anterior. A senha do lavador passou a ser opcional.
 * **Cliente presencial:** o gerente gera o ticket do atendimento (`POST /api/service-orders/{id}/ticket`), entregue por QR, link ou WhatsApp; `GET /api/tickets/{token}` e a página `/ticket/:token` mostram veículo, serviço e andamento sem login e sem dados do cliente.
 * **Cliente com conta:** telefone + senha, código de 6 dígitos por WhatsApp (`POST /api/auth/customers/otp` e `/otp/verify`; vale 10 minutos, 5 tentativas, reenvio após 60 s; o link `/entrar/whatsapp?telefone=...&codigo=...` funciona como magic link) ou Google (`POST /api/auth/customers/google`). Telefone/conta Google novos viram conta de cliente; contas da equipe nunca entram por esses caminhos. `GET /api/auth/options` informa o que está habilitado (`OTP_CHANNEL`, `GOOGLE_CLIENT_ID`).
 

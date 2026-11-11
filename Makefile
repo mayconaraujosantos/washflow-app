@@ -51,7 +51,7 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help install dev dev-backend dev-frontend build run start test test-backup lint format generate-auth-secret seed-test-users load-seed load-test \
-	coverage sonar stop ip clean db-up db-down db-logs \
+	coverage sonar stop ip clean db-up db-down db-logs e2e e2e-ci hooks \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
 	argocd-port-forward argo-install argo-port-forward argo-ui-service ci deploy-dev deploy-prod
@@ -210,6 +210,25 @@ db-down:
 db-logs:
 	docker-compose logs -f postgres
 
+## Versioned git hooks (.githooks): pre-push runs the fast checks (formatting,
+## compilation, lint, types) so a broken build is caught before it reaches
+## develop/main. Once per clone.
+hooks:
+	git config core.hooksPath .githooks
+	@echo "Git hooks enabled (.githooks). Skip once with: git push --no-verify"
+
+## End-to-end journey (web/e2e, Playwright): two lava-jatos set up from
+## scratch, managers, washers (PIN and badge QR) and customers (app and
+## ticket), each on its own phone. Runs against a throwaway pod on :7100
+## (scripts/e2e-env.sh) - never the dev app on :7000 or its database.
+## `make e2e` shows the browser, slowed down; videos per person end up in
+## web/test-results/people and the report opens with `cd web && bun run e2e:report`.
+e2e:
+	cd web && bun run e2e
+
+e2e-ci:
+	cd web && bun run e2e:ci
+
 ## Local CI/CD: kind (via Podman) + Argo CD (GitOps) + Argo Workflows (pipelines).
 ## Production deploys to Render through Argo Workflows (`make deploy-prod`); Argo
 ## CD manages the local cluster - ingress, observability (LGTM), SonarQube and
@@ -229,6 +248,9 @@ cluster-up:
 		-f https://github.com/argoproj/argo-workflows/releases/download/v3.7.2/quick-start-minimal.yaml
 	kubectl -n argo rollout status deploy/workflow-controller --timeout=180s
 	kubectl -n argo rollout status deploy/argo-server --timeout=180s
+	@# The quick-start's MinIO is unused (see infra/argo-workflows/artifact-repository.yaml)
+	@# and its image is no longer pullable: keep it off instead of in ImagePullBackOff.
+	kubectl -n argo scale deploy/minio --replicas=0
 	@echo "==> GitOps root Application + Workflow templates"
 	kubectl apply -f infra/gitops/bootstrap/root.yaml
 	kubectl apply -n argo -f infra/argo-workflows/

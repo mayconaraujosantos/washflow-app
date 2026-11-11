@@ -5,12 +5,14 @@ import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.usecases.user.DbAuthenticateUser;
 import com.washflow.data.usecases.user.DbCreateWasher;
 import com.washflow.data.usecases.user.DbListUsers;
+import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserActive;
 import com.washflow.data.usecases.user.DbUpdateUserProfile;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.usecases.user.AuthenticateUser;
 import com.washflow.domain.usecases.user.CreateWasher;
 import com.washflow.domain.usecases.user.ListUsers;
+import com.washflow.domain.usecases.user.ResetUserPassword;
 import com.washflow.domain.usecases.user.UpdateUserActive;
 import com.washflow.domain.usecases.user.UpdateUserProfile;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
@@ -18,6 +20,7 @@ import com.washflow.infra.security.BCryptPasswordHasher;
 import com.washflow.presentation.controllers.user.AuthenticateUserController;
 import com.washflow.presentation.controllers.user.CreateWasherController;
 import com.washflow.presentation.controllers.user.ListUsersController;
+import com.washflow.presentation.controllers.user.ResetUserPasswordController;
 import com.washflow.presentation.controllers.user.UpdateUserActiveController;
 import com.washflow.presentation.controllers.user.UpdateUserProfileController;
 import com.washflow.presentation.protocols.Controller;
@@ -62,6 +65,11 @@ public final class UserModule {
   public static ListUsers listUsers(Jdbi jdbi) {
     UserJdbiRepository repository = new UserJdbiRepository(jdbi);
     return new DbListUsers(repository);
+  }
+
+  public static ResetUserPassword resetUserPassword(Jdbi jdbi) {
+    UserJdbiRepository repository = new UserJdbiRepository(jdbi);
+    return new DbResetUserPassword(repository, repository, new BCryptPasswordHasher());
   }
 
   public static UpdateUserActive updateUserActive(Jdbi jdbi) {
@@ -126,6 +134,10 @@ public final class UserModule {
 
   public static Controller listUsersController(Jdbi jdbi) {
     return new ListUsersController(listUsers(jdbi));
+  }
+
+  public static Controller resetUserPasswordController(Jdbi jdbi) {
+    return new ResetUserPasswordController(resetUserPassword(jdbi));
   }
 
   public static Controller updateUserActiveController(Jdbi jdbi) {

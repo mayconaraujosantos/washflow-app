@@ -194,6 +194,13 @@ production.
 
 ## Day to day (git flow)
 
+- **Once per clone:** `make hooks` - the pre-push hook (`.githooks/pre-push`)
+  runs Spotless, compilation, lint, Prettier and the TypeScript check (~10 s)
+  so a broken build never reaches `develop`/`main`.
+- **End-to-end journey:** `make e2e` (visible browser) or `make e2e-ci`
+  (headless) runs `web/e2e` - two lava-jatos from a fresh install through
+  managers, washers and customers - against a throwaway pod on `:7100`
+  (`scripts/e2e-env.sh`), never the dev app. Run it before every `release/*`.
 - **feature/\***: `make ci` before opening a PR — runs the same checks Argo
   CD/production will expect (`infra/argo-workflows/ci-workflowtemplate.yaml`).
 - **develop**: pushes are what Argo CD's Applications track

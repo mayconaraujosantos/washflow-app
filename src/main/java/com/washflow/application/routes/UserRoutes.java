@@ -145,6 +145,7 @@ public final class UserRoutes {
     registerListUsers(jdbi);
     registerCreateWasher(jdbi);
     registerUpdateUserActive(jdbi);
+    registerResetUserPassword(jdbi);
   }
 
   @OpenApi(
@@ -201,7 +202,32 @@ public final class UserRoutes {
         JavalinRouteAdapter.adapt(UserModule.updateUserActiveController(jdbi)));
   }
 
+  @OpenApi(
+      path = USERS_BASE_PATH + "/{id}/password",
+      methods = HttpMethod.PATCH,
+      summary = "Manager-only: set a new password for a customer or washer who lost theirs",
+      tags = {"Users"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      requestBody =
+          @OpenApiRequestBody(content = @OpenApiContent(from = ResetUserPasswordRequest.class)),
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = User.class)),
+        @OpenApiResponse(status = "400", description = "Password shorter than 8 characters"),
+        @OpenApiResponse(status = "401", description = "Authentication required"),
+        @OpenApiResponse(
+            status = "403",
+            description = "Requester is not a manager, or the account is a manager's"),
+        @OpenApiResponse(status = "404", description = "User not found")
+      })
+  private static void registerResetUserPassword(Jdbi jdbi) {
+    patch(
+        USERS_BASE_PATH + "/{id}/password",
+        JavalinRouteAdapter.adapt(UserModule.resetUserPasswordController(jdbi)));
+  }
+
   public record CreateWasherRequest(String name, String phone, String password) {}
 
   public record UpdateUserActiveRequest(Boolean active) {}
+
+  public record ResetUserPasswordRequest(String password) {}
 }

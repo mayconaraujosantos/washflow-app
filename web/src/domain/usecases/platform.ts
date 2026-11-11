@@ -31,4 +31,9 @@ export interface Platform extends EstablishmentDirectory {
   list: () => Promise<EstablishmentSummaryModel[]>
   create: (params: NewEstablishmentParams) => Promise<EstablishmentSummaryModel>
   setActive: (id: string, active: boolean) => Promise<EstablishmentSummaryModel>
+  /** New password for the lava-jato's manager, who lost theirs. */
+  resetManagerPassword: (
+    id: string,
+    password: string,
+  ) => Promise<EstablishmentSummaryModel>
 }

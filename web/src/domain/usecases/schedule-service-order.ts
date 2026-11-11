@@ -9,7 +9,7 @@ export interface ScheduleServiceOrder {
 export namespace ScheduleServiceOrder {
   export type Params = {
     vehicleId: string
-    servicePriceId: number
+    servicePriceIds: number[]
     scheduledAt: string
   }
 

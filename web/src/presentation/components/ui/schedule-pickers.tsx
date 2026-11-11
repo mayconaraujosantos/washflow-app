@@ -6,24 +6,24 @@ import { Notice } from '@/presentation/components/ui/blocks'
 import { errorMessage, formatMoney } from '@/presentation/helpers/format'
 import { dayLabel, upcomingDays } from '@/presentation/helpers/schedule-days'
 
-/** Services as tappable cards with the price in view (no dropdown). */
+/** Select one or more services as tappable price cards (no dropdown). */
 export function ServicePicker({
   services,
-  value,
+  values,
   onChange,
 }: Readonly<{
   services: ServicePriceModel[]
-  value: number | null
+  values: number[]
   onChange: (id: number) => void
 }>) {
   return (
-    <div className="choice-grid" role="radiogroup" aria-label="Serviço">
+    <div className="choice-grid" role="group" aria-label="Serviços">
       {services.map((service) => (
         <button
           key={service.id}
           type="button"
-          role="radio"
-          aria-checked={value === service.id}
+          role="checkbox"
+          aria-checked={values.includes(service.id)}
           className="choice"
           onClick={() => onChange(service.id)}
         >

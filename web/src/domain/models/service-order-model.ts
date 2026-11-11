@@ -36,12 +36,14 @@ export type ServiceOrderDetails = {
   customerPhone: string | null
   serviceName: string | null
   washerName: string | null
+  serviceTotal?: number | null
 }
 
 export type ServiceOrderModel = {
   id: string
   vehicleId: string
   servicePriceId: number
+  servicePriceIds?: number[]
   washerId: string | null
   status: ServiceOrderStatus
   scheduledAt: string

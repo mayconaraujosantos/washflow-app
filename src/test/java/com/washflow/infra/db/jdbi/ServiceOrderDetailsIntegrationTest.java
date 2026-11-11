@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -70,6 +72,36 @@ class ServiceOrderDetailsIntegrationTest {
     assertEquals(0, otherOrders.size());
   }
 
+  @Test
+  void combinedServicesAreStoredAndShownAsOneOrderInDetailsAndTicket() {
+    Jdbi jdbi = createJdbi();
+    ServiceOrderJdbiRepository repository = new ServiceOrderJdbiRepository(jdbi);
+    addPolishingService(jdbi);
+    Instant now = Instant.now();
+    ServiceOrder order =
+        new ServiceOrder(
+            UUID.randomUUID(),
+            DEMO_VEHICLE_ID,
+            List.of(1, 2),
+            null,
+            ServiceOrderStatus.SCHEDULED,
+            now,
+            now,
+            now);
+
+    repository.create(order);
+
+    ServiceOrder loaded = repository.loadById(order.id()).orElseThrow();
+    assertEquals(List.of(1, 2), loaded.servicePriceIds());
+    assertEquals("Lavagem Completa + Polimento", loaded.details().serviceName());
+    assertEquals(new BigDecimal("105.00"), loaded.details().serviceTotal());
+    AccessJdbiRepository access = new AccessJdbiRepository(jdbi);
+    String ticketToken = access.issue(order.id(), "ticket-token").orElseThrow();
+    assertEquals(
+        "Lavagem Completa + Polimento",
+        access.loadByToken(ticketToken).orElseThrow().serviceName());
+  }
+
   private static UUID insertOrder(Jdbi jdbi, String status) {
     UUID orderId = UUID.randomUUID();
     Instant now = Instant.now();
@@ -94,5 +126,18 @@ class ServiceOrderDetailsIntegrationTest {
   private static Jdbi createJdbi() {
     DataSource dataSource = TestDatabase.newDatabase();
     return TestDatabase.prepare(dataSource);
+  }
+
+  private static void addPolishingService(Jdbi jdbi) {
+    jdbi.useHandle(
+        handle ->
+            handle
+                .createUpdate(
+                    """
+                    INSERT INTO servicos_preco
+                      (id, estabelecimento_id, nome, preco, comissao_lavador)
+                    VALUES (2, :tenant, 'Polimento', 45.00, 5.00)
+                    """)
+                .execute());
   }
 }

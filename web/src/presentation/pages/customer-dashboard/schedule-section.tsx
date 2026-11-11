@@ -12,7 +12,11 @@ import {
   ServicePicker,
   SlotPicker,
 } from '@/presentation/components/ui/schedule-pickers'
-import { errorMessage, formatDateTime } from '@/presentation/helpers/format'
+import {
+  errorMessage,
+  formatDateTime,
+  formatMoney,
+} from '@/presentation/helpers/format'
 
 // Same minimum lead time DbScheduleServiceOrder enforces for customers.
 const CUSTOMER_LEAD_MINUTES = 30
@@ -40,7 +44,7 @@ export function ScheduleSection({
   const [vehicleId, setVehicleId] = useState(
     vehicles.length === 1 ? vehicles[0].id : '',
   )
-  const [servicePriceId, setServicePriceId] = useState<number | null>(null)
+  const [servicePriceIds, setServicePriceIds] = useState<number[]>([])
   const [slot, setSlot] = useState<string | null>(null)
   const [scheduledAt, setScheduledAt] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -48,14 +52,22 @@ export function ScheduleSection({
   const [loading, setLoading] = useState(false)
 
   const chosenTime = loadDay ? slot : scheduledAt
-  const ready = Boolean(vehicleId && servicePriceId && chosenTime)
+  const selectedServices = servicePrices.filter((service) =>
+    servicePriceIds.includes(service.id),
+  )
+  const serviceTotal =
+    selectedServices.reduce(
+      (totalCents, service) => totalCents + Math.round(service.price * 100),
+      0,
+    ) / 100
+  const ready = Boolean(vehicleId && servicePriceIds.length && chosenTime)
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault()
     setError(null)
     setSuccess(null)
-    if (!ready || servicePriceId === null) {
-      setError('Escolha o veículo, o serviço e o horário.')
+    if (!ready || servicePriceIds.length === 0) {
+      setError('Escolha o veículo, um ou mais serviços e o horário.')
       return
     }
     setLoading(true)
@@ -63,11 +75,11 @@ export function ScheduleSection({
       const startsAt = loadDay && slot ? slot : toManausInstant(scheduledAt)
       const serviceOrder = await scheduleServiceOrder.schedule({
         vehicleId,
-        servicePriceId,
+        servicePriceIds,
         scheduledAt: startsAt,
       })
       onScheduled(serviceOrder)
-      setSuccess(`Lavagem agendada para ${formatDateTime(startsAt)}!`)
+      setSuccess(`Atendimento agendado para ${formatDateTime(startsAt)}!`)
       setSlot(null)
       setScheduledAt('')
     } catch (cause) {
@@ -119,13 +131,27 @@ export function ScheduleSection({
 
       <section className="step">
         <h2 className="step-title">
-          <span className="step-number">2</span> Serviço
+          <span className="step-number">2</span> Serviços
         </h2>
+        <p className="faint">
+          Selecione um ou mais serviços para este atendimento.
+        </p>
         <ServicePicker
           services={servicePrices}
-          value={servicePriceId}
-          onChange={setServicePriceId}
+          values={servicePriceIds}
+          onChange={(servicePriceId) =>
+            setServicePriceIds((selected) =>
+              selected.includes(servicePriceId)
+                ? selected.filter((id) => id !== servicePriceId)
+                : [...selected, servicePriceId],
+            )
+          }
         />
+        {selectedServices.length > 0 && (
+          <p className="auth-note">
+            Total dos serviços: <strong>{formatMoney(serviceTotal)}</strong>
+          </p>
+        )}
       </section>
 
       <section className="step">

@@ -1,5 +1,6 @@
 import { SubmitEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PasswordResetForm } from '@/presentation/components/password-reset-form'
 import { UiIcon } from '@/presentation/components/ui-icon'
 import type { UserModel, UserProfile } from '@/domain/models/user-model'
 import type { Operations } from '@/domain/usecases/operations'
@@ -49,6 +50,7 @@ export function TeamManagementSection({
   const [washerPhone, setWasherPhone] = useState('')
   const [washerPassword, setWasherPassword] = useState('')
   const [creatingWasher, setCreatingWasher] = useState(false)
+  const [resettingId, setResettingId] = useState<string | null>(null)
 
   const createWasher = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -115,6 +117,24 @@ export function TeamManagementSection({
       )
     } finally {
       setBusyUserId(null)
+    }
+  }
+
+  const resetPassword = async (target: UserModel, password: string) => {
+    setError(null)
+    setNotice(null)
+    try {
+      await operations.resetUserPassword(target.id, password)
+      setResettingId(null)
+      setNotice(
+        `Senha de ${target.name} redefinida. Entregue a nova senha pessoalmente.`,
+      )
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível redefinir a senha',
+      )
     }
   }
 
@@ -302,6 +322,20 @@ export function TeamManagementSection({
                 >
                   Salvar perfil
                 </button>
+                {account.profile !== 'MANAGER' && account.active && (
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    aria-label={`Redefinir senha de ${account.name}`}
+                    onClick={() =>
+                      setResettingId((current) =>
+                        current === account.id ? null : account.id,
+                      )
+                    }
+                  >
+                    Redefinir senha
+                  </button>
+                )}
                 <button
                   className="secondary-btn"
                   disabled={busyUserId === account.id}
@@ -314,6 +348,13 @@ export function TeamManagementSection({
                       : 'Reativar acesso'}
                 </button>
               </div>
+              {resettingId === account.id && (
+                <PasswordResetForm
+                  name={account.name}
+                  onSave={(password) => resetPassword(account, password)}
+                  onCancel={() => setResettingId(null)}
+                />
+              )}
             </li>
           ))}
         </ul>
