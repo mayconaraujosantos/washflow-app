@@ -1,8 +1,6 @@
 package com.washflow.domain.usecases.vehicle;
 
 import com.washflow.domain.entities.vehicle.Vehicle;
-import com.washflow.domain.errors.vehicle.InvalidPlateError;
-import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
 import java.util.UUID;
 
 /**
@@ -15,7 +13,7 @@ import java.util.UUID;
  */
 public interface CreateVehicle {
 
-  Vehicle create(Params params) throws InvalidPlateError, VehiclePlateAlreadyRegisteredError;
+  Vehicle create(Params params);
 
   record Params(UUID customerId, String plate, String model, String color) {}
 }

@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.serviceorder;
 
-import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.serviceorder.CheckInServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -27,8 +26,6 @@ public class CheckInServiceOrderController implements Controller {
       return HttpHelper.ok(serviceOrder);
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (VehicleAlreadyInYardError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

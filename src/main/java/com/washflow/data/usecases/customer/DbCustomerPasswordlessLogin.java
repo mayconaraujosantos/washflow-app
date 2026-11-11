@@ -81,7 +81,7 @@ public class DbCustomerPasswordlessLogin implements CustomerPasswordlessLogin {
   }
 
   @Override
-  public int requestCode(OtpRecipient recipient) throws OtpUnavailableError, OtpTooSoonError {
+  public int requestCode(OtpRecipient recipient) {
     OtpSender sender = sender(recipient);
     if (!sender.available()) {
       throw unavailable(recipient);
@@ -104,7 +104,7 @@ public class DbCustomerPasswordlessLogin implements CustomerPasswordlessLogin {
   }
 
   @Override
-  public User verifyCode(OtpRecipient recipient, String code, String name) throws InvalidOtpError {
+  public User verifyCode(OtpRecipient recipient, String code, String name) {
     OtpRepository.PendingCode pending =
         otpRepository.loadPending(recipient).orElseThrow(InvalidOtpError::new);
     Instant now = Instant.now(clock);
@@ -149,7 +149,7 @@ public class DbCustomerPasswordlessLogin implements CustomerPasswordlessLogin {
   }
 
   @Override
-  public User signInWithGoogle(String idToken) throws GoogleLoginUnavailableError {
+  public User signInWithGoogle(String idToken) {
     if (googleTokenVerifier.clientId() == null) {
       throw new GoogleLoginUnavailableError();
     }

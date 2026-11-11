@@ -9,7 +9,13 @@ package com.washflow.domain.errors.common;
  * react to, while the message is the text shown to the user.
  */
 public abstract sealed class DomainError extends RuntimeException
-    permits ValidationError, AuthenticationError, AccessDeniedError, NotFoundError, ConflictError {
+    permits ValidationError,
+        AuthenticationError,
+        AccessDeniedError,
+        NotFoundError,
+        ConflictError,
+        TooManyRequestsError,
+        UnavailableError {
 
   private final String code;
 

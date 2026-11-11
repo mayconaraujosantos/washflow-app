@@ -9,7 +9,7 @@ import com.washflow.domain.errors.auth.OtpUnavailableError;
 public interface OtpSender {
 
   /** Throws {@link OtpUnavailableError} when the channel is off or the delivery failed. */
-  void send(String address, String code, String magicLink) throws OtpUnavailableError;
+  void send(String address, String code, String magicLink);
 
   boolean available();
 }

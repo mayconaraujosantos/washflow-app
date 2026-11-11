@@ -1,8 +1,6 @@
 package com.washflow.presentation.controllers.sale;
 
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.sale.SaleNotFoundError;
-import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import com.washflow.domain.usecases.sale.RefundSale;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -47,10 +45,6 @@ public class RefundSaleController implements Controller {
                   BodyValues.text(body, "description"))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (SaleNotFoundError e) {
-      return HttpHelper.notFound(e);
-    } catch (SaleRefundNotAllowedError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

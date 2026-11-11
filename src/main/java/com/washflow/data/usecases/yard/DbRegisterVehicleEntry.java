@@ -16,10 +16,6 @@ import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.errors.common.ServicePriceNotFoundError;
-import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
-import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
-import com.washflow.domain.errors.schedule.SlotFullyBookedError;
-import com.washflow.domain.errors.vehicle.InvalidPlateError;
 import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
 import java.time.Clock;
@@ -91,13 +87,7 @@ public class DbRegisterVehicleEntry implements RegisterVehicleEntry {
   }
 
   @Override
-  public ServiceOrder register(Params params)
-      throws InvalidPlateError,
-          ServicePriceNotFoundError,
-          OutsideBusinessHoursError,
-          InsufficientLeadTimeError,
-          SlotFullyBookedError,
-          VehicleAlreadyInYardError {
+  public ServiceOrder register(Params params) {
     Instant now = Instant.now(clock);
     String plate = Vehicle.normalizePlate(params.plate());
     String phone = ContactRules.normalizePhone(params.customerPhone());

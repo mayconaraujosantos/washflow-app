@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.customer;
 
-import com.washflow.domain.errors.auth.GoogleLoginUnavailableError;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -25,8 +24,6 @@ public class GoogleCustomerLoginController implements Controller {
       return HttpHelper.ok(login.signInWithGoogle(BodyValues.text(body, "credential")));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (GoogleLoginUnavailableError e) {
-      return new HttpResponse(503, Map.of("error", e.getMessage()));
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

@@ -57,7 +57,7 @@ public class DbManagePlatform implements ManagePlatform {
   }
 
   @Override
-  public EstablishmentSummary create(NewEstablishment params) throws EstablishmentSlugTakenError {
+  public EstablishmentSummary create(NewEstablishment params) {
     String name = EstablishmentRules.name(params.name());
     EstablishmentRules.hours(params.openingHour(), params.closingHour());
     EstablishmentRules.capacity(params.maxVehiclesPerHour());
@@ -96,16 +96,14 @@ public class DbManagePlatform implements ManagePlatform {
   }
 
   @Override
-  public EstablishmentSummary setActive(UUID establishmentId, boolean active)
-      throws EstablishmentNotFoundError {
+  public EstablishmentSummary setActive(UUID establishmentId, boolean active) {
     return repository
         .setEstablishmentActive(establishmentId, active)
         .orElseThrow(EstablishmentNotFoundError::new);
   }
 
   @Override
-  public EstablishmentSummary resetManagerPassword(UUID establishmentId, String newPassword)
-      throws EstablishmentNotFoundError {
+  public EstablishmentSummary resetManagerPassword(UUID establishmentId, String newPassword) {
     if (newPassword == null || newPassword.length() < 8) {
       throw new IllegalArgumentException("A nova senha deve ter no mínimo 8 caracteres");
     }

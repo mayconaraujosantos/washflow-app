@@ -1,7 +1,6 @@
 package com.washflow.domain.usecases.user;
 
 import com.washflow.domain.entities.user.User;
-import com.washflow.domain.errors.user.AccountLockedError;
 import java.util.UUID;
 
 /**
@@ -13,7 +12,7 @@ public interface WasherBadge {
 
   Issued issue(UUID washerId);
 
-  User signInWithPin(String phone, String pin) throws AccountLockedError;
+  User signInWithPin(String phone, String pin);
 
   User signInWithBadge(String badgeToken);
 

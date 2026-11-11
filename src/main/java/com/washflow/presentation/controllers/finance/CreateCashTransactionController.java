@@ -1,7 +1,6 @@
 package com.washflow.presentation.controllers.finance;
 
 import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
-import com.washflow.domain.errors.finance.InvalidTransactionTypeError;
 import com.washflow.domain.usecases.finance.CreateCashTransaction;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -71,7 +70,7 @@ public class CreateCashTransactionController implements Controller {
       var saved = createCashTransaction.create(params);
       return new HttpResponse(201, saved);
 
-    } catch (IllegalArgumentException | InvalidTransactionTypeError e) {
+    } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

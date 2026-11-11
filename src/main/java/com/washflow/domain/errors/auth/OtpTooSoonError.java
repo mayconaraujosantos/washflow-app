@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.auth;
 
-public class OtpTooSoonError extends Exception {
+import com.washflow.domain.errors.common.TooManyRequestsError;
+
+public class OtpTooSoonError extends TooManyRequestsError {
 
   public OtpTooSoonError() {
-    super("Aguarde um minuto para pedir outro código");
+    super("OTP_TOO_SOON", "Aguarde um minuto para pedir outro código");
   }
 }

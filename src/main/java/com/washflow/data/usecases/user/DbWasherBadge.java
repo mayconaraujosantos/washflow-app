@@ -81,7 +81,7 @@ public class DbWasherBadge implements WasherBadge {
    * badge that did not match counts the failure towards its own lockout.
    */
   @Override
-  public User signInWithPin(String phone, String pin) throws AccountLockedError {
+  public User signInWithPin(String phone, String pin) {
     if (phone == null || pin == null || !PIN_FORMAT.matcher(pin).matches()) {
       throw new InvalidCredentialsError();
     }

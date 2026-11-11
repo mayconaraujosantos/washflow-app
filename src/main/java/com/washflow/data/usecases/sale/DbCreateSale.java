@@ -42,7 +42,7 @@ public class DbCreateSale implements CreateSale {
   }
 
   @Override
-  public Sale create(Params params) throws ServicePriceNotFoundError, VehicleNotFoundError {
+  public Sale create(Params params) {
     if (params.type() == null) {
       throw new IllegalArgumentException("Informe se é venda rápida ou orçamento");
     }
@@ -86,7 +86,7 @@ public class DbCreateSale implements CreateSale {
             payments));
   }
 
-  private List<SaleItem> buildItems(List<Item> requested) throws ServicePriceNotFoundError {
+  private List<SaleItem> buildItems(List<Item> requested) {
     if (requested == null || requested.isEmpty()) {
       throw new IllegalArgumentException("Adicione pelo menos um produto ou serviço");
     }

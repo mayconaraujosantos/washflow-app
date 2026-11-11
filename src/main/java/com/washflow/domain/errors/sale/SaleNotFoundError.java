@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.sale;
 
-public class SaleNotFoundError extends Exception {
+import com.washflow.domain.errors.common.NotFoundError;
+
+public class SaleNotFoundError extends NotFoundError {
 
   public SaleNotFoundError() {
-    super("Venda não encontrada");
+    super("SALE_NOT_FOUND", "Venda não encontrada");
   }
 }

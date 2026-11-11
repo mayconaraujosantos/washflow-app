@@ -5,6 +5,8 @@ import com.washflow.domain.errors.common.AuthenticationError;
 import com.washflow.domain.errors.common.ConflictError;
 import com.washflow.domain.errors.common.DomainError;
 import com.washflow.domain.errors.common.NotFoundError;
+import com.washflow.domain.errors.common.TooManyRequestsError;
+import com.washflow.domain.errors.common.UnavailableError;
 import com.washflow.domain.errors.common.ValidationError;
 import com.washflow.presentation.errors.ServerError;
 import com.washflow.presentation.protocols.HttpResponse;
@@ -77,6 +79,8 @@ public final class HttpHelper {
       case AccessDeniedError denied -> 403;
       case NotFoundError notFound -> 404;
       case ConflictError conflict -> 409;
+      case TooManyRequestsError tooMany -> 429;
+      case UnavailableError unavailable -> 503;
     };
   }
 

@@ -9,6 +9,8 @@ import com.washflow.domain.errors.common.UnauthorizedError;
 import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
 import com.washflow.domain.errors.serviceorder.TicketNotFoundError;
+import com.washflow.domain.errors.user.AccountLockedError;
+import com.washflow.domain.errors.user.EmailResetUnavailableError;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -49,6 +51,8 @@ class HttpHelperTest {
     assertEquals(403, HttpHelper.serverError(new ForbiddenError("Só o gerente")).statusCode());
     assertEquals(404, HttpHelper.serverError(new TicketNotFoundError()).statusCode());
     assertEquals(409, HttpHelper.serverError(new ServiceOrderNotCancellableError()).statusCode());
+    assertEquals(429, HttpHelper.serverError(new AccountLockedError()).statusCode());
+    assertEquals(503, HttpHelper.serverError(new EmailResetUnavailableError()).statusCode());
   }
 
   @Test

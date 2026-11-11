@@ -287,7 +287,7 @@ class AccessIntegrationTest {
     boolean failNext;
 
     @Override
-    public void send(String address, String code, String magicLink) throws OtpUnavailableError {
+    public void send(String address, String code, String magicLink) {
       if (failNext) {
         failNext = false;
         throw new OtpUnavailableError("SMTP fora do ar");

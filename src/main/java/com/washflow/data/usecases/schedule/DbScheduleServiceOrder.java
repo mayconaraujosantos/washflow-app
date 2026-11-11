@@ -8,9 +8,6 @@ import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.errors.common.ServicePriceNotFoundError;
-import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
-import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
-import com.washflow.domain.errors.schedule.SlotFullyBookedError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
 import java.time.Clock;
@@ -71,12 +68,7 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
   }
 
   @Override
-  public ServiceOrder schedule(Params params)
-      throws VehicleNotFoundError,
-          ServicePriceNotFoundError,
-          OutsideBusinessHoursError,
-          InsufficientLeadTimeError,
-          SlotFullyBookedError {
+  public ServiceOrder schedule(Params params) {
     Instant now = Instant.now(clock);
     validateServicePriceIds(params.servicePriceIds());
     rules.checkBusinessHours(params.scheduledAt());

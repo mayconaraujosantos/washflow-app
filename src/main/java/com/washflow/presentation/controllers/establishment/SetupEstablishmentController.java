@@ -1,7 +1,5 @@
 package com.washflow.presentation.controllers.establishment;
 
-import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
-import com.washflow.domain.errors.establishment.InvalidSetupCodeError;
 import com.washflow.domain.usecases.establishment.SetupEstablishment;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -35,10 +33,6 @@ public class SetupEstablishmentController implements Controller {
                   BodyValues.text(body, "ownerPassword"))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (InvalidSetupCodeError e) {
-      return HttpHelper.forbidden(e);
-    } catch (EstablishmentAlreadyConfiguredError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

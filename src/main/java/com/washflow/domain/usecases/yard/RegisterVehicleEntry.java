@@ -1,12 +1,6 @@
 package com.washflow.domain.usecases.yard;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
-import com.washflow.domain.errors.common.ServicePriceNotFoundError;
-import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
-import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
-import com.washflow.domain.errors.schedule.SlotFullyBookedError;
-import com.washflow.domain.errors.vehicle.InvalidPlateError;
-import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import java.time.Instant;
 
 /**
@@ -19,13 +13,7 @@ import java.time.Instant;
  */
 public interface RegisterVehicleEntry {
 
-  ServiceOrder register(Params params)
-      throws InvalidPlateError,
-          ServicePriceNotFoundError,
-          OutsideBusinessHoursError,
-          InsufficientLeadTimeError,
-          SlotFullyBookedError,
-          VehicleAlreadyInYardError;
+  ServiceOrder register(Params params);
 
   record Params(
       String plate,

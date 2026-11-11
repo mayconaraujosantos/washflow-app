@@ -22,7 +22,7 @@ public class EmailOtpSender implements OtpSender {
   }
 
   @Override
-  public void send(String email, String code, String magicLink) throws OtpUnavailableError {
+  public void send(String email, String code, String magicLink) {
     if (!emailSender.available()) {
       throw new OtpUnavailableError("Envio de código por e-mail não está configurado");
     }
