@@ -425,10 +425,13 @@ test('5. cada lava-jato é isolado do outro', async () => {
     await expect(
       manager.getByRole('button', { name: new RegExp(`^${customer.plate}`) }),
     ).toBeVisible()
-    await search.fill(walkIn.plate)
-    await manager.waitForResponse((response) =>
+    // Listen before typing: with slowMo the response can arrive before a
+    // listener registered afterwards.
+    const searched = manager.waitForResponse((response) =>
       response.url().includes(`/api/operations/vehicles?query=${walkIn.plate}`),
     )
+    await search.fill(walkIn.plate)
+    await searched
     await expect(
       manager.getByRole('button', { name: new RegExp(`^${walkIn.plate}`) }),
     ).toHaveCount(0)

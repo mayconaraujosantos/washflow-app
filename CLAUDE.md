@@ -2,6 +2,8 @@
 
 Este documento define as entidades de negócio, os estados do fluxo do veículo (fila lógica) e a estrutura relacional do sistema O banco é somente PostgreSQL (desenvolvimento, testes com PostgreSQL embutido e produção); as regras de fila também valem para repositórios em memória.
 
+> **Git flow:** nunca commite direto em `main` ou `develop`. Use a ferramenta `git flow` (AVH): `feature`/`bugfix` a partir da `develop`, `release` e `hotfix` com tag `vX.Y.Z`, finalizados com `git flow ... finish` (merge local, sem PR). Siga a skill [git-flow](.claude/skills/git-flow/SKILL.md); `make hooks` configura o git flow e o hook `.githooks/pre-commit`, que recusa commits nessas branches.
+
 ---
 
 ## 1. Máquina de Estados do Veículo (O Washflow)
@@ -137,7 +139,7 @@ Para garantir que a lógica funcione igual no banco físico ou em listas Java/Ko
 
 ## 4. Atores, autorização e operações
 Somente clientes podem se cadastrar publicamente. O login de lavador e gerente exige telefone e senha de uma conta provisionada ou promovida por gerente; informar um telefone novo nesses endpoints não concede perfil operacional.
-O campo nome é exigido no cadastro de cliente; para entrar (cliente, lavador ou gerente), bastam telefone e senha. A página inicial segue o layout de referência: logo e cartão "Entrar" (telefone e senha do cliente) com troca para "Criar uma conta", "Esqueci a senha", instalação do app e, no rodapé, links para o login do lavador e do gerente. Antes do cartão, o cliente escolhe o lava-jato (busca por nome ou link `/?lavajato=<slug>` do balcão, lembrado no aparelho) e pode trocá-lo; os links da equipe ficam sempre visíveis. Já dentro da conta, o painel do cliente mostra "Lava-jato: <nome>" com "Trocar" (sai da conta e volta à escolha) e o agendamento começa com "Agendando no <nome>". Uma instalação nova vai antes para `/configurar`. O telefone é enviado só com dígitos.
+O campo nome é exigido no cadastro de cliente; para entrar (cliente, lavador ou gerente), bastam telefone e senha. A página inicial segue o layout de referência: logo e cartão "Área do cliente" com a escolha "Já tenho conta | Criar conta" no topo (telefone e senha do cliente), "Esqueci a senha", instalação do app e, no rodapé, links para o login do lavador e do gerente. Antes do cartão, o cliente escolhe o lava-jato (busca por nome ou link `/?lavajato=<slug>` do balcão, lembrado no aparelho) e pode trocá-lo; os links da equipe ficam sempre visíveis. Já dentro da conta, o painel do cliente mostra "Lava-jato: <nome>" com "Trocar" (sai da conta e volta à escolha) e o agendamento começa com "Agendando no <nome>". Uma instalação nova vai antes para `/configurar`. O telefone é enviado só com dígitos.
 
 O login exige telefone e senha (mínimo de 8 caracteres); o nome só é exigido para criar a conta de cliente. A senha é armazenada com BCrypt. Após autenticar, a API emite um token HMAC assinado, com expiração de 8 horas e perfil fixado pelo endpoint de login. Rotas operacionais exigem `Authorization: Bearer <token>` e verificam o perfil atual do usuário.
 
