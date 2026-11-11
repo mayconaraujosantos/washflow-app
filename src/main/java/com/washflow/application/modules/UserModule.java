@@ -10,6 +10,7 @@ import com.washflow.data.usecases.user.DbResetPasswordByEmail;
 import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserActive;
 import com.washflow.data.usecases.user.DbUpdateUserProfile;
+import com.washflow.data.usecases.user.DbWasherBadge;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.usecases.user.AuthenticateUser;
 import com.washflow.domain.usecases.user.CreateWasher;
@@ -18,6 +19,8 @@ import com.washflow.domain.usecases.user.ResetPasswordByEmail;
 import com.washflow.domain.usecases.user.ResetUserPassword;
 import com.washflow.domain.usecases.user.UpdateUserActive;
 import com.washflow.domain.usecases.user.UpdateUserProfile;
+import com.washflow.domain.usecases.user.WasherBadge;
+import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
 import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.messaging.LoggingEmailSender;
@@ -99,6 +102,17 @@ public final class UserModule {
   /**
    * Backs the CLIENTE QR code - {@link UserProfile#CUSTOMER} is fixed here, never client-supplied.
    */
+  public static WasherBadge washerBadge(Jdbi jdbi, AppConfig appConfig) {
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    return new DbWasherBadge(
+        users,
+        users,
+        new AccessJdbiRepository(jdbi),
+        new BCryptPasswordHasher(),
+        new HmacTokenHasher(appConfig.tokenSecret()),
+        Clock.systemUTC());
+  }
+
   public static Controller authenticateCustomerController(Jdbi jdbi, AppConfig appConfig) {
     Validation validation =
         new ValidationComposite(

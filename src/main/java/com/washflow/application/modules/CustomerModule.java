@@ -6,12 +6,10 @@ import com.washflow.data.usecases.customer.DbCustomerPasswordlessLogin;
 import com.washflow.data.usecases.customer.DbCustomerRecoveryEmail;
 import com.washflow.data.usecases.customer.DbListServiceOrdersByCustomer;
 import com.washflow.data.usecases.customer.DbServiceOrderTicket;
-import com.washflow.data.usecases.user.DbWasherBadge;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.domain.usecases.customer.CustomerRecoveryEmail;
 import com.washflow.domain.usecases.customer.ListServiceOrdersByCustomer;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
-import com.washflow.domain.usecases.user.WasherBadge;
 import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
@@ -20,7 +18,6 @@ import com.washflow.infra.identity.GoogleTokeninfoVerifier;
 import com.washflow.infra.messaging.EmailOtpSender;
 import com.washflow.infra.messaging.LoggingOtpSender;
 import com.washflow.infra.messaging.UnavailableOtpSender;
-import com.washflow.infra.security.BCryptPasswordHasher;
 import com.washflow.infra.security.HmacTokenHasher;
 import com.washflow.presentation.controllers.customer.ListServiceOrdersByCustomerController;
 import com.washflow.presentation.protocols.Controller;
@@ -34,17 +31,6 @@ import org.jdbi.v3.core.Jdbi;
 public final class CustomerModule {
 
   private CustomerModule() {}
-
-  public static WasherBadge washerBadge(Jdbi jdbi, AppConfig appConfig) {
-    UserJdbiRepository users = new UserJdbiRepository(jdbi);
-    return new DbWasherBadge(
-        users,
-        users,
-        new AccessJdbiRepository(jdbi),
-        new BCryptPasswordHasher(),
-        new HmacTokenHasher(appConfig.tokenSecret()),
-        Clock.systemUTC());
-  }
 
   public static ServiceOrderTicket ticket(Jdbi jdbi) {
     return new DbServiceOrderTicket(new AccessJdbiRepository(jdbi));
