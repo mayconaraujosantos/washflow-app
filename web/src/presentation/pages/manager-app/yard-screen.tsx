@@ -266,15 +266,17 @@ function PaymentSheet({
   const [method, setMethod] = useState<PaymentMethod>('PIX')
   if (!order) return null
   const price = servicePrices.find((item) => item.id === order.servicePriceId)
+  const total = order.details?.serviceTotal ?? price?.price
 
   return (
     <BottomSheet open title="Receber pagamento" onClose={onClose}>
       <div className="client-chip">
         <span className="plate">{order.details?.vehiclePlate ?? '—'}</span>
-        <strong>{formatMoney(price?.price)}</strong>
+        <strong>{formatMoney(total)}</strong>
       </div>
       <p className="faint">
-        {order.details?.serviceName ?? price?.name} · valor do catálogo
+        {order.details?.serviceName ?? price?.name} · valor dos serviços do
+        catálogo
       </p>
       <div role="group" aria-label="Forma de pagamento" className="form">
         {PAYMENT_METHODS.map((option) => (

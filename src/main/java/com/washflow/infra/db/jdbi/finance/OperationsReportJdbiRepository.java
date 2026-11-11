@@ -35,16 +35,28 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
 
   private static final String PAID_ORDERS_SQL =
       """
-      SELECT a.id, s.nome AS service_name, p.forma_pagamento, p.valor,
+      SELECT a.id, p.forma_pagamento, p.valor,
              c.valor AS commission, a.lavagem_iniciada_em,
              a.lavagem_concluida_em
       FROM pagamentos p
       JOIN atendimentos a ON a.id = p.atendimento_id
-      JOIN servicos_preco s ON s.id = a.servico_preco_id
       LEFT JOIN comissoes_lavador c ON c.atendimento_id = a.id
       WHERE p.recebido_em >= :start AND p.recebido_em < :end
         AND a.estabelecimento_id = :tenant
       ORDER BY p.recebido_em ASC
+      """;
+
+  private static final String PAID_SERVICE_ITEMS_SQL =
+      """
+      SELECT s.nome AS service_name, s.preco AS service_amount,
+             s.comissao_lavador AS service_commission
+      FROM pagamentos p
+      JOIN atendimentos a ON a.id = p.atendimento_id
+      LEFT JOIN atendimento_servicos ats ON ats.atendimento_id = a.id
+      JOIN servicos_preco s ON s.id = COALESCE(ats.servico_preco_id, a.servico_preco_id)
+      WHERE p.recebido_em >= :start AND p.recebido_em < :end
+        AND a.estabelecimento_id = :tenant
+      ORDER BY p.recebido_em ASC, ats.ordem ASC
       """;
 
   private static final String PAUSES_SQL =
@@ -118,8 +130,9 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
     return jdbi.withHandle(
         handle -> {
           List<ReportOrder> orders = paidOrders(handle, start, end);
+          List<ReportServiceItem> serviceItems = paidServiceItems(handle, start, end);
           Pauses pauses = pauses(handle, orders);
-          Totals totals = totals(orders, pauses.durations());
+          Totals totals = totals(orders, serviceItems, pauses.durations());
           List<PauseBreakdown> pauseBreakdowns = new ArrayList<>();
           pauses
               .counts()
@@ -156,7 +169,7 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
         });
   }
 
-  /** Orders paid in the period, with their service, payment, commission and washing times. */
+  /** Orders paid in the period, with their payment, commission and washing times. */
   private static List<ReportOrder> paidOrders(Handle handle, Instant start, Instant end) {
     try (var query = handle.createQuery(PAID_ORDERS_SQL)) {
       return query
@@ -166,12 +179,27 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
               (rs, ctx) ->
                   new ReportOrder(
                       rs.getObject("id", UUID.class),
-                      rs.getString("service_name"),
                       rs.getString("forma_pagamento"),
                       rs.getBigDecimal("valor"),
                       rs.getBigDecimal("commission"),
                       timestamp(rs, "lavagem_iniciada_em"),
                       timestamp(rs, "lavagem_concluida_em")))
+          .list();
+    }
+  }
+
+  private static List<ReportServiceItem> paidServiceItems(
+      Handle handle, Instant start, Instant end) {
+    try (var query = handle.createQuery(PAID_SERVICE_ITEMS_SQL)) {
+      return query
+          .bind(START, start)
+          .bind(END, end)
+          .map(
+              (rs, ctx) ->
+                  new ReportServiceItem(
+                      rs.getString("service_name"),
+                      rs.getBigDecimal("service_amount"),
+                      rs.getBigDecimal("service_commission")))
           .list();
     }
   }
@@ -202,7 +230,10 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
   }
 
   /** Revenue, commissions, average washing time (minus pauses) and the service/payment splits. */
-  private static Totals totals(List<ReportOrder> orders, Map<UUID, Duration> pausedTime) {
+  private static Totals totals(
+      List<ReportOrder> orders,
+      List<ReportServiceItem> serviceItems,
+      Map<UUID, Duration> pausedTime) {
     BigDecimal revenue = BigDecimal.ZERO;
     BigDecimal commissions = BigDecimal.ZERO;
     long totalWashingMinutes = 0;
@@ -214,9 +245,6 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
       if (order.commission() != null) {
         commissions = commissions.add(order.commission());
       }
-      services
-          .computeIfAbsent(order.serviceName(), ignored -> new ServiceSummary())
-          .add(order.amount(), order.commission());
       payments
           .computeIfAbsent(order.paymentMethod(), ignored -> new PaymentSummary())
           .add(order.amount());
@@ -226,6 +254,11 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
         totalWashingMinutes += Math.max(0, elapsed.minus(paused).toMinutes());
         timedOrders++;
       }
+    }
+    for (ReportServiceItem item : serviceItems) {
+      services
+          .computeIfAbsent(item.serviceName(), ignored -> new ServiceSummary())
+          .add(item.amount(), item.commission());
     }
     List<ServiceBreakdown> serviceBreakdowns = new ArrayList<>();
     services.forEach(
@@ -307,12 +340,13 @@ public class OperationsReportJdbiRepository implements LoadOperationsReportRepos
 
   private record ReportOrder(
       UUID id,
-      String serviceName,
       String paymentMethod,
       BigDecimal amount,
       BigDecimal commission,
       Instant washStartedAt,
       Instant washCompletedAt) {}
+
+  private record ReportServiceItem(String serviceName, BigDecimal amount, BigDecimal commission) {}
 
   private static final class ServiceSummary {
     private int orders;

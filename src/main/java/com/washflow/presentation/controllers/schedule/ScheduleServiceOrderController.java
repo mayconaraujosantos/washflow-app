@@ -14,6 +14,7 @@ import com.washflow.presentation.protocols.HttpResponse;
 import com.washflow.validation.protocols.Validation;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.UUID;
 
 public class ScheduleServiceOrderController implements Controller {
@@ -36,12 +37,16 @@ public class ScheduleServiceOrderController implements Controller {
       }
 
       UUID vehicleId = UUID.fromString(BodyValues.text(request.body(), "vehicleId"));
-      int servicePriceId = BodyValues.integer(request.body(), "servicePriceId");
+      List<Integer> servicePriceIds = BodyValues.integers(request.body(), "servicePriceIds");
+      if (servicePriceIds.isEmpty()) {
+        servicePriceIds = List.of(BodyValues.integer(request.body(), "servicePriceId"));
+      }
       Instant scheduledAt = Instant.parse(BodyValues.text(request.body(), "scheduledAt"));
 
       var serviceOrder =
           scheduleServiceOrder.schedule(
-              new ScheduleServiceOrder.Params(vehicleId, servicePriceId, scheduledAt));
+              new ScheduleServiceOrder.Params(
+                  vehicleId, servicePriceIds.getFirst(), servicePriceIds, scheduledAt));
 
       return HttpHelper.ok(serviceOrder);
     } catch (DateTimeParseException

@@ -2,20 +2,22 @@ package com.washflow.domain.usecases.vehicle;
 
 import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
+import com.washflow.domain.errors.vehicle.InvalidPlateError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
 import java.util.UUID;
 
 /**
  * Registers a vehicle for an existing customer - RF-03's "veículo (se já cadastrado)" step from
- * {@code docs/feature_espec_visao_do_cliente.md} starts here, the first time a plate is seen.
- * {@code plate} is globally unique (one physical vehicle can't belong to two records), so a repeat
- * registration attempt is rejected rather than silently returning the existing row - after the
- * first registration, the client should pick the vehicle from {@code ListVehiclesByCustomer}
- * instead. Implemented by {@code DbCreateVehicle} in the data layer.
+ * {@code docs/feature_espec_visao_do_cliente.md} starts here, the first time a plate is seen. The
+ * plate is unique within the lava-jato, so a repeat registration is rejected - except for a car the
+ * manager entered at the counter without an account and with this customer's phone as the contact:
+ * that one is handed over to the customer (see {@link ListUnclaimedVehicles}). Implemented by
+ * {@code DbCreateVehicle} in the data layer.
  */
 public interface CreateVehicle {
 
-  Vehicle create(Params params) throws UserNotFoundError, VehiclePlateAlreadyRegisteredError;
+  Vehicle create(Params params)
+      throws UserNotFoundError, InvalidPlateError, VehiclePlateAlreadyRegisteredError;
 
   record Params(UUID customerId, String plate, String model, String color) {}
 }

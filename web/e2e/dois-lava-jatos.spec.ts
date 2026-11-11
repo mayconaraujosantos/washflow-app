@@ -201,7 +201,9 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     await customerPhone.getByRole('link', { name: 'Veículos' }).click()
     await customerPhone.getByLabel('Placa').fill(customer.plate)
     await customerPhone.getByLabel('Modelo (opcional)').fill(customer.model)
-    await customerPhone.getByLabel('Cor (opcional)').fill(customer.color)
+    await customerPhone
+      .getByRole('radio', { name: customer.color, exact: true })
+      .click()
     await customerPhone
       .getByRole('button', { name: 'Adicionar veículo' })
       .click()
@@ -385,6 +387,31 @@ test('4. Lava Sol: cliente sem app acompanha pelo ticket, lavador entra pelo QR'
         name: 'Atendimento finalizado. Obrigado!',
       }),
     ).toBeVisible()
+  })
+  await test.step('Carlos cria a conta e adiciona o carro do balcão com um toque', async () => {
+    await visitor.goto(`/?lavajato=${sol.slug}`)
+    await visitor.getByRole('button', { name: 'Criar conta' }).click()
+    await visitor.getByLabel('Nome', { exact: true }).fill(walkIn.name)
+    await visitor.getByLabel('Telefone').fill(walkIn.phone)
+    await visitor.getByLabel('Senha (mínimo 8 caracteres)').fill(PASSWORD)
+    await visitor.getByRole('button', { name: 'Criar uma conta' }).click()
+    await visitor
+      .getByRole('button', { name: 'Perfeito, entendi, vou começar' })
+      .click()
+    await visitor.getByRole('link', { name: 'Veículos' }).click()
+
+    const counterCars = visitor.getByRole('region', {
+      name: 'Carros do balcão',
+    })
+    await expect(counterCars).toContainText(walkIn.plate)
+    await expect(counterCars).toContainText(`${walkIn.model} · ${walkIn.color}`)
+    await counterCars.getByRole('button', { name: 'É meu' }).click()
+    await expect(counterCars).toHaveCount(0)
+    await expect(cardWith(visitor, walkIn.plate)).toContainText(walkIn.model)
+
+    // O atendimento feito no balcão aparece no histórico da conta nova.
+    await visitor.getByRole('link', { name: 'Agendamentos' }).click()
+    await expect(cardWith(visitor, walkIn.plate)).toBeVisible()
   })
 })
 

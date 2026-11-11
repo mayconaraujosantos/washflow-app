@@ -46,13 +46,18 @@ public class AccessJdbiRepository
 
   private static final String LOAD_BY_TOKEN_SELECT_SQL =
       """
-      SELECT e.nome AS establishment, v.placa, v.modelo, s.nome AS service,
+      SELECT e.nome AS establishment, v.placa, v.modelo,
+             COALESCE((SELECT STRING_AGG(sp.nome, ' + ' ORDER BY ats.ordem)
+              FROM atendimento_servicos ats
+              JOIN servicos_preco sp ON sp.id = ats.servico_preco_id
+              WHERE ats.atendimento_id = a.id),
+              (SELECT sp.nome FROM servicos_preco sp WHERE sp.id = a.servico_preco_id))
+                AS service,
              a.status, a.data_agendamento, a.previsao_entrega, a.atualizado_em,
              (SELECT p.motivo FROM pausas_atendimento p
               WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason
       FROM atendimentos a
       JOIN veiculos v ON v.id = a.veiculo_id
-      JOIN servicos_preco s ON s.id = a.servico_preco_id
       JOIN estabelecimentos e ON e.id = a.estabelecimento_id
       WHERE a.ticket_token = :token
       """;

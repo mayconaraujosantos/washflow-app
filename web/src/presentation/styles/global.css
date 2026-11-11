@@ -2262,3 +2262,42 @@ select option {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+
+/* Vehicle form: color buttons with a swatch, plain fieldset, inline field error. */
+fieldset.field {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+fieldset.field > legend {
+  margin-bottom: 6px;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.color-grid {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+
+.color-grid .choice {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--swatch);
+}
+
+.field-error {
+  color: var(--danger, #e5484d);
+  font-size: 0.8rem;
+}

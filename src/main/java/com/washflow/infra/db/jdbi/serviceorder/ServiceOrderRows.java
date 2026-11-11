@@ -18,7 +18,11 @@ final class ServiceOrderRows {
   // screens show on each card - see ServiceOrder.Details.
   static final String SELECT_WITH_DETAILS =
       """
-      SELECT a.id, a.veiculo_id, a.servico_preco_id, a.lavador_id, a.status,
+      SELECT a.id, a.veiculo_id, a.servico_preco_id,
+             (SELECT STRING_AGG(CAST(ats.servico_preco_id AS VARCHAR), ',' ORDER BY ats.ordem)
+              FROM atendimento_servicos ats
+              WHERE ats.atendimento_id = a.id) AS service_price_ids,
+             a.lavador_id, a.status,
              a.data_agendamento, a.criado_em, a.atualizado_em,
              (SELECT p.motivo FROM pausas_atendimento p
               WHERE p.atendimento_id = a.id AND p.retomada_em IS NULL) AS pause_reason,
@@ -26,11 +30,22 @@ final class ServiceOrderRows {
              v.placa AS vehicle_plate, v.modelo AS vehicle_model, v.cor AS vehicle_color,
              COALESCE(c.nome, v.contato_nome) AS customer_name,
              COALESCE(c.telefone, v.contato_telefone) AS customer_phone,
-             s.nome AS service_name, l.nome AS washer_name
+             COALESCE((SELECT STRING_AGG(sp.nome, ' + ' ORDER BY ats.ordem)
+              FROM atendimento_servicos ats
+              JOIN servicos_preco sp ON sp.id = ats.servico_preco_id
+              WHERE ats.atendimento_id = a.id),
+              (SELECT sp.nome FROM servicos_preco sp WHERE sp.id = a.servico_preco_id))
+                AS service_name,
+             COALESCE((SELECT SUM(sp.preco)
+              FROM atendimento_servicos ats
+              JOIN servicos_preco sp ON sp.id = ats.servico_preco_id
+              WHERE ats.atendimento_id = a.id),
+              (SELECT sp.preco FROM servicos_preco sp WHERE sp.id = a.servico_preco_id), 0)
+                AS service_total,
+             l.nome AS washer_name
       FROM atendimentos a
       LEFT JOIN veiculos v ON v.id = a.veiculo_id
       LEFT JOIN usuarios c ON c.id = v.cliente_id
-      LEFT JOIN servicos_preco s ON s.id = a.servico_preco_id
       LEFT JOIN usuarios l ON l.id = a.lavador_id
       """;
 
@@ -44,6 +59,7 @@ final class ServiceOrderRows {
 
   @SuppressWarnings("java:S1172") // Required by JDBI's RowMapper method signature.
   static ServiceOrder map(ResultSet rs, StatementContext ctx) throws SQLException {
+    String servicePriceIds = rs.getString("service_price_ids");
     return new ServiceOrder(
         (UUID) rs.getObject("id"),
         (UUID) rs.getObject("veiculo_id"),
@@ -63,7 +79,11 @@ final class ServiceOrderRows {
             rs.getString("customer_name"),
             rs.getString("customer_phone"),
             rs.getString("service_name"),
-            rs.getString("washer_name")));
+            rs.getString("washer_name"),
+            rs.getBigDecimal("service_total")),
+        servicePriceIds == null
+            ? java.util.List.of(rs.getInt("servico_preco_id"))
+            : java.util.Arrays.stream(servicePriceIds.split(",")).map(Integer::parseInt).toList());
   }
 
   static Instant timestamp(ResultSet rs, String column) throws SQLException {
