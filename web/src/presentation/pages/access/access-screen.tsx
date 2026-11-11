@@ -43,15 +43,16 @@ type Props = Readonly<{
 }>
 
 /**
- * Customer access card (target of the "Cliente > Entrar" role card and of the
- * customer QR code): create an account with name, phone and password, or sign
- * in with phone and password. Staff accounts are provisioned by a manager and
+ * Customer access card (home page, "Cliente > Entrar" and the customer QR
+ * code): opens on "Já tenho conta" (phone and password) with "Criar conta"
+ * (name, phone and password) one tap away, so a customer who just signed out
+ * is not sent to the sign-up form. Staff accounts are provisioned by a manager and
  * use their own login pages, so there is no profile choice here.
  */
 export function AccessScreen({
   authenticateCustomer,
   access,
-  initialMode = 'signup',
+  initialMode = 'signin',
   staffLinks = false,
   directory,
 }: Props) {
@@ -188,12 +189,13 @@ export function AccessScreen({
     whatsapp: 'Entrar com WhatsApp',
     email: 'Entrar com e-mail',
   }[mode]
+  const passwordForm = mode === 'signin' || mode === 'signup'
   const whatsappEnabled = Boolean(access && options?.whatsappCode)
   const emailEnabled = Boolean(access && options?.emailCode)
   const googleClientId = access ? options?.googleClientId : null
   const staff = staffLinks && (
     <p className="auth-staff">
-      É da equipe? <Link to="/login/lavador">Entrar como lavador</Link>
+      Trabalha no lava-jato? <Link to="/login/lavador">Entrar como lavador</Link>
       {' · '}
       <Link to="/login/gerente">Entrar como gerente</Link>
     </p>
@@ -219,7 +221,36 @@ export function AccessScreen({
       </h1>
 
       <section className="auth-card" aria-labelledby="auth-title">
+        <p className="auth-eyebrow">Área do cliente</p>
         <h2 id="auth-title">{title}</h2>
+        {passwordForm && (
+          <p className="subtitle">
+            {mode === 'signup'
+              ? 'Primeira vez aqui? Crie sua conta para agendar e acompanhar a lavagem do seu carro.'
+              : 'Entre para agendar e acompanhar a lavagem do seu carro.'}
+          </p>
+        )}
+        {passwordForm && (
+          <fieldset
+            className="segmented segmented-block"
+            aria-label="Conta de cliente"
+          >
+            <button
+              type="button"
+              aria-pressed={mode === 'signin'}
+              onClick={() => switchMode('signin')}
+            >
+              Já tenho conta
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === 'signup'}
+              onClick={() => switchMode('signup')}
+            >
+              Criar conta
+            </button>
+          </fieldset>
+        )}
         {chosen && (
           <p className="auth-establishment">
             <span>
@@ -339,15 +370,6 @@ export function AccessScreen({
               <button type="button" onClick={() => switchMode('forgot')}>
                 Esqueci a senha
               </button>
-              {mode === 'signup' ? (
-                <button type="button" onClick={() => switchMode('signin')}>
-                  Entrar
-                </button>
-              ) : (
-                <button type="button" onClick={() => switchMode('signup')}>
-                  Criar conta
-                </button>
-              )}
             </div>
             {(whatsappEnabled || emailEnabled || googleClientId) && access && (
               <>
