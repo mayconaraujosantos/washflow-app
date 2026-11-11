@@ -3,7 +3,7 @@ package com.washflow.domain.usecases.sale;
 import com.washflow.domain.entities.sale.Sale;
 import com.washflow.domain.entities.sale.SaleType;
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
+import com.washflow.domain.errors.common.ServicePriceNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import java.math.BigDecimal;
 import java.util.List;

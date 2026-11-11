@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.sale.SaleType;
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
+import com.washflow.domain.errors.common.ServicePriceNotFoundError;
 import com.washflow.domain.usecases.sale.CreateSale;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;

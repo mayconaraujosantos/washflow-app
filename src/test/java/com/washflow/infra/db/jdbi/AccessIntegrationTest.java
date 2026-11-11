@@ -19,7 +19,7 @@ import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.auth.InvalidOtpError;
 import com.washflow.domain.errors.auth.OtpTooSoonError;
 import com.washflow.domain.errors.auth.OtpUnavailableError;
-import com.washflow.domain.errors.common.TicketNotFoundError;
+import com.washflow.domain.errors.serviceorder.TicketNotFoundError;
 import com.washflow.domain.errors.user.AccountLockedError;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;

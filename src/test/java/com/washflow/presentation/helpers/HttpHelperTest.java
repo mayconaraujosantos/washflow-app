@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.washflow.domain.errors.common.ForbiddenError;
 import com.washflow.domain.errors.common.TenantRequiredError;
-import com.washflow.domain.errors.common.TicketNotFoundError;
 import com.washflow.domain.errors.common.UnauthorizedError;
 import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
+import com.washflow.domain.errors.serviceorder.TicketNotFoundError;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;

@@ -17,7 +17,7 @@ import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.entities.serviceorder.ServicePayment;
 import com.washflow.domain.entities.serviceorder.WasherCommission;
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
+import com.washflow.domain.errors.common.ServicePriceNotFoundError;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.serviceorder.FinalizeServiceOrder;

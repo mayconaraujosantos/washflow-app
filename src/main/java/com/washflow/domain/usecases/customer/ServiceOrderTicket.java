@@ -1,8 +1,8 @@
 package com.washflow.domain.usecases.customer;
 
 import com.washflow.domain.entities.serviceorder.TicketView;
-import com.washflow.domain.errors.common.TicketNotFoundError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.serviceorder.TicketNotFoundError;
 import java.util.UUID;
 
 /** Public, unguessable link (and QR) to follow one order without logging in. */

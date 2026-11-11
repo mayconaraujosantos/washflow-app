@@ -1,7 +1,7 @@
 package com.washflow.domain.usecases.schedule;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
+import com.washflow.domain.errors.common.ServicePriceNotFoundError;
 import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
 import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
 import com.washflow.domain.errors.schedule.SlotFullyBookedError;

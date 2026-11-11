@@ -1,4 +1,4 @@
-package com.washflow.domain.errors.finance;
+package com.washflow.domain.errors.common;
 
 public class ServicePriceNotFoundError extends Exception {
 

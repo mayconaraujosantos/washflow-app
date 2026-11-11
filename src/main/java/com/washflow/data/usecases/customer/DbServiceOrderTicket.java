@@ -3,8 +3,8 @@ package com.washflow.data.usecases.customer;
 import com.washflow.data.protocols.db.customer.TicketRepository;
 import com.washflow.data.usecases.shared.Secrets;
 import com.washflow.domain.entities.serviceorder.TicketView;
-import com.washflow.domain.errors.common.TicketNotFoundError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.serviceorder.TicketNotFoundError;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
 import java.util.UUID;
 

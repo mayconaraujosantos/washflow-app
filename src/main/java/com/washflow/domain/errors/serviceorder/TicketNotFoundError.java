@@ -1,4 +1,6 @@
-package com.washflow.domain.errors.common;
+package com.washflow.domain.errors.serviceorder;
+
+import com.washflow.domain.errors.common.NotFoundError;
 
 public class TicketNotFoundError extends NotFoundError {
 
