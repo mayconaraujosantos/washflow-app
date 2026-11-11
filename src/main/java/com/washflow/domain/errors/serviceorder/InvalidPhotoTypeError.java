@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.serviceorder;
 
-public class InvalidPhotoTypeError extends Exception {
+import com.washflow.domain.errors.common.ValidationError;
+
+public class InvalidPhotoTypeError extends ValidationError {
 
   public InvalidPhotoTypeError(String value) {
-    super("Invalid photo type: " + value + ". Must be ENTRY or EXIT");
+    super("INVALID_PHOTO_TYPE", "Invalid photo type: " + value + ". Must be ENTRY or EXIT");
   }
 }
