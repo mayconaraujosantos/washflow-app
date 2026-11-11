@@ -19,7 +19,8 @@ Esta especificação descreve os requisitos funcionais, regras de negócio, cicl
 * A API emite um token JWT de 8 horas com o perfil `CLIENTE`. O cadastro enviado duas vezes ao mesmo tempo entra na mesma conta, sem erro.
 
 ### 2.2. Agendamento de Serviço
-* **RF-03 (Seleção de Serviços e Horários):** O cliente escolhe o tipo de lavagem/serviço, veículo (se já cadastrado), data e horário desejados.
+* **RF-03 (Seleção de Serviços e Horários):** O cliente escolhe um ou mais serviços para o mesmo veículo e atendimento, além da data e horário desejados. O preço cobrado é a soma dos preços dos serviços selecionados; o atendimento reserva uma única vaga por veículo.
+  * A comissão do lavador é a soma dos valores fixos `comissao_lavador` de cada serviço selecionado, creditada ao finalizar o atendimento.
   * Os horários exibidos e informados pelo cliente são sempre do estabelecimento em Manaus (`America/Manaus`, UTC-4), independentemente do fuso configurado no dispositivo.
 * **RF-04 (Validação de Capacidade):** O sistema deve validar em tempo real:
   * Horário de funcionamento do lava-jato escolhido (dias, horas e domingos configurados pelo gerente).
@@ -102,7 +103,7 @@ Não existe endpoint SSE/event stream; o painel usa polling autenticado em `/api
 
 ## 5. Critérios de Aceite
 
-* **CA-01:** O cliente consegue realizar um agendamento completo em menos de 3 passos.
+* **CA-01:** O cliente consegue realizar um agendamento completo em menos de 3 passos e selecionar um ou mais serviços.
 * **CA-02:** Tentativas de agendamento fora do horário comercial ou acima da capacidade do pátio devem ser rejeitadas instantaneamente com feedback amigável.
 * **CA-03:** A alteração do status da OS para `EM_LAVAGEM` pelo lavador deve atualizar a tela do cliente em até 3 segundos.
 * **CA-04:** Quando a OS atinge o status `PRONTO`, uma notificação clara deve orientar o cliente a se dirigir ao caixa/balcão para retirada.

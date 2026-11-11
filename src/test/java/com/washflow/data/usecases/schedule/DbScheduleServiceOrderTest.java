@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -27,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,6 +106,27 @@ class DbScheduleServiceOrderTest {
     assertEquals(params.scheduledAt(), serviceOrder.scheduledAt());
     verify(createServiceOrderRepository)
         .createWithinCapacity(any(), any(), any(), eq(MAX_VEHICLES_PER_HOUR));
+  }
+
+  @Test
+  void validatesAndKeepsEverySelectedServiceForOneScheduledOrder() throws Exception {
+    ScheduleServiceOrder.Params combined =
+        new ScheduleServiceOrder.Params(params.vehicleId(), 1, List.of(1, 2), params.scheduledAt());
+    when(loadVehicleByIdRepository.loadById(combined.vehicleId())).thenReturn(Optional.of(vehicle));
+    when(loadServicePriceByIdRepository.loadById(1)).thenReturn(Optional.of(servicePrice));
+    when(loadServicePriceByIdRepository.loadById(2))
+        .thenReturn(
+            Optional.of(
+                new ServicePrice(2, "Polimento", new BigDecimal("45.00"), new BigDecimal("5.00"))));
+    when(countServiceOrdersScheduledInRangeRepository.countScheduledBetween(any(), any()))
+        .thenReturn(0);
+    when(createServiceOrderRepository.createWithinCapacity(any(), any(), any(), anyInt()))
+        .thenAnswer(invocation -> Optional.of(invocation.getArgument(0)));
+
+    ServiceOrder result = sut.schedule(combined);
+
+    assertEquals(List.of(1, 2), result.servicePriceIds());
+    verify(createServiceOrderRepository).createWithinCapacity(any(), any(), any(), anyInt());
   }
 
   @Test

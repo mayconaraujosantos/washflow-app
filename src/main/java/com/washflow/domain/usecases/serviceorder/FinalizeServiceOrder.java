@@ -11,8 +11,8 @@ import java.util.UUID;
  * The manager closes out the sale: the client has paid, moving the {@code atendimento} from {@link
  * com.washflow.domain.entities.serviceorder.ServiceOrderStatus#READY} to {@link
  * com.washflow.domain.entities.serviceorder.ServiceOrderStatus#DONE} and crediting the washer's
- * exact commission for that service. Implemented by {@code DbFinalizeServiceOrder} in the data
- * layer.
+ * summed commissions for the selected services. Implemented by {@code DbFinalizeServiceOrder} in
+ * the data layer.
  */
 public interface FinalizeServiceOrder {
 

@@ -21,12 +21,64 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 
 class OperationsWorkflowIntegrationTest {
+
+  @Test
+  void reportBreaksOutCombinedServicesWithoutDuplicatingPaymentOrCommissionTotals() {
+    Jdbi jdbi = createJdbi();
+    jdbi.useHandle(
+        handle ->
+            handle
+                .createUpdate(
+                    """
+                    INSERT INTO servicos_preco
+                      (id, estabelecimento_id, nome, preco, comissao_lavador)
+                    VALUES (2, :tenant, 'Polimento', 45.00, 5.00)
+                    """)
+                .execute());
+
+    Instant now = Instant.now();
+    UUID washerId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    ServiceOrder order =
+        new ServiceOrder(
+            UUID.randomUUID(),
+            UUID.fromString("22222222-2222-2222-2222-222222222222"),
+            List.of(1, 2),
+            washerId,
+            ServiceOrderStatus.READY,
+            now,
+            now,
+            now);
+    ServiceOrderJdbiRepository repository = new ServiceOrderJdbiRepository(jdbi);
+    repository.create(order);
+    repository.finalizeSale(
+        order,
+        new ServicePayment(
+            UUID.randomUUID(), order.id(), PaymentMethod.PIX, new BigDecimal("105.00"), now),
+        new WasherCommission(
+            UUID.randomUUID(), order.id(), washerId, new BigDecimal("25.00"), now));
+
+    LocalDate reportDate = LocalDate.now(ZoneId.of("America/Manaus"));
+    OperationsReport report =
+        new OperationsReportJdbiRepository(jdbi).loadOperationsReport(reportDate, reportDate);
+
+    assertEquals(1, report.finalizedOrders());
+    assertEquals(new BigDecimal("105.00"), report.revenue());
+    assertEquals(new BigDecimal("25.00"), report.commissions());
+    assertEquals(2, report.services().size());
+    assertEquals("Lavagem Completa", report.services().get(0).serviceName());
+    assertEquals(new BigDecimal("60.00"), report.services().get(0).revenue());
+    assertEquals(new BigDecimal("20.00"), report.services().get(0).commissions());
+    assertEquals("Polimento", report.services().get(1).serviceName());
+    assertEquals(new BigDecimal("45.00"), report.services().get(1).revenue());
+    assertEquals(new BigDecimal("5.00"), report.services().get(1).commissions());
+  }
 
   @Test
   void washerCanPauseAndResumeAndManagerReportIncludesCompletedWork() {

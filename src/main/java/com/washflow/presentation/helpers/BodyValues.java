@@ -30,6 +30,30 @@ public final class BodyValues {
     throw new IllegalArgumentException(key + " deve ser um número");
   }
 
+  /** A list of JSON integers; absent is an empty list. */
+  public static List<Integer> integers(Map<String, Object> body, String key) {
+    Object value = body.get(key);
+    if (value == null) {
+      return List.of();
+    }
+    if (!(value instanceof List<?> list)) {
+      throw new IllegalArgumentException(key + " deve ser uma lista de números");
+    }
+    return list.stream()
+        .map(
+            item -> {
+              if (!(item instanceof Number number)) {
+                throw new IllegalArgumentException(key + " deve conter apenas números inteiros");
+              }
+              try {
+                return new java.math.BigDecimal(number.toString()).intValueExact();
+              } catch (ArithmeticException e) {
+                throw new IllegalArgumentException(key + " deve conter apenas números inteiros", e);
+              }
+            })
+        .toList();
+  }
+
   public static BigDecimal decimal(Map<String, Object> body, String key) {
     Object value = body.get(key);
     if (value == null) {

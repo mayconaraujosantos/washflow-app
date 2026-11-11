@@ -57,7 +57,7 @@ function dayCapacity(
 }
 
 export function AgendaScreen() {
-  const { operations, openMenu, settings, servicePrices, notify } = useManager()
+  const { operations, openMenu, settings, notify } = useManager()
   const today = manausDate()
   const [month, setMonth] = useState(today.slice(0, 7))
   const [selected, setSelected] = useState(today)
@@ -195,10 +195,7 @@ export function AgendaScreen() {
       </section>
       <RefundSheet
         order={refunding}
-        amount={
-          servicePrices.find((item) => item.id === refunding?.servicePriceId)
-            ?.price
-        }
+        amount={refunding?.details?.serviceTotal ?? undefined}
         onClose={() => setRefunding(null)}
         onConfirm={(order, params) => {
           setRefunding(null)

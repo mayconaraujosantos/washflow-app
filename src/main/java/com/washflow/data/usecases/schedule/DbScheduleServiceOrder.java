@@ -16,6 +16,8 @@ import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -76,6 +78,7 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
           InsufficientLeadTimeError,
           SlotFullyBookedError {
     Instant now = Instant.now(clock);
+    validateServicePriceIds(params.servicePriceIds());
     rules.checkBusinessHours(params.scheduledAt());
     rules.checkLeadTime(params.scheduledAt(), now, MIN_LEAD_TIME);
 
@@ -83,9 +86,11 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
         .loadById(params.vehicleId())
         .orElseThrow(() -> new VehicleNotFoundError(params.vehicleId()));
 
-    loadServicePriceByIdRepository
-        .loadById(params.servicePriceId())
-        .orElseThrow(() -> new ServicePriceNotFoundError(params.servicePriceId()));
+    for (int id : params.servicePriceIds()) {
+      loadServicePriceByIdRepository
+          .loadById(id)
+          .orElseThrow(() -> new ServicePriceNotFoundError(id));
+    }
 
     rules.checkCapacity(params.scheduledAt());
 
@@ -93,7 +98,7 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
         new ServiceOrder(
             UUID.randomUUID(),
             params.vehicleId(),
-            params.servicePriceId(),
+            params.servicePriceIds(),
             null,
             ServiceOrderStatus.SCHEDULED,
             params.scheduledAt(),
@@ -101,5 +106,14 @@ public class DbScheduleServiceOrder implements ScheduleServiceOrder {
             now);
 
     return rules.book(createServiceOrderRepository, newServiceOrder);
+  }
+
+  private static void validateServicePriceIds(List<Integer> servicePriceIds) {
+    if (servicePriceIds == null
+        || servicePriceIds.isEmpty()
+        || servicePriceIds.stream().anyMatch(id -> id == null || id <= 0)
+        || new HashSet<>(servicePriceIds).size() != servicePriceIds.size()) {
+      throw new IllegalArgumentException("Escolha um ou mais serviços válidos.");
+    }
   }
 }

@@ -23,6 +23,7 @@ import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.serviceorder.FinalizeServiceOrder;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,6 +110,38 @@ class DbFinalizeServiceOrderTest {
     assertEquals(readyServiceOrder.id(), payment.serviceOrderId());
     assertEquals(PaymentMethod.PIX, payment.method());
     assertEquals(servicePrice.price(), payment.amount());
+  }
+
+  @Test
+  void sumsSelectedServicePricesAndFixedCommissions() throws Exception {
+    ServiceOrder combinedOrder =
+        new ServiceOrder(
+            readyServiceOrder.id(),
+            readyServiceOrder.vehicleId(),
+            List.of(1, 2),
+            readyServiceOrder.washerId(),
+            ServiceOrderStatus.READY,
+            readyServiceOrder.scheduledAt(),
+            readyServiceOrder.createdAt(),
+            readyServiceOrder.updatedAt());
+    ServicePrice polishing =
+        new ServicePrice(2, "Polimento", new BigDecimal("45.00"), new BigDecimal("5.00"));
+    when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
+        .thenReturn(Optional.of(combinedOrder));
+    when(loadServicePriceByIdRepository.loadById(1)).thenReturn(Optional.of(servicePrice));
+    when(loadServicePriceByIdRepository.loadById(2)).thenReturn(Optional.of(polishing));
+    when(finalizeServiceOrderRepository.finalizeSale(any(), any(), any()))
+        .thenReturn(Optional.of(combinedOrder));
+
+    sut.finalizeOrder(params);
+
+    ArgumentCaptor<WasherCommission> commissionCaptor =
+        ArgumentCaptor.forClass(WasherCommission.class);
+    ArgumentCaptor<ServicePayment> paymentCaptor = ArgumentCaptor.forClass(ServicePayment.class);
+    verify(finalizeServiceOrderRepository)
+        .finalizeSale(any(), paymentCaptor.capture(), commissionCaptor.capture());
+    assertEquals(new BigDecimal("105.00"), paymentCaptor.getValue().amount());
+    assertEquals(new BigDecimal("25.00"), commissionCaptor.getValue().amount());
   }
 
   @Test
