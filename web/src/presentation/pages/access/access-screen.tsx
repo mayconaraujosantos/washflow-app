@@ -195,7 +195,8 @@ export function AccessScreen({
   const googleClientId = access ? options?.googleClientId : null
   const staff = staffLinks && (
     <p className="auth-staff">
-      Trabalha no lava-jato? <Link to="/login/lavador">Entrar como lavador</Link>
+      Trabalha no lava-jato?{' '}
+      <Link to="/login/lavador">Entrar como lavador</Link>
       {' · '}
       <Link to="/login/gerente">Entrar como gerente</Link>
     </p>
