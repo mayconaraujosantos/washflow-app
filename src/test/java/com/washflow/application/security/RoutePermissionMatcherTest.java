@@ -73,6 +73,13 @@ class RoutePermissionMatcherTest {
   }
 
   @Test
+  void returnsCustomerForListUnclaimedVehicles() {
+    assertEquals(
+        UserProfile.CUSTOMER,
+        RoutePermissionMatcher.requiredProfile("GET", "/api/customers/abc-123/unclaimed-vehicles"));
+  }
+
+  @Test
   void returnsCustomerForListCustomerServiceOrders() {
     assertEquals(
         UserProfile.CUSTOMER,

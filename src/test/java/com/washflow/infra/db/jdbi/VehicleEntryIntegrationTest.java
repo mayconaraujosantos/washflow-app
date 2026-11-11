@@ -1,15 +1,21 @@
 package com.washflow.infra.db.jdbi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.washflow.data.usecases.schedule.DbListAgenda;
+import com.washflow.data.usecases.vehicle.DbCreateVehicle;
+import com.washflow.data.usecases.vehicle.DbListUnclaimedVehicles;
 import com.washflow.data.usecases.vehicle.DbSearchVehicles;
 import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
+import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.entities.vehicle.VehicleLookup;
+import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
 import com.washflow.domain.usecases.schedule.ListAgenda;
+import com.washflow.domain.usecases.vehicle.CreateVehicle;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
 import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
@@ -107,6 +113,58 @@ class VehicleEntryIntegrationTest {
 
     assertEquals(UUID.fromString("22222222-2222-2222-2222-222222222222"), order.vehicleId());
     assertEquals("Cliente Demo", order.details().customerName());
+  }
+
+  @Test
+  void customerWithTheContactPhoneTakesOverTheCounterCar() throws Exception {
+    Jdbi jdbi = createJdbi();
+    ServiceOrderJdbiRepository orders = new ServiceOrderJdbiRepository(jdbi);
+    VehicleJdbiRepository vehicles = new VehicleJdbiRepository(jdbi);
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    new DbRegisterVehicleEntry(
+            vehicles,
+            vehicles,
+            users,
+            new ServicePriceJdbiRepository(jdbi),
+            new AgendaJdbiRepository(jdbi),
+            orders,
+            orders,
+            Clock.fixed(NOW, ZoneOffset.UTC),
+            4)
+        .register(
+            new RegisterVehicleEntry.Params(
+                "QWE4R56", "Onix", "Prata", "Ana", "92988887777", 1, null, null, null));
+
+    UUID ana = UUID.randomUUID();
+    jdbi.useHandle(
+        h ->
+            h.createUpdate(
+                    """
+                    INSERT INTO usuarios (id, estabelecimento_id, nome, telefone, perfil)
+                    VALUES (:id, :tenant, 'Ana', '92988887777', 'CLIENTE')
+                    """)
+                .bind("id", ana)
+                .execute());
+
+    DbListUnclaimedVehicles unclaimed = new DbListUnclaimedVehicles(users, vehicles);
+    assertEquals(List.of("QWE4R56"), unclaimed.list(ana).stream().map(Vehicle::plate).toList());
+
+    DbCreateVehicle create = new DbCreateVehicle(users, vehicles, vehicles, vehicles);
+    Vehicle claimed = create.create(new CreateVehicle.Params(ana, "qwe-4r56", null, "Preto"));
+
+    assertEquals(ana, claimed.customerId());
+    assertEquals("Onix", claimed.model());
+    assertEquals("Preto", claimed.color());
+    Vehicle stored = vehicles.loadByPlate("QWE4R56").orElseThrow();
+    assertEquals(ana, stored.customerId());
+    assertEquals("Preto", stored.color());
+    assertEquals(null, stored.contactPhone());
+    assertTrue(unclaimed.list(ana).isEmpty());
+    assertEquals(
+        List.of(claimed.id()), vehicles.loadByCustomerId(ana).stream().map(Vehicle::id).toList());
+    assertThrows(
+        VehiclePlateAlreadyRegisteredError.class,
+        () -> create.create(new CreateVehicle.Params(ana, "QWE4R56", null, null)));
   }
 
   private static void assertPlates(List<String> expected, List<VehicleLookup> actual) {

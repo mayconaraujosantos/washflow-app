@@ -322,8 +322,12 @@ export function CustomerDashboard({
                 vehicles={vehicles}
                 customerId={user.id}
                 createVehicle={createVehicle}
+                listVehiclesByCustomer={listVehiclesByCustomer}
                 onCreated={(vehicle) =>
-                  setVehicles((current) => [...current, vehicle])
+                  setVehicles((current) => [
+                    ...current.filter((item) => item.id !== vehicle.id),
+                    vehicle,
+                  ])
                 }
               />
             </ScreenLayout>

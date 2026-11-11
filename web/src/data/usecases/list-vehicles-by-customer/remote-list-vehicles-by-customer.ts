@@ -10,8 +10,18 @@ export class RemoteListVehiclesByCustomer implements ListVehiclesByCustomer {
   async list(
     params: ListVehiclesByCustomer.Params,
   ): Promise<ListVehiclesByCustomer.Model> {
+    return this.load(`${params.customerId}/vehicles`)
+  }
+
+  async listUnclaimed(
+    params: ListVehiclesByCustomer.Params,
+  ): Promise<ListVehiclesByCustomer.Model> {
+    return this.load(`${params.customerId}/unclaimed-vehicles`)
+  }
+
+  private async load(path: string): Promise<ListVehiclesByCustomer.Model> {
     const httpResponse = await this.httpClient.request({
-      url: `${this.urlPrefix}/${params.customerId}/vehicles`,
+      url: `${this.urlPrefix}/${path}`,
       method: 'get',
     })
 
