@@ -2,6 +2,8 @@
 
 Este documento define as entidades de negócio, os estados do fluxo do veículo (fila lógica) e a estrutura relacional do sistema O banco é somente PostgreSQL (desenvolvimento, testes com PostgreSQL embutido e produção); as regras de fila também valem para repositórios em memória.
 
+> **Git flow:** nunca commite direto em `main` ou `develop`. Use a ferramenta `git flow` (AVH): `feature`/`bugfix` a partir da `develop`, `release` e `hotfix` com tag `vX.Y.Z`, finalizados com `git flow ... finish` (merge local, sem PR). Siga a skill [git-flow](.claude/skills/git-flow/SKILL.md); `make hooks` configura o git flow e o hook `.githooks/pre-commit`, que recusa commits nessas branches.
+
 ---
 
 ## 1. Máquina de Estados do Veículo (O Washflow)
