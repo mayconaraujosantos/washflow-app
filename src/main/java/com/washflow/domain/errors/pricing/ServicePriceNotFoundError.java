@@ -1,4 +1,6 @@
-package com.washflow.domain.errors.common;
+package com.washflow.domain.errors.pricing;
+
+import com.washflow.domain.errors.common.NotFoundError;
 
 public class ServicePriceNotFoundError extends NotFoundError {
 

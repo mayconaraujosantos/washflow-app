@@ -7,7 +7,7 @@ import com.washflow.data.protocols.db.vehicle.LoadVehicleByIdRepository;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
-import com.washflow.domain.errors.common.ServicePriceNotFoundError;
+import com.washflow.domain.errors.pricing.ServicePriceNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import com.washflow.domain.usecases.schedule.ScheduleServiceOrder;
 import java.time.Clock;

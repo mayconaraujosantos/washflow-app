@@ -8,7 +8,7 @@ import com.washflow.domain.entities.sale.Sale;
 import com.washflow.domain.entities.sale.SaleItem;
 import com.washflow.domain.entities.sale.SalePayment;
 import com.washflow.domain.entities.shared.ContactRules;
-import com.washflow.domain.errors.common.ServicePriceNotFoundError;
+import com.washflow.domain.errors.pricing.ServicePriceNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import com.washflow.domain.usecases.sale.CreateSale;
 import java.math.BigDecimal;

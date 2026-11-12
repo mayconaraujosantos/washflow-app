@@ -5,7 +5,7 @@ import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.user.PasswordResetRepository;
 import com.washflow.data.protocols.db.user.SaveUserPasswordHashRepository;
-import com.washflow.data.protocols.messaging.EmailDeliveryException;
+import com.washflow.data.protocols.messaging.EmailSendError;
 import com.washflow.data.protocols.messaging.EmailSender;
 import com.washflow.domain.entities.shared.ContactRules;
 import com.washflow.domain.entities.user.User;
@@ -103,7 +103,7 @@ public class DbResetPasswordByEmail implements ResetPasswordByEmail {
   private void send(User user, String recipient, String code) {
     try {
       emailSender.send(recipient, "Seu código para criar uma nova senha", body(user, code));
-    } catch (EmailDeliveryException e) {
+    } catch (EmailSendError e) {
       LOGGER.error("Password reset e-mail not sent for user {}", user.id(), e);
       codes.discard(user.id());
       throw new EmailDeliveryFailedError();

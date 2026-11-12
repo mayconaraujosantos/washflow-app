@@ -32,14 +32,14 @@ class AuthTokenServiceTest {
     String token = new AuthTokenService(SECRET).issue(user);
 
     assertThrows(
-        AuthTokenService.InvalidTokenException.class,
+        AuthTokenService.InvalidTokenError.class,
         () -> new AuthTokenService("abcdef0123456789abcdef0123456789").verify(token));
   }
 
   @Test
   void rejectsMalformedTokens() {
     assertThrows(
-        AuthTokenService.InvalidTokenException.class,
+        AuthTokenService.InvalidTokenError.class,
         () -> new AuthTokenService(SECRET).verify("not-a-token"));
   }
 }

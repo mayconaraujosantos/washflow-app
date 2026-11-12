@@ -86,7 +86,7 @@ public final class AuthorizationMiddleware {
     AuthTokenService.Claims claims;
     try {
       claims = tokenService.verify(token);
-    } catch (AuthTokenService.InvalidTokenException e) {
+    } catch (AuthTokenService.InvalidTokenError e) {
       ctx.status(401).json(HttpHelper.errorBody("Invalid or expired access token"));
       return false;
     }
@@ -197,7 +197,7 @@ public final class AuthorizationMiddleware {
           .findAccessById(claims.userId())
           .filter(AccountSecurityGateway.AccountAccess::active)
           .map(AccountSecurityGateway.AccountAccess::establishmentId);
-    } catch (AuthTokenService.InvalidTokenException e) {
+    } catch (AuthTokenService.InvalidTokenError e) {
       return Optional.empty();
     }
   }

@@ -394,12 +394,13 @@ domain/errors/
 │ └── OutsideBusinessHoursError.java
 ├── finance/
 │ └── InvalidTransactionTypeError.java
+├── pricing/
+│ └── ServicePriceNotFoundError.java (dono do catálogo; sale, schedule, serviceorder e yard também lançam)
 └── common/
 ├── DomainError.java (+ ValidationError, AuthenticationError, AccessDeniedError, NotFoundError, ConflictError, TooManyRequestsError, UnavailableError)
 ├── ForbiddenError.java
 ├── UnauthorizedError.java
-├── TenantRequiredError.java
-└── ServicePriceNotFoundError.java (catálogo, usado por sale, schedule, serviceorder e yard)
+└── TenantRequiredError.java
 text
 
 
