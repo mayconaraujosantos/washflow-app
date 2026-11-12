@@ -21,7 +21,7 @@ public final class TenantBindingCustomizer implements StatementCustomizer {
     if (sql == null || !sql.contains(PLACEHOLDER)) {
       return;
     }
-    if (ctx.getBinding().findForName(PARAMETER, ctx).isPresent()) {
+    if (ctx.getBinding().getNames().contains(PARAMETER)) {
       return;
     }
     ctx.getBinding().addNamed(PARAMETER, TenantContext.require());

@@ -31,7 +31,7 @@ public class DbCreateWasher implements CreateWasher {
   }
 
   @Override
-  public User create(Params params) throws PhoneAlreadyRegisteredError {
+  public User create(Params params) {
     String name = params.name() == null ? "" : params.name().trim();
     String phone = params.phone() == null ? "" : params.phone().trim();
     String password = params.password() == null ? "" : params.password();

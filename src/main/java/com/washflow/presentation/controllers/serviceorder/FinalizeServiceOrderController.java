@@ -1,9 +1,6 @@
 package com.washflow.presentation.controllers.serviceorder;
 
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
-import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
-import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.serviceorder.FinalizeServiceOrder;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -39,10 +36,6 @@ public class FinalizeServiceOrderController implements Controller {
       return HttpHelper.ok(serviceOrder);
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (ServiceOrderNotFoundError | ServicePriceNotFoundError e) {
-      return HttpHelper.notFound(e);
-    } catch (InvalidServiceOrderStatusError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

@@ -1,8 +1,12 @@
 package com.washflow.domain.errors.serviceorder;
 
-public class ServiceOrderNotCancellableError extends Exception {
+import com.washflow.domain.errors.common.ConflictError;
+
+public class ServiceOrderNotCancellableError extends ConflictError {
 
   public ServiceOrderNotCancellableError() {
-    super("Só dá para cancelar atendimentos agendados ou aguardando no pátio");
+    super(
+        "SERVICE_ORDER_NOT_CANCELLABLE",
+        "Só dá para cancelar atendimentos agendados ou aguardando no pátio");
   }
 }

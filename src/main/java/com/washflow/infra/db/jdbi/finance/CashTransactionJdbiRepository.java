@@ -256,11 +256,8 @@ public class CashTransactionJdbiRepository
             handle ->
                 handle.createQuery(REPORT_SQL).bind("from", from).bind("to", to).mapToMap().one());
 
-    @SuppressWarnings("unchecked")
     BigDecimal totalIncome = new BigDecimal(summary.get("total_income").toString());
-    @SuppressWarnings("unchecked")
     BigDecimal totalExpense = new BigDecimal(summary.get("total_expense").toString());
-    @SuppressWarnings("unchecked")
     int totalCount = Integer.parseInt(summary.get("total_count").toString());
 
     result.put("totalIncome", totalIncome);

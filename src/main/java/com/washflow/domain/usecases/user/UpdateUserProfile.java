@@ -3,7 +3,6 @@ package com.washflow.domain.usecases.user;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.common.ForbiddenError;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.UUID;
 
 /**
@@ -16,7 +15,7 @@ import java.util.UUID;
  */
 public interface UpdateUserProfile {
 
-  User update(Params params) throws UserNotFoundError, ForbiddenError;
+  User update(Params params) throws ForbiddenError;
 
   record Params(UUID requestedByUserId, UUID targetUserId, UserProfile newProfile) {}
 }

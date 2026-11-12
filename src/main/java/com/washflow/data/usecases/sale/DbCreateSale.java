@@ -8,7 +8,7 @@ import com.washflow.domain.entities.sale.Sale;
 import com.washflow.domain.entities.sale.SaleItem;
 import com.washflow.domain.entities.sale.SalePayment;
 import com.washflow.domain.entities.shared.ContactRules;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
+import com.washflow.domain.errors.pricing.ServicePriceNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import com.washflow.domain.usecases.sale.CreateSale;
 import java.math.BigDecimal;
@@ -42,7 +42,7 @@ public class DbCreateSale implements CreateSale {
   }
 
   @Override
-  public Sale create(Params params) throws ServicePriceNotFoundError, VehicleNotFoundError {
+  public Sale create(Params params) {
     if (params.type() == null) {
       throw new IllegalArgumentException("Informe se é venda rápida ou orçamento");
     }
@@ -86,7 +86,7 @@ public class DbCreateSale implements CreateSale {
             payments));
   }
 
-  private List<SaleItem> buildItems(List<Item> requested) throws ServicePriceNotFoundError {
+  private List<SaleItem> buildItems(List<Item> requested) {
     if (requested == null || requested.isEmpty()) {
       throw new IllegalArgumentException("Adicione pelo menos um produto ou serviço");
     }

@@ -21,6 +21,8 @@ import org.jdbi.v3.core.Jdbi;
 
 public class PlatformJdbiRepository implements PlatformRepository {
 
+  private static final String WHERE_E_ID_ID = " WHERE e.id = :id";
+
   private static final String CREATE_FIRST_ADMIN_INSERT_SQL =
       """
       INSERT INTO administradores (id, nome, email, senha_hash, criado_em)
@@ -233,7 +235,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
               .execute();
           seedCatalog(handle, id);
           return handle
-              .createQuery(SUMMARY_SQL + " WHERE e.id = :id")
+              .createQuery(SUMMARY_SQL + WHERE_E_ID_ID)
               .bind("id", id)
               .map((rs, ctx) -> summary(rs))
               .one();
@@ -297,7 +299,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
             return Optional.empty();
           }
           return handle
-              .createQuery(SUMMARY_SQL + " WHERE e.id = :id")
+              .createQuery(SUMMARY_SQL + WHERE_E_ID_ID)
               .bind("id", id)
               .map((rs, ctx) -> summary(rs))
               .findOne();
@@ -319,7 +321,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
             return Optional.empty();
           }
           return handle
-              .createQuery(SUMMARY_SQL + " WHERE e.id = :id")
+              .createQuery(SUMMARY_SQL + WHERE_E_ID_ID)
               .bind("id", establishmentId)
               .map((rs, ctx) -> summary(rs))
               .findOne();

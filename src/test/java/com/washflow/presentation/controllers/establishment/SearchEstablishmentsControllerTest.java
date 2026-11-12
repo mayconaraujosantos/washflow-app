@@ -8,20 +8,11 @@ import static org.mockito.Mockito.when;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class SearchEstablishmentsControllerTest {
-
-  private static HttpRequest request(Map<String, String> path, Object... pairs) {
-    Map<String, Object> body = new HashMap<>();
-    for (int i = 0; i < pairs.length; i += 2) {
-      body.put((String) pairs[i], pairs[i + 1]);
-    }
-    return new HttpRequest(body, path, Map.of());
-  }
 
   @Test
   void searchesActiveLavaJatosByName() {

@@ -2,7 +2,6 @@ package com.washflow.presentation.controllers.serviceorder;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistItem;
 import com.washflow.domain.entities.serviceorder.ServiceOrderChecklist.ChecklistType;
-import com.washflow.domain.errors.serviceorder.InvalidChecklistTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderChecklist;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -40,7 +39,6 @@ public class SaveServiceOrderChecklistController implements Controller {
       }
       ChecklistType type = ChecklistType.valueOf(typeStr);
 
-      @SuppressWarnings("unchecked")
       List<Map<String, Object>> itemsMap = BodyValues.objects(body, "items");
       if (itemsMap == null || itemsMap.isEmpty()) {
         return HttpHelper.badRequest(new IllegalArgumentException("items are required"));
@@ -70,8 +68,6 @@ public class SaveServiceOrderChecklistController implements Controller {
       return new HttpResponse(201, saved);
 
     } catch (IllegalArgumentException e) {
-      return HttpHelper.badRequest(e);
-    } catch (InvalidChecklistTypeError e) {
       return HttpHelper.badRequest(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

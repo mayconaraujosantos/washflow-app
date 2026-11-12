@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.user;
 
-public class InvalidCredentialsError extends Exception {
+import com.washflow.domain.errors.common.AuthenticationError;
+
+public class InvalidCredentialsError extends AuthenticationError {
 
   public InvalidCredentialsError() {
-    super("Login ou senha inválidos");
+    super("INVALID_CREDENTIALS", "Login ou senha inválidos");
   }
 }

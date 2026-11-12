@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.user;
 
-public class AccountLockedError extends Exception {
+import com.washflow.domain.errors.common.TooManyRequestsError;
+
+public class AccountLockedError extends TooManyRequestsError {
 
   public AccountLockedError() {
-    super("Muitas tentativas. Tente novamente em alguns minutos");
+    super("ACCOUNT_LOCKED", "Muitas tentativas. Tente novamente em alguns minutos");
   }
 }

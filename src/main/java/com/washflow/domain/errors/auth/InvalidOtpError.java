@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.auth;
 
-public class InvalidOtpError extends Exception {
+import com.washflow.domain.errors.common.AuthenticationError;
+
+public class InvalidOtpError extends AuthenticationError {
 
   public InvalidOtpError() {
-    super("Código inválido ou expirado");
+    super("INVALID_OTP", "Código inválido ou expirado");
   }
 }

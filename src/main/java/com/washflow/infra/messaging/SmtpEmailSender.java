@@ -1,6 +1,7 @@
 package com.washflow.infra.messaging;
 
 import com.washflow.application.AppConfig;
+import com.washflow.data.protocols.messaging.EmailSendError;
 import com.washflow.data.protocols.messaging.EmailSender;
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
@@ -61,7 +62,7 @@ public class SmtpEmailSender implements EmailSender {
       message.setSentDate(new Date());
       Transport.send(message);
     } catch (MessagingException e) {
-      throw new EmailDeliveryException("Could not send the e-mail", e);
+      throw new EmailSendError("Could not send the e-mail", e);
     }
   }
 

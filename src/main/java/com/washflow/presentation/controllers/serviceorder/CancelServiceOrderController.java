@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.serviceorder;
 
-import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
 import com.washflow.domain.usecases.serviceorder.CancelServiceOrder;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -37,8 +36,6 @@ public class CancelServiceOrderController implements Controller {
       return new HttpResponse(200, Map.of("status", "CANCELLED"));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (ServiceOrderNotCancellableError e) {
-      return new HttpResponse(409, Map.of("error", e.getMessage()));
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

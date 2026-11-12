@@ -17,7 +17,7 @@ public class UnavailableOtpSender implements OtpSender {
   }
 
   @Override
-  public void send(String address, String code, String magicLink) throws OtpUnavailableError {
+  public void send(String address, String code, String magicLink) {
     throw new OtpUnavailableError(message);
   }
 

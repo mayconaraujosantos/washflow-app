@@ -1,5 +1,6 @@
 package com.washflow.infra.messaging;
 
+import com.washflow.data.protocols.messaging.EmailSendError;
 import com.washflow.data.protocols.messaging.EmailSender;
 import com.washflow.data.protocols.messaging.OtpSender;
 import com.washflow.domain.errors.auth.OtpUnavailableError;
@@ -21,13 +22,13 @@ public class EmailOtpSender implements OtpSender {
   }
 
   @Override
-  public void send(String email, String code, String magicLink) throws OtpUnavailableError {
+  public void send(String email, String code, String magicLink) {
     if (!emailSender.available()) {
       throw new OtpUnavailableError("Envio de código por e-mail não está configurado");
     }
     try {
       emailSender.send(email, code + " é o seu código de acesso", body(code, magicLink));
-    } catch (EmailSender.EmailDeliveryException e) {
+    } catch (EmailSendError e) {
       // The provider's reason goes to the log, never to the customer.
       LOGGER.error("event=otp_email_failed reason={}", e.getMessage(), e);
       throw new OtpUnavailableError("Não foi possível enviar o e-mail agora. Tente de novo.");

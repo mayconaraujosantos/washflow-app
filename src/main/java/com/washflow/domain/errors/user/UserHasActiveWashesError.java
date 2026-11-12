@@ -1,10 +1,12 @@
 package com.washflow.domain.errors.user;
 
-import java.util.UUID;
+import com.washflow.domain.errors.common.ConflictError;
 
-public class UserHasActiveWashesError extends RuntimeException {
+public class UserHasActiveWashesError extends ConflictError {
 
-  public UserHasActiveWashesError(UUID userId) {
-    super("Resolve the user's active washes before changing this profile: " + userId);
+  public UserHasActiveWashesError() {
+    super(
+        "USER_HAS_ACTIVE_WASHES",
+        "Conclua ou reatribua as lavagens em andamento deste lavador antes de alterar a conta");
   }
 }

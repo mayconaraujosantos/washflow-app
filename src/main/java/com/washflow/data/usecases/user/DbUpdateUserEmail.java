@@ -27,8 +27,7 @@ public class DbUpdateUserEmail implements UpdateUserEmail {
   }
 
   @Override
-  public User update(UUID userId, String rawEmail)
-      throws UserNotFoundError, EmailAlreadyRegisteredError {
+  public User update(UUID userId, String rawEmail) {
     loadUserByIdRepository.loadById(userId).orElseThrow(() -> new UserNotFoundError(userId));
     String email = ContactRules.normalizeEmail(rawEmail);
     if (email != null) {

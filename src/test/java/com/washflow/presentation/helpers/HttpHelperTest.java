@@ -3,6 +3,15 @@ package com.washflow.presentation.helpers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import com.washflow.domain.errors.common.ForbiddenError;
+import com.washflow.domain.errors.common.TenantRequiredError;
+import com.washflow.domain.errors.common.UnauthorizedError;
+import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderNotCancellableError;
+import com.washflow.domain.errors.serviceorder.TicketNotFoundError;
+import com.washflow.domain.errors.user.AccountLockedError;
+import com.washflow.domain.errors.user.EmailResetUnavailableError;
+import com.washflow.presentation.protocols.HttpResponse;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -32,5 +41,38 @@ class HttpHelperTest {
     Map<?, ?> body = (Map<?, ?>) HttpHelper.notFound(new Exception("x")).body();
 
     assertFalse(body.containsKey("requestId"));
+  }
+
+  @Test
+  void eachErrorCategoryHasItsOwnStatus() {
+    assertEquals(400, HttpHelper.serverError(new InvalidPhotoTypeError("SIDE")).statusCode());
+    assertEquals(
+        401, HttpHelper.serverError(new UnauthorizedError("Sessão expirada")).statusCode());
+    assertEquals(403, HttpHelper.serverError(new ForbiddenError("Só o gerente")).statusCode());
+    assertEquals(404, HttpHelper.serverError(new TicketNotFoundError()).statusCode());
+    assertEquals(409, HttpHelper.serverError(new ServiceOrderNotCancellableError()).statusCode());
+    assertEquals(429, HttpHelper.serverError(new AccountLockedError()).statusCode());
+    assertEquals(503, HttpHelper.serverError(new EmailResetUnavailableError()).statusCode());
+  }
+
+  @Test
+  void aDomainErrorAnswersWithItsMessageCodeAndRequestId() {
+    MDC.put(HttpHelper.REQUEST_ID, "abc123def456");
+
+    HttpResponse response = HttpHelper.serverError(new TenantRequiredError());
+
+    assertEquals(400, response.statusCode());
+    assertEquals(
+        Map.of(
+            "error", "Escolha o lava-jato", "code", "TENANT_REQUIRED", "requestId", "abc123def456"),
+        response.body());
+  }
+
+  @Test
+  void anythingElseIsAnInternalErrorThatDoesNotLeakItsMessage() {
+    HttpResponse response = HttpHelper.serverError(new IllegalStateException("pool exhausted"));
+
+    assertEquals(500, response.statusCode());
+    assertEquals(Map.of("error", "Internal server error"), response.body());
   }
 }

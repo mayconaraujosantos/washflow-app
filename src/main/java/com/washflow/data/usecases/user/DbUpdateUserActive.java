@@ -19,7 +19,7 @@ public class DbUpdateUserActive implements UpdateUserActive {
   }
 
   @Override
-  public User update(Params params) throws UserNotFoundError {
+  public User update(Params params) {
     try {
       return updateRepository.updateActive(params.userId(), params.active());
     } catch (UserHasActiveWashesError e) {

@@ -24,7 +24,7 @@ public class DbListServiceOrdersByCustomer implements ListServiceOrdersByCustome
   }
 
   @Override
-  public List<ServiceOrder> list(Params params) throws UserNotFoundError {
+  public List<ServiceOrder> list(Params params) {
     loadUserByIdRepository
         .loadById(params.customerId())
         .orElseThrow(() -> new UserNotFoundError(params.customerId()));

@@ -1,7 +1,6 @@
 package com.washflow.domain.usecases.customer;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,7 +11,7 @@ import java.util.UUID;
  */
 public interface ListServiceOrdersByCustomer {
 
-  List<ServiceOrder> list(Params params) throws UserNotFoundError;
+  List<ServiceOrder> list(Params params);
 
   record Params(UUID customerId) {}
 }

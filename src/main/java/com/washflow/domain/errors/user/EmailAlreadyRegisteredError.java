@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.user;
 
-public class EmailAlreadyRegisteredError extends Exception {
+import com.washflow.domain.errors.common.ConflictError;
+
+public class EmailAlreadyRegisteredError extends ConflictError {
 
   public EmailAlreadyRegisteredError() {
-    super("E-mail já cadastrado em outra conta");
+    super("EMAIL_ALREADY_REGISTERED", "E-mail já cadastrado em outra conta");
   }
 }

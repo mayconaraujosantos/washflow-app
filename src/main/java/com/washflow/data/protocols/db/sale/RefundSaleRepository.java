@@ -2,8 +2,6 @@ package com.washflow.data.protocols.db.sale;
 
 import com.washflow.domain.entities.sale.Sale;
 import com.washflow.domain.entities.sale.SaleRefund;
-import com.washflow.domain.errors.sale.SaleNotFoundError;
-import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import java.util.UUID;
 
 /**
@@ -12,5 +10,5 @@ import java.util.UUID;
  */
 public interface RefundSaleRepository {
 
-  Sale refund(UUID saleId, SaleRefund refund) throws SaleNotFoundError, SaleRefundNotAllowedError;
+  Sale refund(UUID saleId, SaleRefund refund);
 }

@@ -17,6 +17,7 @@ import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.user.PasswordResetRepository;
 import com.washflow.data.protocols.db.user.PasswordResetRepository.PendingCode;
 import com.washflow.data.protocols.db.user.SaveUserPasswordHashRepository;
+import com.washflow.data.protocols.messaging.EmailSendError;
 import com.washflow.data.protocols.messaging.EmailSender;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
@@ -49,7 +50,7 @@ class DbResetPasswordByEmailTest {
     @Override
     public void send(String to, String subject, String body) {
       if (!up) {
-        throw new EmailDeliveryException("smtp down", null);
+        throw new EmailSendError("smtp down", null);
       }
       sent.add(new String[] {to, subject, body});
     }
@@ -109,7 +110,13 @@ class DbResetPasswordByEmailTest {
         };
     sut =
         new DbResetPasswordByEmail(
-            byPhone, byEmail, resets, passwords, hasher, value -> "h:" + value, outbox, clock);
+            byPhone,
+            byEmail,
+            resets,
+            passwords,
+            hasher,
+            outbox,
+            new PasswordResetCodes(resets, value -> "h:" + value, clock));
     when(byPhone.loadByPhone(PHONE)).thenReturn(Optional.of(ana));
     when(byEmail.loadByEmail("rita@lavaraio.test")).thenReturn(Optional.of(rita));
     when(resets.loadRecoveryEmail(ana.id())).thenReturn(Optional.of("ana@mail.test"));

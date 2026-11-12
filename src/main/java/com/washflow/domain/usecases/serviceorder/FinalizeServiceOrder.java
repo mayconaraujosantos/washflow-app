@@ -2,7 +2,6 @@ package com.washflow.domain.usecases.serviceorder;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import java.util.UUID;
@@ -17,7 +16,7 @@ import java.util.UUID;
 public interface FinalizeServiceOrder {
 
   ServiceOrder finalizeOrder(Params params)
-      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError, ServicePriceNotFoundError;
+      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError;
 
   record Params(UUID serviceOrderId, PaymentMethod paymentMethod) {}
 }
