@@ -1,16 +1,18 @@
 package com.washflow.domain.errors.user;
 
 import com.washflow.domain.entities.user.UserProfile;
+import com.washflow.domain.errors.common.ConflictError;
 
 /**
  * The phone number was already claimed by a different profile - e.g. a phone that registered
  * through the LAVADOR QR code trying to log in through the CLIENTE one. The profile is bound to the
  * phone at first access; only {@code UpdateUserProfile} (a manager action) can change it.
  */
-public class UserProfileMismatchError extends Exception {
+public class UserProfileMismatchError extends ConflictError {
 
   public UserProfileMismatchError(String phone, UserProfile existing, UserProfile requested) {
     super(
+        "USER_PROFILE_MISMATCH",
         "Phone "
             + phone
             + " is already registered as "

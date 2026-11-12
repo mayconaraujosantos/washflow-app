@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.user;
 
-import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.usecases.user.WasherBadge;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -28,8 +27,6 @@ public class WasherBadgeLoginController implements Controller {
       return HttpHelper.ok(washerBadge.signInWithBadge(BodyValues.text(body, "badgeToken")));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (InvalidCredentialsError e) {
-      return HttpHelper.unauthorized(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

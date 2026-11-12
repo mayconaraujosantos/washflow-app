@@ -1,8 +1,12 @@
 package com.washflow.domain.errors.finance;
 
-public class InvalidTransactionTypeError extends Exception {
+import com.washflow.domain.errors.common.ValidationError;
+
+public class InvalidTransactionTypeError extends ValidationError {
 
   public InvalidTransactionTypeError(String value) {
-    super("Invalid transaction type: " + value + ". Must be INCOME or EXPENSE");
+    super(
+        "INVALID_TRANSACTION_TYPE",
+        "Invalid transaction type: " + value + ". Must be INCOME or EXPENSE");
   }
 }

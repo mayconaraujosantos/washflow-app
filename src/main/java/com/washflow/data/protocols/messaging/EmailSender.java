@@ -4,7 +4,7 @@ package com.washflow.data.protocols.messaging;
 public interface EmailSender {
 
   /**
-   * @throws EmailDeliveryException when the message could not be handed to the mail server
+   * @throws EmailSendError when the message could not be handed to the mail server
    */
   void send(String to, String subject, String body);
 

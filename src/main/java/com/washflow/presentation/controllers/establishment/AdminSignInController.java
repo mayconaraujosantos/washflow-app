@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.establishment;
 
-import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -28,8 +27,6 @@ public class AdminSignInController implements Controller {
           platform.signIn(BodyValues.text(body, "email"), BodyValues.text(body, "password")));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (InvalidCredentialsError e) {
-      return HttpHelper.unauthorized(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

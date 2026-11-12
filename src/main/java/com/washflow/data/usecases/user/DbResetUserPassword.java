@@ -28,8 +28,7 @@ public class DbResetUserPassword implements ResetUserPassword {
   }
 
   @Override
-  public User reset(UUID userId, String newPassword)
-      throws UserNotFoundError, PasswordResetNotAllowedError {
+  public User reset(UUID userId, String newPassword) {
     if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
       throw new IllegalArgumentException("A nova senha deve ter no mínimo 8 caracteres");
     }

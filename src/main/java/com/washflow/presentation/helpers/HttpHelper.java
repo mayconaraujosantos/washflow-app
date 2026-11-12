@@ -1,6 +1,13 @@
 package com.washflow.presentation.helpers;
 
-import com.washflow.domain.errors.common.TenantRequiredError;
+import com.washflow.domain.errors.common.AccessDeniedError;
+import com.washflow.domain.errors.common.AuthenticationError;
+import com.washflow.domain.errors.common.ConflictError;
+import com.washflow.domain.errors.common.DomainError;
+import com.washflow.domain.errors.common.NotFoundError;
+import com.washflow.domain.errors.common.TooManyRequestsError;
+import com.washflow.domain.errors.common.UnavailableError;
+import com.washflow.domain.errors.common.ValidationError;
 import com.washflow.presentation.errors.ServerError;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.LinkedHashMap;
@@ -46,12 +53,35 @@ public final class HttpHelper {
     return new HttpResponse(401, errorBody(error.getMessage()));
   }
 
+  /**
+   * The response for an error a controller did not handle itself: a {@link DomainError} gets the
+   * status of its category, anything else is a bug and becomes a logged 500.
+   */
   public static HttpResponse serverError(Exception error) {
-    if (error instanceof TenantRequiredError) {
-      return badRequest(error);
+    if (error instanceof DomainError domainError) {
+      return domainError(domainError);
     }
     LOGGER.error("Unhandled controller error", new ServerError(error));
     return new HttpResponse(500, errorBody("Internal server error"));
+  }
+
+  /** {@code {"error": message, "code": code, "requestId": id}} with the status of its category. */
+  public static HttpResponse domainError(DomainError error) {
+    Map<String, Object> body = errorBody(error.getMessage());
+    body.put("code", error.code());
+    return new HttpResponse(statusOf(error), body);
+  }
+
+  static int statusOf(DomainError error) {
+    return switch (error) {
+      case ValidationError invalid -> 400;
+      case AuthenticationError unauthenticated -> 401;
+      case AccessDeniedError denied -> 403;
+      case NotFoundError notFound -> 404;
+      case ConflictError conflict -> 409;
+      case TooManyRequestsError tooMany -> 429;
+      case UnavailableError unavailable -> 503;
+    };
   }
 
   /**

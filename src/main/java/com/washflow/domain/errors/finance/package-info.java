@@ -1,2 +1,2 @@
-/** Errors of the cash register and its catalog references. */
+/** Errors of the cash register: transactions and expense categories. */
 package com.washflow.domain.errors.finance;

@@ -23,7 +23,7 @@ public class DbListUnclaimedVehicles implements ListUnclaimedVehicles {
   }
 
   @Override
-  public List<Vehicle> list(UUID customerId) throws UserNotFoundError {
+  public List<Vehicle> list(UUID customerId) {
     User customer =
         loadUserByIdRepository
             .loadById(customerId)

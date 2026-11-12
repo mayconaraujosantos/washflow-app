@@ -1,7 +1,6 @@
 package com.washflow.domain.usecases.user;
 
 import com.washflow.domain.entities.user.User;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.UUID;
 
 /**
@@ -10,7 +9,7 @@ import java.util.UUID;
  */
 public interface UpdateUserActive {
 
-  User update(Params params) throws UserNotFoundError;
+  User update(Params params);
 
   record Params(UUID userId, boolean active) {}
 }

@@ -1,7 +1,6 @@
 package com.washflow.presentation.controllers.serviceorder;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrderPhoto.PhotoType;
-import com.washflow.domain.errors.serviceorder.InvalidPhotoTypeError;
 import com.washflow.domain.usecases.serviceorder.SaveServiceOrderPhoto;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -50,8 +49,6 @@ public class SaveServiceOrderPhotoController implements Controller {
       return new HttpResponse(201, saved);
 
     } catch (IllegalArgumentException e) {
-      return HttpHelper.badRequest(e);
-    } catch (InvalidPhotoTypeError e) {
       return HttpHelper.badRequest(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);

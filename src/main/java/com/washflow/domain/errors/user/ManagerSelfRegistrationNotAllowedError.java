@@ -1,5 +1,7 @@
 package com.washflow.domain.errors.user;
 
+import com.washflow.domain.errors.common.AccessDeniedError;
+
 /**
  * A phone number not yet registered tried to log in through the GERENTE QR code. {@code
  * AuthenticateUser} auto-registers first-time CLIENTE/LAVADOR access, but never GERENTE - otherwise
@@ -7,10 +9,11 @@ package com.washflow.domain.errors.user;
  * new manager can only come from an existing one calling {@code UpdateUserProfile}, or from the
  * initial seed data.
  */
-public class ManagerSelfRegistrationNotAllowedError extends Exception {
+public class ManagerSelfRegistrationNotAllowedError extends AccessDeniedError {
 
   public ManagerSelfRegistrationNotAllowedError(String phone) {
     super(
+        "MANAGER_SELF_REGISTRATION_NOT_ALLOWED",
         "Phone "
             + phone
             + " is not registered as a manager yet; ask an existing manager to promote it");

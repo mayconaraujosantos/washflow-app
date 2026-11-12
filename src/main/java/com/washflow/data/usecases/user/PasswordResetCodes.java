@@ -56,7 +56,7 @@ public class PasswordResetCodes {
    * Accepts the pending code of the account. A wrong guess counts towards {@link #MAX_ATTEMPTS}; an
    * expired or exhausted code is discarded. The code stays pending until {@link #discard}.
    */
-  void verify(UUID userId, String code) throws InvalidOtpError {
+  void verify(UUID userId, String code) {
     PendingCode pending = repository.loadCode(userId).orElseThrow(InvalidOtpError::new);
     if (pending.expiresAt().isBefore(Instant.now(clock)) || pending.attempts() >= MAX_ATTEMPTS) {
       repository.deleteCode(userId);

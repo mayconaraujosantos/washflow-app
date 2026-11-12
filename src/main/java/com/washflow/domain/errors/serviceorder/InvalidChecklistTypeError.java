@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.serviceorder;
 
-public class InvalidChecklistTypeError extends Exception {
+import com.washflow.domain.errors.common.ValidationError;
+
+public class InvalidChecklistTypeError extends ValidationError {
 
   public InvalidChecklistTypeError(String value) {
-    super("Invalid checklist type: " + value + ". Must be ENTRY or EXIT");
+    super("INVALID_CHECKLIST_TYPE", "Invalid checklist type: " + value + ". Must be ENTRY or EXIT");
   }
 }

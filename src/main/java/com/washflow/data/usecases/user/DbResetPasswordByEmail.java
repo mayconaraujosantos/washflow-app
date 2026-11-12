@@ -5,7 +5,7 @@ import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.user.PasswordResetRepository;
 import com.washflow.data.protocols.db.user.SaveUserPasswordHashRepository;
-import com.washflow.data.protocols.messaging.EmailDeliveryException;
+import com.washflow.data.protocols.messaging.EmailSendError;
 import com.washflow.data.protocols.messaging.EmailSender;
 import com.washflow.domain.entities.shared.ContactRules;
 import com.washflow.domain.entities.user.User;
@@ -59,38 +59,33 @@ public class DbResetPasswordByEmail implements ResetPasswordByEmail {
   }
 
   @Override
-  public int requestForCustomer(String phone)
-      throws EmailResetUnavailableError, EmailDeliveryFailedError {
+  public int requestForCustomer(String phone) {
     Optional<User> customer = customer(requiredPhone(phone));
     return request(
         customer, customer.flatMap(found -> passwordResetRepository.loadRecoveryEmail(found.id())));
   }
 
   @Override
-  public int requestForManager(String email)
-      throws EmailResetUnavailableError, EmailDeliveryFailedError {
+  public int requestForManager(String email) {
     Optional<User> manager = manager(requiredEmail(email));
     return request(manager, manager.map(User::email));
   }
 
   @Override
-  public void confirmForCustomer(String phone, String code, String newPassword)
-      throws InvalidOtpError {
+  public void confirmForCustomer(String phone, String code, String newPassword) {
     requirePasswordLength(newPassword);
     String normalized = ContactRules.normalizePhone(phone);
     confirm(normalized == null ? Optional.empty() : customer(normalized), code, newPassword);
   }
 
   @Override
-  public void confirmForManager(String email, String code, String newPassword)
-      throws InvalidOtpError {
+  public void confirmForManager(String email, String code, String newPassword) {
     requirePasswordLength(newPassword);
     String normalized = ContactRules.normalizeEmail(email);
     confirm(normalized == null ? Optional.empty() : manager(normalized), code, newPassword);
   }
 
-  private int request(Optional<User> account, Optional<String> recipient)
-      throws EmailResetUnavailableError, EmailDeliveryFailedError {
+  private int request(Optional<User> account, Optional<String> recipient) {
     if (!emailSender.available()) {
       throw new EmailResetUnavailableError();
     }
@@ -105,18 +100,17 @@ public class DbResetPasswordByEmail implements ResetPasswordByEmail {
     return codes.ttlSeconds();
   }
 
-  private void send(User user, String recipient, String code) throws EmailDeliveryFailedError {
+  private void send(User user, String recipient, String code) {
     try {
       emailSender.send(recipient, "Seu código para criar uma nova senha", body(user, code));
-    } catch (EmailDeliveryException e) {
+    } catch (EmailSendError e) {
       LOGGER.error("Password reset e-mail not sent for user {}", user.id(), e);
       codes.discard(user.id());
       throw new EmailDeliveryFailedError();
     }
   }
 
-  private void confirm(Optional<User> account, String code, String newPassword)
-      throws InvalidOtpError {
+  private void confirm(Optional<User> account, String code, String newPassword) {
     User user = account.orElseThrow(InvalidOtpError::new);
     codes.verify(user.id(), code);
     saveUserPasswordHashRepository.savePasswordHash(user.id(), passwordHasher.hash(newPassword));

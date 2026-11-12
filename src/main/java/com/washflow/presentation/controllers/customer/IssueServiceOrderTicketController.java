@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.customer;
 
-import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -27,8 +26,6 @@ public class IssueServiceOrderTicketController implements Controller {
           Map.of("token", ticket.issue(UUID.fromString(request.pathParams().get("id")))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (ServiceOrderNotFoundError e) {
-      return HttpHelper.notFound(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

@@ -1,11 +1,6 @@
 package com.washflow.domain.usecases.schedule;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
-import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
-import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
-import com.washflow.domain.errors.schedule.SlotFullyBookedError;
-import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -18,12 +13,7 @@ import java.util.UUID;
  */
 public interface ScheduleServiceOrder {
 
-  ServiceOrder schedule(Params params)
-      throws VehicleNotFoundError,
-          ServicePriceNotFoundError,
-          OutsideBusinessHoursError,
-          InsufficientLeadTimeError,
-          SlotFullyBookedError;
+  ServiceOrder schedule(Params params);
 
   record Params(
       UUID vehicleId, int servicePriceId, List<Integer> servicePriceIds, Instant scheduledAt) {

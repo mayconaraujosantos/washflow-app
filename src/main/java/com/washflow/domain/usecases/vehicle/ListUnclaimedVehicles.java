@@ -1,7 +1,6 @@
 package com.washflow.domain.usecases.vehicle;
 
 import com.washflow.domain.entities.vehicle.Vehicle;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,5 +10,5 @@ import java.util.UUID;
  */
 public interface ListUnclaimedVehicles {
 
-  List<Vehicle> list(UUID customerId) throws UserNotFoundError;
+  List<Vehicle> list(UUID customerId);
 }

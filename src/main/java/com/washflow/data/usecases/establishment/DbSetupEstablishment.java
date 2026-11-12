@@ -46,8 +46,7 @@ public class DbSetupEstablishment implements SetupEstablishment {
   }
 
   @Override
-  public User setup(Params params)
-      throws EstablishmentAlreadyConfiguredError, InvalidSetupCodeError {
+  public User setup(Params params) {
     if (platformRepository.adminExists()) {
       throw new EstablishmentAlreadyConfiguredError();
     }
@@ -72,7 +71,7 @@ public class DbSetupEstablishment implements SetupEstablishment {
     return admin;
   }
 
-  private void checkSetupCode(String provided) throws InvalidSetupCodeError {
+  private void checkSetupCode(String provided) {
     if (!setupCodeRequired) {
       return;
     }

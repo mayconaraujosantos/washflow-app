@@ -2,8 +2,6 @@ package com.washflow.presentation.controllers.sale;
 
 import com.washflow.domain.entities.sale.SaleType;
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
-import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import com.washflow.domain.usecases.sale.CreateSale;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -59,8 +57,6 @@ public class CreateSaleController implements Controller {
       return HttpHelper.ok(sale);
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (ServicePriceNotFoundError | VehicleNotFoundError e) {
-      return HttpHelper.notFound(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

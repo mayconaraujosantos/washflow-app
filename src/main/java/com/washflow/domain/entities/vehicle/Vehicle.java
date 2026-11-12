@@ -32,7 +32,7 @@ public record Vehicle(
    * customer types matches the one the manager entered at the counter. Old ({@code ABC1234}) and
    * Mercosul ({@code ABC1D23}) formats.
    */
-  public static String normalizePlate(String raw) throws InvalidPlateError {
+  public static String normalizePlate(String raw) {
     String plate = raw == null ? "" : raw.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
     if (!PLATE.matcher(plate).matches()) {
       throw new InvalidPlateError(raw == null ? "" : raw);

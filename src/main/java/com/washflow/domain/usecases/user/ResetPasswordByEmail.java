@@ -1,9 +1,5 @@
 package com.washflow.domain.usecases.user;
 
-import com.washflow.domain.errors.auth.InvalidOtpError;
-import com.washflow.domain.errors.user.EmailDeliveryFailedError;
-import com.washflow.domain.errors.user.EmailResetUnavailableError;
-
 /**
  * "Esqueci a senha" without the counter: a 6-digit code goes to the account's e-mail and, with it,
  * the person sets a new password.
@@ -19,14 +15,14 @@ public interface ResetPasswordByEmail {
   /**
    * @return seconds the code stays valid
    */
-  int requestForCustomer(String phone) throws EmailResetUnavailableError, EmailDeliveryFailedError;
+  int requestForCustomer(String phone);
 
   /**
    * @return seconds the code stays valid
    */
-  int requestForManager(String email) throws EmailResetUnavailableError, EmailDeliveryFailedError;
+  int requestForManager(String email);
 
-  void confirmForCustomer(String phone, String code, String newPassword) throws InvalidOtpError;
+  void confirmForCustomer(String phone, String code, String newPassword);
 
-  void confirmForManager(String email, String code, String newPassword) throws InvalidOtpError;
+  void confirmForManager(String email, String code, String newPassword);
 }

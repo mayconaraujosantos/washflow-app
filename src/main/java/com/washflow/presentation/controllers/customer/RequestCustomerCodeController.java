@@ -1,7 +1,5 @@
 package com.washflow.presentation.controllers.customer;
 
-import com.washflow.domain.errors.auth.OtpTooSoonError;
-import com.washflow.domain.errors.auth.OtpUnavailableError;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -28,10 +26,6 @@ public class RequestCustomerCodeController implements Controller {
       return HttpHelper.ok(Map.of("expiresInSeconds", login.requestCode(OtpRecipients.from(body))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (OtpTooSoonError e) {
-      return new HttpResponse(429, Map.of("error", e.getMessage()));
-    } catch (OtpUnavailableError e) {
-      return new HttpResponse(503, Map.of("error", e.getMessage()));
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

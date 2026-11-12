@@ -2,7 +2,6 @@ package com.washflow.domain.usecases.user;
 
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
-import com.washflow.domain.errors.user.InvalidCredentialsError;
 import com.washflow.domain.errors.user.ManagerSelfRegistrationNotAllowedError;
 import com.washflow.domain.errors.user.UserProfileMismatchError;
 import com.washflow.domain.errors.user.WasherSelfRegistrationNotAllowedError;
@@ -21,11 +20,7 @@ import com.washflow.domain.errors.user.WasherSelfRegistrationNotAllowedError;
  */
 public interface AuthenticateUser {
 
-  User authenticate(Params params)
-      throws UserProfileMismatchError,
-          ManagerSelfRegistrationNotAllowedError,
-          WasherSelfRegistrationNotAllowedError,
-          InvalidCredentialsError;
+  User authenticate(Params params);
 
   /** {@code email} (managers only) replaces {@code phone} as the login when present. */
   record Params(

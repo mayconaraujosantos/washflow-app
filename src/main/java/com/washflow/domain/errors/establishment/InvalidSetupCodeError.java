@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.establishment;
 
-public class InvalidSetupCodeError extends Exception {
+import com.washflow.domain.errors.common.AccessDeniedError;
+
+public class InvalidSetupCodeError extends AccessDeniedError {
 
   public InvalidSetupCodeError() {
-    super("Código de configuração inválido");
+    super("INVALID_SETUP_CODE", "Código de configuração inválido");
   }
 }

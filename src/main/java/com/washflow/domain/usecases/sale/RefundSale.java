@@ -2,8 +2,6 @@ package com.washflow.domain.usecases.sale;
 
 import com.washflow.domain.entities.sale.Sale;
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.sale.SaleNotFoundError;
-import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -13,7 +11,7 @@ import java.util.UUID;
  */
 public interface RefundSale {
 
-  Sale refund(Params params) throws SaleNotFoundError, SaleRefundNotAllowedError;
+  Sale refund(Params params);
 
   record Params(
       UUID saleId,

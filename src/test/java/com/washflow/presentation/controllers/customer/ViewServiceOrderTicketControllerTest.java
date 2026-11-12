@@ -7,7 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.washflow.domain.entities.serviceorder.TicketView;
-import com.washflow.domain.errors.common.TicketNotFoundError;
+import com.washflow.domain.errors.serviceorder.TicketNotFoundError;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
 import com.washflow.presentation.protocols.HttpResponse;
 import java.util.Map;

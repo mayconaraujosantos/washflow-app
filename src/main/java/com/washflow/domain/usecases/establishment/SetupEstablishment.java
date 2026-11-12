@@ -1,8 +1,6 @@
 package com.washflow.domain.usecases.establishment;
 
 import com.washflow.domain.entities.user.User;
-import com.washflow.domain.errors.establishment.EstablishmentAlreadyConfiguredError;
-import com.washflow.domain.errors.establishment.InvalidSetupCodeError;
 
 /**
  * First-run wizard: names the car wash, sets its hours and yard capacity, and creates the owner
@@ -13,7 +11,7 @@ public interface SetupEstablishment {
 
   Status status();
 
-  User setup(Params params) throws EstablishmentAlreadyConfiguredError, InvalidSetupCodeError;
+  User setup(Params params);
 
   record Status(boolean configured, boolean setupCodeRequired, String establishmentName) {}
 

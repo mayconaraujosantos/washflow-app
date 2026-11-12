@@ -210,60 +210,51 @@ public class SaleJdbiRepository
   // FOR UPDATE on the sale serializes refunds of the same sale: two concurrent partial refunds
   // can't both read the same balance and together give back more than was paid.
   @Override
-  public Sale refund(UUID saleId, SaleRefund refund)
-      throws SaleNotFoundError, SaleRefundNotAllowedError {
-    try {
-      return jdbi.inTransaction(
-          handle -> {
-            SaleRow row;
-            try (var query = handle.createQuery(SELECT_SALE + " AND id = :id FOR UPDATE")) {
-              row =
-                  query
-                      .bind("id", saleId)
-                      .map(SaleJdbiRepository::mapRow)
-                      .findOne()
-                      .orElseThrow(() -> new Rejected(new SaleNotFoundError()));
-            }
-            if (row.type() != SaleType.QUICK_SALE) {
-              throw new Rejected(new SaleRefundNotAllowedError("Orçamento não tem estorno"));
-            }
-            BigDecimal available;
-            try (var query = handle.createQuery(REFUND_SELECT_SQL)) {
-              available =
-                  query
-                      .bind("id", saleId)
-                      .bind(METHOD, refund.method().name())
-                      .mapTo(BigDecimal.class)
-                      .one();
-            }
-            if (refund.amount().compareTo(available) > 0) {
-              throw new Rejected(
-                  new SaleRefundNotAllowedError(
-                      String.format(
-                          PT_BR,
-                          "%s só tem R$ %,.2f para estornar nesta venda",
-                          METHOD_LABELS.get(refund.method()),
-                          available)));
-            }
-            handle
-                .createUpdate(REJECTED_INSERT_SQL)
-                .bind("id", refund.id())
-                .bind(SALE_ID, saleId)
-                .bind(METHOD, refund.method().name())
-                .bind("amount", refund.amount())
-                .bind("reason", refund.reason())
-                .bind("description", refund.description())
-                .bind("createdBy", refund.createdBy())
-                .bind("createdAt", refund.createdAt())
-                .execute();
-            return assemble(handle, List.of(row)).getFirst();
-          });
-    } catch (Rejected rejected) {
-      if (rejected.getCause() instanceof SaleNotFoundError notFound) {
-        throw notFound;
-      }
-      throw (SaleRefundNotAllowedError) rejected.getCause();
-    }
+  public Sale refund(UUID saleId, SaleRefund refund) {
+    return jdbi.inTransaction(
+        handle -> {
+          SaleRow row;
+          try (var query = handle.createQuery(SELECT_SALE + " AND id = :id FOR UPDATE")) {
+            row =
+                query
+                    .bind("id", saleId)
+                    .map(SaleJdbiRepository::mapRow)
+                    .findOne()
+                    .orElseThrow(() -> new SaleNotFoundError());
+          }
+          if (row.type() != SaleType.QUICK_SALE) {
+            throw new SaleRefundNotAllowedError("Orçamento não tem estorno");
+          }
+          BigDecimal available;
+          try (var query = handle.createQuery(REFUND_SELECT_SQL)) {
+            available =
+                query
+                    .bind("id", saleId)
+                    .bind(METHOD, refund.method().name())
+                    .mapTo(BigDecimal.class)
+                    .one();
+          }
+          if (refund.amount().compareTo(available) > 0) {
+            throw new SaleRefundNotAllowedError(
+                String.format(
+                    PT_BR,
+                    "%s só tem R$ %,.2f para estornar nesta venda",
+                    METHOD_LABELS.get(refund.method()),
+                    available));
+          }
+          handle
+              .createUpdate(REJECTED_INSERT_SQL)
+              .bind("id", refund.id())
+              .bind(SALE_ID, saleId)
+              .bind(METHOD, refund.method().name())
+              .bind("amount", refund.amount())
+              .bind("reason", refund.reason())
+              .bind("description", refund.description())
+              .bind("createdBy", refund.createdBy())
+              .bind("createdAt", refund.createdAt())
+              .execute();
+          return assemble(handle, List.of(row)).getFirst();
+        });
   }
 
   private static List<Sale> assemble(Handle handle, List<SaleRow> rows) {
@@ -353,13 +344,6 @@ public class SaleJdbiRepository
           .list();
     }
     return bySale;
-  }
-
-  /** Carries a checked domain error out of the JDBI transaction callback (rolls it back). */
-  private static final class Rejected extends RuntimeException {
-    Rejected(Exception cause) {
-      super(cause);
-    }
   }
 
   private static Map<UUID, List<SaleItem>> loadItems(Handle handle, List<UUID> saleIds) {

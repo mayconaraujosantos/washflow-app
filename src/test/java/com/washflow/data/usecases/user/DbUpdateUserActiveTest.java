@@ -64,8 +64,7 @@ class DbUpdateUserActiveTest {
 
   @Test
   void throwsUserHasActiveWashesErrorWhenWasherHasActiveOrders() {
-    when(updateRepository.updateActive(userId, false))
-        .thenThrow(new UserHasActiveWashesError(userId));
+    when(updateRepository.updateActive(userId, false)).thenThrow(new UserHasActiveWashesError());
 
     UpdateUserActive.Params params = new UpdateUserActive.Params(userId, false);
 

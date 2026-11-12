@@ -3,8 +3,6 @@ package com.washflow.data.usecases.sale;
 import com.washflow.data.protocols.db.sale.RefundSaleRepository;
 import com.washflow.domain.entities.sale.Sale;
 import com.washflow.domain.entities.sale.SaleRefund;
-import com.washflow.domain.errors.sale.SaleNotFoundError;
-import com.washflow.domain.errors.sale.SaleRefundNotAllowedError;
 import com.washflow.domain.usecases.sale.RefundSale;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -31,7 +29,7 @@ public class DbRefundSale implements RefundSale {
   }
 
   @Override
-  public Sale refund(Params params) throws SaleNotFoundError, SaleRefundNotAllowedError {
+  public Sale refund(Params params) {
     if (params.method() == null) {
       throw new IllegalArgumentException("Escolha a forma da devolução");
     }

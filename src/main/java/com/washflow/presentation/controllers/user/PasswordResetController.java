@@ -1,8 +1,5 @@
 package com.washflow.presentation.controllers.user;
 
-import com.washflow.domain.errors.auth.InvalidOtpError;
-import com.washflow.domain.errors.user.EmailDeliveryFailedError;
-import com.washflow.domain.errors.user.EmailResetUnavailableError;
 import com.washflow.domain.usecases.user.ResetPasswordByEmail;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -70,10 +67,6 @@ public class PasswordResetController implements Controller {
       return new HttpResponse(202, Map.of("expiresInSeconds", seconds));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (InvalidOtpError e) {
-      return HttpHelper.unauthorized(e);
-    } catch (EmailResetUnavailableError | EmailDeliveryFailedError e) {
-      return new HttpResponse(503, HttpHelper.errorBody(e.getMessage()));
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

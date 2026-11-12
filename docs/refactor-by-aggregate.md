@@ -80,7 +80,7 @@ domain/usecases/
 │ ├── CreateSale.java
 │ ├── ListSales.java
 │ └── RefundSale.java
-├── cash/
+├── finance/
 │ ├── CreateCashTransaction.java
 │ ├── DeleteCashTransaction.java
 │ ├── GetCashTransactionReport.java
@@ -181,7 +181,7 @@ data/usecases/
 │ ├── DbCreateSale.java
 │ ├── DbListSales.java
 │ └── DbRefundSale.java
-├── cash/
+├── finance/
 │ ├── DbCreateCashTransaction.java
 │ ├── DbDeleteCashTransaction.java
 │ ├── DbGetCashTransactionReport.java
@@ -287,7 +287,7 @@ data/protocols/db/
 │ ├── LoadSalesRepository.java
 │ ├── RefundSaleRepository.java
 │ └── SaveSaleRepository.java
-├── cash/
+├── finance/
 │ ├── CashTransactionReportRepository.java
 │ ├── DeleteCashTransactionRepository.java
 │ ├── LoadCashTransactionRepository.java
@@ -358,7 +358,8 @@ domain/errors/
 │ ├── ServiceOrderNotWashingError.java
 │ ├── InvalidServiceOrderStatusError.java
 │ ├── InvalidChecklistTypeError.java
-│ └── InvalidPhotoTypeError.java
+│ ├── InvalidPhotoTypeError.java
+│ └── TicketNotFoundError.java
 ├── sale/
 │ ├── SaleNotFoundError.java
 │ └── SaleRefundNotAllowedError.java
@@ -391,22 +392,24 @@ domain/errors/
 │ ├── SlotFullyBookedError.java
 │ ├── InsufficientLeadTimeError.java
 │ └── OutsideBusinessHoursError.java
-├── cash/
-│ ├── InvalidTransactionTypeError.java
-│ └── ServicePriceNotFoundError.java
+├── finance/
+│ └── InvalidTransactionTypeError.java
+├── pricing/
+│ └── ServicePriceNotFoundError.java (dono do catálogo; sale, schedule, serviceorder e yard também lançam)
 └── common/
+├── DomainError.java (+ ValidationError, AuthenticationError, AccessDeniedError, NotFoundError, ConflictError, TooManyRequestsError, UnavailableError)
 ├── ForbiddenError.java
 ├── UnauthorizedError.java
-├── TenantRequiredError.java
-└── TicketNotFoundError.java
+└── TenantRequiredError.java
 text
 
 
 ### Checklist PR 4
-- [ ] Criar pacotes de agregado em `domain/errors/`
-- [ ] Mover cada `*Error.java`
-- [ ] Ajustar imports em `data/usecases/**`, `presentation/**`, `application/**`
-- [ ] `./gradlew test` deve passar
+- [x] Criar pacotes de agregado em `domain/errors/`
+- [x] Mover cada `*Error.java`
+- [x] Ajustar imports em `data/usecases/**`, `presentation/**`, `application/**`
+- [x] `./gradlew test` deve passar
+- [x] Migrar cada agregado para as categorias de `DomainError` (429 e 503 com `TooManyRequestsError` e `UnavailableError`)
 
 ---
 
@@ -448,7 +451,7 @@ application/factories/
 │ │ ├── ListSalesControllerFactory.java
 │ │ ├── ListSaleRefundsControllerFactory.java
 │ │ └── RefundSaleControllerFactory.java
-│ ├── cash/
+│ ├── finance/
 │ │ ├── CreateCashTransactionControllerFactory.java
 │ │ ├── DeleteCashTransactionControllerFactory.java
 │ │ ├── GetCashTransactionReportControllerFactory.java
@@ -493,7 +496,7 @@ application/factories/
 ├── schedule/
 ├── yard/
 ├── sale/
-├── cash/
+├── finance/
 ├── vehicle/
 ├── user/
 ├── establishment/

@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.auth;
 
-public class GoogleLoginUnavailableError extends Exception {
+import com.washflow.domain.errors.common.UnavailableError;
+
+public class GoogleLoginUnavailableError extends UnavailableError {
 
   public GoogleLoginUnavailableError() {
-    super("Login com Google não está configurado");
+    super("GOOGLE_LOGIN_UNAVAILABLE", "Login com Google não está configurado");
   }
 }

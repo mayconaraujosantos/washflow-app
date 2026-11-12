@@ -28,7 +28,7 @@ public class DbCheckInServiceOrder implements CheckInServiceOrder {
 
   @Override
   public ServiceOrder checkIn(Params params)
-      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError, VehicleAlreadyInYardError {
+      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError {
     ServiceOrder serviceOrder =
         loadServiceOrderByIdRepository
             .loadById(params.serviceOrderId())

@@ -163,7 +163,6 @@ public final class ResourceAccessEvaluator {
     }
   }
 
-  @SuppressWarnings("unchecked")
   private static String bodyValue(Map<String, Object> body, String key) {
     if (body == null || !body.containsKey(key)) {
       return "";

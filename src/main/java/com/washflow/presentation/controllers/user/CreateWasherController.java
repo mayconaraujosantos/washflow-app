@@ -1,7 +1,6 @@
 package com.washflow.presentation.controllers.user;
 
 import com.washflow.domain.entities.user.User;
-import com.washflow.domain.errors.user.PhoneAlreadyRegisteredError;
 import com.washflow.domain.usecases.user.CreateWasher;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -37,8 +36,6 @@ public class CreateWasherController implements Controller {
 
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (PhoneAlreadyRegisteredError e) {
-      return new HttpResponse(409, Map.of("error", e.getMessage()));
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }
