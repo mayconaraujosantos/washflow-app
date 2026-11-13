@@ -18,7 +18,8 @@ public final class ScheduleReminderJob {
 
   private ScheduleReminderJob() {}
 
-  public static void start(SendScheduleReminders reminders) {
+  /** {@code housekeeping} (old received-message ids) runs on the same thread, after each run. */
+  public static void start(SendScheduleReminders reminders, Runnable housekeeping) {
     ScheduledExecutorService scheduler =
         Executors.newSingleThreadScheduledExecutor(
             runnable -> {
@@ -26,7 +27,14 @@ public final class ScheduleReminderJob {
               thread.setDaemon(true);
               return thread;
             });
-    scheduler.scheduleWithFixedDelay(() -> run(reminders), 1, PERIOD_MINUTES, TimeUnit.MINUTES);
+    scheduler.scheduleWithFixedDelay(
+        () -> {
+          run(reminders);
+          runHousekeeping(housekeeping);
+        },
+        1,
+        PERIOD_MINUTES,
+        TimeUnit.MINUTES);
   }
 
   static void run(SendScheduleReminders reminders) {
@@ -38,6 +46,14 @@ public final class ScheduleReminderJob {
       }
     } catch (RuntimeException e) {
       LOGGER.error("event=schedule_reminders_failed", e);
+    }
+  }
+
+  private static void runHousekeeping(Runnable housekeeping) {
+    try {
+      housekeeping.run();
+    } catch (RuntimeException e) {
+      LOGGER.error("event=whatsapp_housekeeping_failed", e);
     }
   }
 }

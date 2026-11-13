@@ -41,6 +41,7 @@ public final class AuthorizationMiddleware {
           "/api/auth/customers/password-reset/confirm");
 
   public static final String ESTABLISHMENT_HEADER = "X-Establishment";
+  public static final String WEBHOOK_PATH = "/api/whatsapp/webhook";
   // Login entry points (POST): each one fixes the profile it can sign into.
   private static final Set<String> AUTHENTICATION_PATHS =
       Set.of(
@@ -120,7 +121,10 @@ public final class AuthorizationMiddleware {
         || (PUBLIC_API_PATHS.contains(path) && "GET".equals(ctx.method().name()))
         // Ticket links are unguessable tokens meant to be opened without logging in.
         || ("GET".equals(ctx.method().name()) && path.matches("/api/tickets/[^/]+"))
-        || isAuthenticationPath(path, ctx.method().name());
+        || isAuthenticationPath(path, ctx.method().name())
+        // The WhatsApp provider has no account: WhatsappRoutes checks its webhook token, and the
+        // lava-jato comes from the instance that received the message.
+        || ("POST".equals(ctx.method().name()) && WEBHOOK_PATH.equals(path));
   }
 
   private boolean isAuthenticationPath(String path, String method) {

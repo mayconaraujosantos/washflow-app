@@ -162,7 +162,7 @@ public class Application {
 
     SendScheduleReminders reminders = WhatsappModule.scheduleReminders(jdbi, appConfig);
     if (reminders != null) {
-      ScheduleReminderJob.start(reminders);
+      ScheduleReminderJob.start(reminders, WhatsappModule.housekeeping(jdbi));
     }
   }
 
