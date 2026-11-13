@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 
 /**
  * Where the tests reach the e2e pod. On Linux and macOS Podman publishes the
@@ -38,7 +39,9 @@ function detectHost(): string {
     const address = execFileSync(
       'podman',
       ['machine', 'ssh', 'ip -4 -o addr show eth0'],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+      // podman's ssh writes a known_hosts file literally named "NUL" in the
+      // working directory under Git Bash: keep it out of the repository.
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], cwd: tmpdir() },
     )
     return /inet (\d+\.\d+\.\d+\.\d+)/.exec(address)?.[1] ?? 'localhost'
   } catch {
