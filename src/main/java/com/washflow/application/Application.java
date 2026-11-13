@@ -47,7 +47,7 @@ public class Application {
     AccountSecurityGateway securityGateway = new JdbiAccountSecurityGateway(jdbi);
     AuthorizationMiddleware authorizationMiddleware =
         new AuthorizationMiddleware(
-            new AuthTokenService(appConfig.tokenSecret()), securityGateway, jdbi);
+            new AuthTokenService(appConfig.tokenSecret().value()), securityGateway, jdbi);
 
     RequestTracing tracing = new RequestTracing(Metrics.registry());
     IdempotencyGuard idempotency =

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.washflow.application.AppConfig;
+import com.washflow.application.config.SmtpConfig;
 import com.washflow.domain.errors.auth.OtpUnavailableError;
 import java.net.ServerSocket;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ class EmailOtpSenderTest {
     EmailOtpSender sender =
         new EmailOtpSender(
             new SmtpEmailSender(
-                new AppConfig.Smtp(
+                new SmtpConfig(
                     "127.0.0.1",
                     closedPort,
                     "",

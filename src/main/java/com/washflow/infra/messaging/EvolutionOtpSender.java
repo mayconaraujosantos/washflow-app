@@ -1,7 +1,7 @@
 package com.washflow.infra.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.washflow.application.AppConfig;
+import com.washflow.application.config.EvolutionConfig;
 import com.washflow.data.protocols.messaging.OtpSender;
 import com.washflow.domain.errors.auth.OtpUnavailableError;
 import java.net.URI;
@@ -32,7 +32,7 @@ public class EvolutionOtpSender implements OtpSender {
   private final String apiKey;
   private final HttpClient http;
 
-  public EvolutionOtpSender(AppConfig.Evolution evolution) {
+  public EvolutionOtpSender(EvolutionConfig evolution) {
     String base = evolution.url().replaceAll("/+$", "");
     this.endpoint =
         URI.create(

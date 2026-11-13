@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
-import com.washflow.application.AppConfig;
+import com.washflow.application.config.EvolutionConfig;
 import com.washflow.domain.errors.auth.OtpUnavailableError;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -87,7 +87,7 @@ class EvolutionOtpSenderTest {
   }
 
   private static EvolutionOtpSender sender(String url, String instance) {
-    return new EvolutionOtpSender(new AppConfig.Evolution(url, "secret-key", instance));
+    return new EvolutionOtpSender(new EvolutionConfig(url, "secret-key", instance));
   }
 
   private interface Inspector {
