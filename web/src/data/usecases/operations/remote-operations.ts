@@ -1,3 +1,4 @@
+import type { WasherStatusModel } from '@/domain/models/washer-status-model'
 import { HttpClient } from '@/data/protocols/http/http-client'
 import { AuditEntryModel } from '@/domain/models/audit-entry-model'
 import {
@@ -103,11 +104,32 @@ export class RemoteOperations implements Operations {
     }) as Promise<UserModel>
   }
 
-  async checkIn(serviceOrderId: string): Promise<void> {
+  async checkIn(
+    serviceOrderId: string,
+    washerId?: string | null,
+  ): Promise<void> {
     await this.request(
       `/api/service-orders/${serviceOrderId}/check-in`,
       'patch',
+      washerId ? { washerId } : undefined,
     )
+  }
+
+  assignWasher(
+    serviceOrderId: string,
+    washerId: string | null,
+  ): Promise<ServiceOrderModel> {
+    return this.request(
+      `/api/service-orders/${serviceOrderId}/washer`,
+      'patch',
+      { washerId },
+    ) as Promise<ServiceOrderModel>
+  }
+
+  loadWasherBoard(): Promise<WasherStatusModel[]> {
+    return this.request('/api/operations/washers', 'get') as Promise<
+      WasherStatusModel[]
+    >
   }
 
   async start(serviceOrderId: string, washerId: string): Promise<void> {

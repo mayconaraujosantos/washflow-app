@@ -3,10 +3,12 @@ package com.washflow.application.modules;
 import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.shared.SchedulingRules;
 import com.washflow.data.usecases.yard.DbGetWaitingQueue;
+import com.washflow.data.usecases.yard.DbGetWasherBoard;
 import com.washflow.data.usecases.yard.DbGetWashingByWasher;
 import com.washflow.data.usecases.yard.DbGetYardOverview;
 import com.washflow.data.usecases.yard.DbRegisterVehicleEntry;
 import com.washflow.domain.usecases.yard.GetWaitingQueue;
+import com.washflow.domain.usecases.yard.GetWasherBoard;
 import com.washflow.domain.usecases.yard.GetWashingByWasher;
 import com.washflow.domain.usecases.yard.GetYardOverview;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
@@ -17,6 +19,7 @@ import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.db.jdbi.vehicle.VehicleJdbiRepository;
 import com.washflow.presentation.controllers.yard.GetWaitingQueueController;
+import com.washflow.presentation.controllers.yard.GetWasherBoardController;
 import com.washflow.presentation.controllers.yard.GetWashingByWasherController;
 import com.washflow.presentation.controllers.yard.GetYardOverviewController;
 import com.washflow.presentation.controllers.yard.RegisterVehicleEntryController;
@@ -65,6 +68,14 @@ public final class YardModule {
 
   public static Controller getWashingByWasherController(Jdbi jdbi) {
     return new GetWashingByWasherController(getWashingByWasher(jdbi));
+  }
+
+  public static GetWasherBoard getWasherBoard(Jdbi jdbi) {
+    return new DbGetWasherBoard(new YardJdbiRepository(jdbi));
+  }
+
+  public static Controller getWasherBoardController(Jdbi jdbi) {
+    return new GetWasherBoardController(getWasherBoard(jdbi));
   }
 
   public static Controller getYardOverviewController(Jdbi jdbi) {

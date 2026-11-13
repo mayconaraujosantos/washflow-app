@@ -241,4 +241,47 @@ describe('RemoteOperations', () => {
       body: undefined,
     })
   })
+
+  it('checks a car in for the shared queue or reserved for a washer', async () => {
+    await operations.checkIn('o1')
+    await operations.checkIn('o2', 'w1')
+
+    expect(request).toHaveBeenNthCalledWith(1, {
+      url: 'https://washflow.test/api/service-orders/o1/check-in',
+      method: 'patch',
+      body: undefined,
+    })
+    expect(request).toHaveBeenNthCalledWith(2, {
+      url: 'https://washflow.test/api/service-orders/o2/check-in',
+      method: 'patch',
+      body: { washerId: 'w1' },
+    })
+  })
+
+  it('reserves a car for a washer and back to the shared queue', async () => {
+    await operations.assignWasher('o1', 'w1')
+    await operations.assignWasher('o1', null)
+
+    expect(request).toHaveBeenNthCalledWith(1, {
+      url: 'https://washflow.test/api/service-orders/o1/washer',
+      method: 'patch',
+      body: { washerId: 'w1' },
+    })
+    expect(request).toHaveBeenNthCalledWith(2, {
+      url: 'https://washflow.test/api/service-orders/o1/washer',
+      method: 'patch',
+      body: { washerId: null },
+    })
+  })
+
+  it('loads the washer board', async () => {
+    request.mockResolvedValue({ statusCode: HttpStatusCode.ok, body: [] })
+
+    await expect(operations.loadWasherBoard()).resolves.toEqual([])
+    expect(request).toHaveBeenCalledWith({
+      url: 'https://washflow.test/api/operations/washers',
+      method: 'get',
+      body: undefined,
+    })
+  })
 })

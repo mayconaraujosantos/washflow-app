@@ -6,6 +6,7 @@ import { ScreenLayout } from '@/presentation/components/ui/app-chrome'
 import { ActionTile, KpiBand } from '@/presentation/components/ui/blocks'
 import { firstName, greeting } from '@/presentation/helpers/format'
 import { IN_YARD_STATUSES, MANAGER_NAV, useManager } from './manager-context'
+import { WasherBoard } from './washer-board'
 
 const KPI_REFRESH_MS = 30000
 
@@ -65,6 +66,8 @@ export function ManagerHome() {
           { label: 'Concluídos hoje', value: doneToday ?? '–' },
         ]}
       />
+
+      <WasherBoard />
 
       <div className="quick-row">
         <Link to="/gerente/venda" className="quick-sale-btn">

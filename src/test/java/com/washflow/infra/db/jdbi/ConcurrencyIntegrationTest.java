@@ -66,7 +66,9 @@ class ConcurrencyIntegrationTest {
     UUID washerB = insertWasher(jdbi, "Lavador B", "11999992222");
     ServiceOrderJdbiRepository orders = new ServiceOrderJdbiRepository(jdbi);
     UUID orderId = registerWalkIn(jdbi, "ABC1D23").id();
-    DbStartServiceOrder start = new DbStartServiceOrder(orders, orders);
+    DbStartServiceOrder start =
+        new DbStartServiceOrder(
+            orders, orders, new com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository(jdbi));
 
     List<Object> results =
         race(

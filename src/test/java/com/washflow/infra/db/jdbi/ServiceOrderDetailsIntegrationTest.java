@@ -30,7 +30,7 @@ class ServiceOrderDetailsIntegrationTest {
     ServiceOrderJdbiRepository repository = new ServiceOrderJdbiRepository(jdbi);
     UUID orderId = insertOrder(jdbi, "AGUARDANDO_PATIO");
 
-    List<ServiceOrder> queue = new YardJdbiRepository(jdbi).loadWaitingQueue();
+    List<ServiceOrder> queue = new YardJdbiRepository(jdbi).loadWaitingQueue(null);
 
     assertEquals(1, queue.size());
     ServiceOrder.Details details = queue.get(0).details();

@@ -246,12 +246,27 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     )
   })
 
-  await test.step('gerente vê o agendamento e recebe o carro no pátio', async () => {
+  await test.step('gerente vê o lavador livre no quadro da tela inicial', async () => {
+    await manager.goto('/gerente')
+    const board = manager.getByRole('region', { name: 'Lavadores' })
+    await expect(board).toContainText(raio.washer.name)
+    await expect(board).toContainText('Livre')
+  })
+
+  await test.step('gerente recebe o carro no pátio e reserva para o lavador', async () => {
     await manager.getByRole('link', { name: 'Pátio' }).click()
     const order = cardWith(manager, customer.plate)
     await expect(order).toBeVisible()
     await order.getByRole('button', { name: 'Receber no pátio' }).click()
+    const sheet = manager.getByRole('dialog', { name: 'Receber no pátio' })
+    await sheet
+      .getByRole('button', { name: new RegExp(raio.washer.name) })
+      .click()
+    await sheet.getByRole('button', { name: 'Receber no pátio' }).click()
     await expectMessage(manager, `${customer.plate} recebido no pátio.`)
+    await expect(cardWith(manager, customer.plate)).toContainText(
+      raio.washer.name,
+    )
   })
 
   const washer = await phones.of(`lavador-${raio.slug}`)
@@ -263,10 +278,15 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     await expect(washer).toHaveURL(/:\d+\/lavador$/)
   })
 
-  await test.step('lavador pega o carro da fila, lava e conclui', async () => {
+  await test.step('lavador pega o carro reservado para ele, lava e conclui', async () => {
     const queued = cardWith(washer, customer.plate)
+    await expect(queued).toContainText('Reservado para você')
     await queued.getByRole('button', { name: 'Iniciar lavagem' }).click()
     await expectMessage(washer, `Lavagem de ${customer.plate} iniciada.`)
+    await manager.goto('/gerente')
+    await expect(
+      manager.getByRole('region', { name: 'Lavadores' }),
+    ).toContainText(`Lavando ${customer.plate}`)
     await washer.getByRole('link', { name: 'Minhas lavagens' }).click()
     await cardWith(washer, customer.plate)
       .getByRole('button', { name: 'Concluir lavagem' })
@@ -758,6 +778,11 @@ ${services}`,
     await manager.reload()
     await yardCards()
       .first()
+      .getByRole('button', { name: 'Receber no pátio' })
+      .click()
+    // Shared queue (the default): any washer may take it.
+    await manager
+      .getByRole('dialog', { name: 'Receber no pátio' })
       .getByRole('button', { name: 'Receber no pátio' })
       .click()
     await expectMessage(manager, `${zap.plate} recebido no pátio.`)

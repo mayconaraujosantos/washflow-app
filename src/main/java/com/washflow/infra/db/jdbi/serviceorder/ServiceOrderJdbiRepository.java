@@ -1,5 +1,6 @@
 package com.washflow.infra.db.jdbi.serviceorder;
 
+import com.washflow.data.protocols.db.serviceorder.AssignWasherRepository;
 import com.washflow.data.protocols.db.serviceorder.CancelServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.CreateServiceOrderRepository;
 import com.washflow.data.protocols.db.serviceorder.FinalizeServiceOrderRepository;
@@ -38,7 +39,16 @@ public class ServiceOrderJdbiRepository
         PauseServiceOrderRepository,
         ResumeServiceOrderRepository,
         CancelServiceOrderRepository,
-        RefundServiceOrderRepository {
+        RefundServiceOrderRepository,
+        AssignWasherRepository {
+
+  // The manager's reservation: before washing only, and atualizado_em stays (queue position).
+  private static final String ASSIGN_WASHER_SQL =
+      """
+      UPDATE atendimentos SET lavador_id = CAST(:washerId AS UUID)
+      WHERE id = :id AND estabelecimento_id = :tenant
+        AND status IN ('AGENDADO', 'AGUARDANDO_PATIO')
+      """;
 
   private static final String PAUSE_WASHING_UPDATE_SQL =
       """
@@ -157,6 +167,8 @@ public class ServiceOrderJdbiRepository
   // other transition passes the vehicle's already-assigned washerId back in, so COALESCE
   // keeps the column as-is instead of overwriting it with null. "status = :expected" makes the
   // transition a compare-and-set: of two requests racing for the same order, only one updates.
+  // A car reserved for a washer (lavador_id set while waiting) only moves on with that washer,
+  // even if the manager re-assigned it between the start request's read and this write.
   private static final String UPDATE_STATUS_SQL =
       """
       UPDATE atendimentos
@@ -172,6 +184,8 @@ public class ServiceOrderJdbiRepository
           END,
           atualizado_em = :updatedAt
       WHERE id = :id AND status = :expected AND estabelecimento_id = :tenant
+        AND (lavador_id IS NULL OR CAST(:washerId AS UUID) IS NULL
+             OR lavador_id = CAST(:washerId AS UUID))
       """;
 
   private static final String SELECT_BY_CUSTOMER_ID_SQL =
@@ -465,5 +479,17 @@ public class ServiceOrderJdbiRepository
                 query.bind("id", serviceOrder.id()).map(ServiceOrderRows::map).one());
           }
         });
+  }
+
+  @Override
+  public boolean assignWasher(UUID serviceOrderId, UUID washerId) {
+    return jdbi.withHandle(
+            handle ->
+                handle
+                    .createUpdate(ASSIGN_WASHER_SQL)
+                    .bind("id", serviceOrderId)
+                    .bind("washerId", washerId == null ? null : washerId.toString())
+                    .execute())
+        > 0;
   }
 }

@@ -16,6 +16,7 @@ import com.washflow.domain.entities.finance.OperationsReport;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderRefund;
 import com.washflow.domain.entities.vehicle.VehicleLookup;
+import com.washflow.domain.usecases.yard.GetWasherBoard;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
@@ -40,6 +41,7 @@ public final class OperationsRoutes {
     registerRefund(jdbi);
     registerQueue(jdbi);
     registerYard(jdbi);
+    registerWasherBoard(jdbi);
     registerReport(jdbi);
     registerMyOrders(jdbi);
   }
@@ -202,6 +204,22 @@ public final class OperationsRoutes {
     get(
         "/api/operations/yard",
         JavalinRouteAdapter.adapt(YardModule.getYardOverviewController(jdbi)));
+  }
+
+  @OpenApi(
+      path = "/api/operations/washers",
+      methods = HttpMethod.GET,
+      summary = "Active washers: free, washing or on a pause, and reserved cars (manager)",
+      tags = {"Operations"},
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            content = @OpenApiContent(from = GetWasherBoard.WasherStatus[].class))
+      })
+  private static void registerWasherBoard(Jdbi jdbi) {
+    get(
+        "/api/operations/washers",
+        JavalinRouteAdapter.adapt(YardModule.getWasherBoardController(jdbi)));
   }
 
   @OpenApi(

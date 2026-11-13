@@ -17,5 +17,11 @@ public interface CheckInServiceOrder {
   ServiceOrder checkIn(Params params)
       throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError;
 
-  record Params(UUID serviceOrderId) {}
+  /** {@code washerId}: the washer the manager reserves the car for; null for the shared queue. */
+  record Params(UUID serviceOrderId, UUID washerId) {
+
+    public Params(UUID serviceOrderId) {
+      this(serviceOrderId, null);
+    }
+  }
 }
