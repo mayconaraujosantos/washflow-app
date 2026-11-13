@@ -12,6 +12,7 @@ public final class RoutePermissionMatcher {
   private static final String HTTP_PATCH = "PATCH";
   private static final String HTTP_DELETE = "DELETE";
   private static final String CASH_TRANSACTIONS = "/api/cash-transactions";
+  private static final String WHATSAPP_CONNECTION = "/api/whatsapp/connection";
 
   private RoutePermissionMatcher() {}
 
@@ -61,7 +62,8 @@ public final class RoutePermissionMatcher {
               || path.equals("/api/sales/refunds")
               || path.equals("/api/audit")
               || isFeatureResource(path)
-              || path.equals(CASH_TRANSACTIONS + "/report");
+              || path.equals(CASH_TRANSACTIONS + "/report")
+              || path.equals(WHATSAPP_CONNECTION);
 
       case HTTP_POST ->
           path.equals("/api/users")
@@ -71,6 +73,7 @@ public final class RoutePermissionMatcher {
               || path.equals("/api/services")
               || path.matches("/api/users/[^/]+/badge")
               || path.matches("/api/service-orders/[^/]+/ticket")
+              || path.equals(WHATSAPP_CONNECTION)
               || isFeatureResource(path);
 
       case HTTP_PATCH ->
@@ -81,7 +84,8 @@ public final class RoutePermissionMatcher {
 
       case HTTP_DELETE ->
           path.matches(CASH_TRANSACTIONS + "/[^/]+")
-              || path.matches("/api/service-orders/[^/]+/photos/[^/]+");
+              || path.matches("/api/service-orders/[^/]+/photos/[^/]+")
+              || path.equals(WHATSAPP_CONNECTION);
 
       default -> false;
     };

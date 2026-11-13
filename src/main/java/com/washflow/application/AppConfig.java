@@ -2,11 +2,13 @@ package com.washflow.application;
 
 import com.washflow.application.config.AppConfigLoader;
 import com.washflow.application.config.AppEnvironment;
+import com.washflow.application.config.AssistantAiConfig;
 import com.washflow.application.config.CompositeEnvSource;
 import com.washflow.application.config.DatabaseConfig;
 import com.washflow.application.config.EmailConfig;
 import com.washflow.application.config.OtpConfig;
 import com.washflow.application.config.TokenSecret;
+import com.washflow.application.config.WhatsappConfig;
 import java.util.Map;
 
 /**
@@ -26,7 +28,9 @@ public record AppConfig(
     EmailConfig email,
     String googleClientId,
     String publicAppUrl,
-    String metricsToken) {
+    String metricsToken,
+    WhatsappConfig whatsapp,
+    AssistantAiConfig assistantAi) {
 
   /** Process environment first, then the .env file (ignored in production). */
   public static AppConfig load() {
@@ -63,6 +67,10 @@ public record AppConfig(
         + otp
         + ", email="
         + email
+        + ", whatsapp="
+        + whatsapp
+        + ", assistantAi="
+        + assistantAi
         + "]";
   }
 }

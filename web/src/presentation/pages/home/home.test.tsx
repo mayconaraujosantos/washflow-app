@@ -16,6 +16,9 @@ const establishment = (
   load: vi.fn(),
   update: vi.fn(),
   availability: vi.fn(),
+  whatsappStatus: vi.fn(),
+  connectWhatsapp: vi.fn(),
+  disconnectWhatsapp: vi.fn(),
 })
 
 const renderHome = (shop?: Establishment) =>

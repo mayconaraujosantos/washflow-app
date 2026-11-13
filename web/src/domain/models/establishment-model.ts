@@ -29,3 +29,10 @@ export type ScheduleDayModel = {
   open: boolean
   slots: ScheduleSlotModel[]
 }
+
+/** The lava-jato's own WhatsApp number, linked by QR code. */
+export type WhatsappConnectionModel = {
+  state: 'CONNECTED' | 'WAITING_QR_CODE' | 'DISCONNECTED'
+  /** `data:image/png;base64,...` while waiting for the scan, otherwise null. */
+  qrCode: string | null
+}

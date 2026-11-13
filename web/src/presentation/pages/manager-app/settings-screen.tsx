@@ -14,6 +14,7 @@ import {
   type HoursValue,
 } from '@/presentation/pages/setup/hours-fields'
 import { useManager } from './manager-context'
+import { WhatsappSection } from './whatsapp-section'
 
 /** Establishment parameters (hours, Sundays, yard capacity) and the service catalog. */
 export function SettingsScreen() {
@@ -28,6 +29,7 @@ export function SettingsScreen() {
       ) : (
         <p className="muted">Carregando...</p>
       )}
+      <WhatsappSection />
       <CatalogSection />
     </ScreenLayout>
   )

@@ -1,5 +1,6 @@
 package com.washflow.application.modules;
 
+import com.washflow.application.AppConfig;
 import com.washflow.data.usecases.serviceorder.DbCancelServiceOrder;
 import com.washflow.data.usecases.serviceorder.DbCheckInServiceOrder;
 import com.washflow.data.usecases.serviceorder.DbCompleteServiceOrder;
@@ -171,8 +172,10 @@ public final class ServiceOrderModule {
     return new CheckInServiceOrderController(checkInServiceOrder(jdbi));
   }
 
-  public static Controller completeServiceOrderController(Jdbi jdbi) {
-    return new CompleteServiceOrderController(completeServiceOrder(jdbi));
+  /** The customer also gets a WhatsApp notice when the server has WhatsApp (WhatsappModule). */
+  public static Controller completeServiceOrderController(Jdbi jdbi, AppConfig appConfig) {
+    return new CompleteServiceOrderController(
+        WhatsappModule.notifying(completeServiceOrder(jdbi), jdbi, appConfig));
   }
 
   public static Controller deleteServiceOrderPhotoController(Jdbi jdbi) {
