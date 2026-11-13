@@ -2,6 +2,7 @@ package com.washflow.presentation.controllers.yard;
 
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.usecases.yard.GetWaitingQueue;
+import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.protocols.Controller;
 import com.washflow.presentation.protocols.HttpRequest;
 import com.washflow.presentation.protocols.HttpResponse;
@@ -21,7 +22,7 @@ public class GetWaitingQueueController implements Controller {
 
   @Override
   public HttpResponse handle(HttpRequest request) {
-    List<ServiceOrder> queue = getWaitingQueue.get();
+    List<ServiceOrder> queue = getWaitingQueue.get(BodyValues.createdBy(request.body()));
     return new HttpResponse(200, queue);
   }
 }

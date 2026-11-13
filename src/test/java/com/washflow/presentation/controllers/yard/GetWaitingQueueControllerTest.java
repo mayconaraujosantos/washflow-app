@@ -46,19 +46,19 @@ class GetWaitingQueueControllerTest {
                 Instant.now(),
                 Instant.now(),
                 Instant.now()));
-    when(getWaitingQueue.get()).thenReturn(queue);
+    when(getWaitingQueue.get(null)).thenReturn(queue);
 
     HttpResponse response = sut.handle(request);
 
     assertEquals(200, response.statusCode());
-    verify(getWaitingQueue).get();
+    verify(getWaitingQueue).get(null);
   }
 
   @Test
   void returnsEmptyListWhenNoQueue() throws Exception {
     HttpRequest request = new HttpRequest(Map.of(), Map.of(), Map.of());
 
-    when(getWaitingQueue.get()).thenReturn(List.of());
+    when(getWaitingQueue.get(null)).thenReturn(List.of());
 
     HttpResponse response = sut.handle(request);
 

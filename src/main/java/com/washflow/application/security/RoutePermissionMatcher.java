@@ -56,7 +56,7 @@ public final class RoutePermissionMatcher {
   private static boolean isManagerResource(String method, String path) {
     return switch (method) {
       case HTTP_GET ->
-          path.matches("/api/operations/(report|yard|agenda|vehicles)")
+          path.matches("/api/operations/(report|yard|agenda|vehicles|washers)")
               || path.equals("/api/users")
               || path.equals("/api/sales")
               || path.equals("/api/sales/refunds")
@@ -78,7 +78,7 @@ public final class RoutePermissionMatcher {
 
       case HTTP_PATCH ->
           path.matches("/api/users/[^/]+/(profile|active|email|password)")
-              || path.matches("/api/service-orders/[^/]+/(check-in|finalize|cancel|refund)");
+              || path.matches("/api/service-orders/[^/]+/(check-in|washer|finalize|cancel|refund)");
 
       case "PUT" -> path.matches(CASH_TRANSACTIONS + "/[^/]+") || path.equals("/api/establishment");
 

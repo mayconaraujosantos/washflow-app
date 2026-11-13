@@ -74,7 +74,7 @@ class VehicleEntryIntegrationTest {
     assertEquals("Lavagem Completa", order.details().serviceName());
     assertEquals(NOW.plusSeconds(3600), order.expectedDeliveryAt());
     assertEquals("Cliente aguarda na loja", order.notes());
-    assertEquals(order.id(), new YardJdbiRepository(jdbi).loadWaitingQueue().get(0).id());
+    assertEquals(order.id(), new YardJdbiRepository(jdbi).loadWaitingQueue(null).get(0).id());
 
     DbSearchVehicles search = new DbSearchVehicles(vehicles);
     assertPlates(List.of("XYZ9A87"), search.search("xyz9"));

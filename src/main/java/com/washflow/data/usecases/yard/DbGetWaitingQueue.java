@@ -4,6 +4,7 @@ import com.washflow.data.protocols.db.yard.LoadWaitingQueueRepository;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.usecases.yard.GetWaitingQueue;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Delegates to {@code LoadWaitingQueueRepository}. Depends only on the port interface, never on
@@ -18,7 +19,7 @@ public class DbGetWaitingQueue implements GetWaitingQueue {
   }
 
   @Override
-  public List<ServiceOrder> get() {
-    return loadRepository.loadWaitingQueue();
+  public List<ServiceOrder> get(UUID washerId) {
+    return loadRepository.loadWaitingQueue(washerId);
   }
 }
