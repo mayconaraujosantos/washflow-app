@@ -28,7 +28,21 @@ public record AppConfig(
     String publicAppUrl,
     String metricsToken,
     String emailChannel,
-    Smtp smtp) {
+    Smtp smtp,
+    Evolution evolution) {
+
+  /**
+   * WhatsApp delivery through a self-hosted Evolution API (OTP_CHANNEL=evolution): {@code url} is
+   * the server base URL, {@code apiKey} its global AUTHENTICATION_API_KEY and {@code instance} the
+   * connected WhatsApp number's instance name.
+   */
+  public record Evolution(String url, String apiKey, String instance) {
+
+    @Override
+    public String toString() {
+      return "Evolution[url=" + url + ", instance=" + instance + ", apiKey=[redacted]]";
+    }
+  }
 
   /**
    * Outgoing e-mail: customer access codes and password-reset codes share it. {@code emailChannel}
@@ -110,13 +124,15 @@ public record AppConfig(
             value(processEnv, dotenvValues, useDotenv, "BOOTSTRAP_MANAGER_PASSWORD", ""),
             // Owner-only secret that unlocks the first-run setup wizard in production.
             value(processEnv, dotenvValues, useDotenv, "SETUP_CODE", ""),
-            // WhatsApp code delivery: "log" (development only) or "none" until a provider exists.
+            // WhatsApp code delivery: "evolution", "log" (development only) or "none".
             value(
-                processEnv,
-                dotenvValues,
-                useDotenv,
-                "OTP_CHANNEL",
-                isProduction(environment) ? "none" : "log"),
+                    processEnv,
+                    dotenvValues,
+                    useDotenv,
+                    "OTP_CHANNEL",
+                    isProduction(environment) ? "none" : "log")
+                .trim()
+                .toLowerCase(Locale.ROOT),
             value(processEnv, dotenvValues, useDotenv, "GOOGLE_CLIENT_ID", ""),
             value(processEnv, dotenvValues, useDotenv, "APP_PUBLIC_URL", ""),
             // Bearer token for GET /api/metrics; empty keeps the endpoint off.
@@ -132,7 +148,22 @@ public record AppConfig(
                     .trim()
                     .toLowerCase(Locale.ROOT),
                 value(processEnv, dotenvValues, useDotenv, "SMTP_FROM", ""),
-                value(processEnv, dotenvValues, useDotenv, "SMTP_FROM_NAME", "Washflow")));
+                value(processEnv, dotenvValues, useDotenv, "SMTP_FROM_NAME", "Washflow")),
+            new Evolution(
+                value(processEnv, dotenvValues, useDotenv, "EVOLUTION_URL", "").trim(),
+                value(processEnv, dotenvValues, useDotenv, "EVOLUTION_API_KEY", "").trim(),
+                value(processEnv, dotenvValues, useDotenv, "EVOLUTION_INSTANCE", "").trim()));
+
+    if (!Set.of("evolution", "log", "none").contains(config.otpChannel())) {
+      throw new IllegalStateException("OTP_CHANNEL must be evolution, log or none");
+    }
+    if ("evolution".equals(config.otpChannel())
+        && (config.evolution().url().isBlank()
+            || config.evolution().apiKey().isBlank()
+            || config.evolution().instance().isBlank())) {
+      throw new IllegalStateException(
+          "OTP_CHANNEL=evolution requires EVOLUTION_URL, EVOLUTION_API_KEY and EVOLUTION_INSTANCE");
+    }
 
     if (!Set.of("smtp", "log", "none").contains(config.emailChannel())) {
       throw new IllegalStateException("EMAIL_CHANNEL must be smtp, log or none");
@@ -189,6 +220,10 @@ public record AppConfig(
         + emailChannel
         + ", smtp="
         + smtp
+        + ", otpChannel="
+        + otpChannel
+        + ", evolution="
+        + evolution
         + "]";
   }
 

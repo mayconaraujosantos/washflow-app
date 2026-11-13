@@ -54,7 +54,7 @@ endif
 	coverage sonar stop ip clean db-up db-down db-logs e2e e2e-ci hooks \
 	cluster-up cluster-down cluster-status image-local docker-build docker-info \
 	argocd-install argocd-password \
-	argocd-port-forward argo-install argo-port-forward argo-ui-service ci deploy-dev deploy-prod
+	argocd-port-forward evolution-port-forward argo-install argo-port-forward argo-ui-service ci deploy-dev deploy-prod
 
 help:
 	@echo "Washflow - local commands"
@@ -102,6 +102,7 @@ help:
 	@echo "  make argocd-password     Print the Argo CD admin password."
 	@echo "  make argocd-port-forward Argo CD UI at http://localhost:8081 (if argocd.local isn't mapped)."
 	@echo "  make argo-port-forward   Open the Argo Workflows UI at https://localhost:2746."
+	@echo "  make evolution-port-forward Evolution manager (WhatsApp QR) at http://localhost:8082/manager."
 
 install:
 	cd web && bun install
@@ -345,6 +346,10 @@ argocd-password:
 argocd-port-forward:
 	@echo "Argo CD UI: http://localhost:8081  (user: admin, password: make argocd-password)"
 	kubectl -n argocd port-forward svc/argocd-server 8081:80
+
+evolution-port-forward:
+	@echo "Evolution manager: http://localhost:8082/manager (API key: EVOLUTION_API_KEY in the washflow secret)"
+	kubectl -n washflow-dev port-forward svc/washflow-evolution 8082:8080
 
 argo-port-forward:
 	@echo "Argo Workflows UI: https://localhost:2746"

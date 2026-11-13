@@ -135,4 +135,25 @@ class AppConfigTest {
             AppConfig.load(
                 Map.of("SMTP_HOST", "h", "SMTP_FROM", "a@b.co", "SMTP_SECURITY", "tls"), Map.of()));
   }
+
+  @Test
+  void evolutionWhatsappChannelNeedsTheServerKeyAndInstance() {
+    AppConfig config =
+        AppConfig.load(
+            Map.of(
+                "OTP_CHANNEL", "Evolution",
+                "EVOLUTION_URL", "http://evolution:8080",
+                "EVOLUTION_API_KEY", "secret-key",
+                "EVOLUTION_INSTANCE", "washflow"),
+            Map.of());
+
+    assertEquals("evolution", config.otpChannel());
+    assertEquals("http://evolution:8080", config.evolution().url());
+    assertFalse(config.toString().contains("secret-key"));
+    assertThrows(
+        IllegalStateException.class,
+        () -> AppConfig.load(Map.of("OTP_CHANNEL", "evolution"), Map.of()));
+    assertThrows(
+        IllegalStateException.class, () -> AppConfig.load(Map.of("OTP_CHANNEL", "zapi"), Map.of()));
+  }
 }

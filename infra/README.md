@@ -125,7 +125,8 @@ Other access settings:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `SETUP_CODE` | empty | Unlocks the one-time platform setup in production (wizard disabled while empty). |
-| `OTP_CHANNEL` | `log` (dev), `none` (prod) | Customer WhatsApp codes. `log` prints the code/magic link to the server log and is refused in production; plug a WhatsApp provider in `AccessFactory.otpSender`. |
+| `OTP_CHANNEL` | `log` (dev), `none` (prod) | Customer WhatsApp codes: `evolution` sends them through the Evolution API (see "WhatsApp" below), `log` prints the code/magic link to the server log and is refused in production, `none` hides the option. |
+| `EVOLUTION_URL` / `EVOLUTION_API_KEY` / `EVOLUTION_INSTANCE` | empty | Required with `OTP_CHANNEL=evolution`: Evolution server base URL, its global `AUTHENTICATION_API_KEY` and the instance (WhatsApp number) that sends the codes. |
 | `GOOGLE_CLIENT_ID` | empty | Google Identity Services client ID; empty hides "Entrar com Google". |
 | `APP_PUBLIC_URL` | empty | Public origin used in WhatsApp magic links (e.g. `https://app.lavajato.com`). |
 | `EMAIL_CHANNEL` | `smtp` when `SMTP_HOST` is set, else `log` (dev) / `none` (prod) | The app's single e-mail channel, used by the customer access code and by "Esqueci a senha" codes (customers by phone → their recovery e-mail; managers by login e-mail). `log` prints the e-mail to the server log and is refused in production; `none` hides both options. |
@@ -135,6 +136,33 @@ Other access settings:
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | empty | Relay credentials; empty username sends without authentication (e.g. a local test inbox). |
 | `SMTP_FROM` | empty | Sender address, required with `EMAIL_CHANNEL=smtp`; use a domain the relay is allowed to send for (SPF/DKIM). |
 | `SMTP_FROM_NAME` | `Washflow` | Sender name shown in the inbox. |
+
+## WhatsApp (Evolution API)
+
+The customer's access code goes out through a self-hosted
+[Evolution API](https://docs.evolutionfoundation.com.br) (Apache 2.0). On the kind
+cluster it runs next to the app (`infra/gitops/apps/washflow/evolution.yaml`),
+internal only, with its own `evolution` database on the washflow PostgreSQL; the
+`washflow` secret sets `OTP_CHANNEL=evolution` and the `EVOLUTION_*` variables.
+
+Link the sending number once (the session is kept in the database):
+
+1. `make evolution-port-forward` and open http://localhost:8082/manager; log in with
+   the `EVOLUTION_API_KEY` of the secret.
+2. Create the instance **`washflow`** (same as `EVOLUTION_INSTANCE`), integration
+   *Baileys*, and scan the QR code with WhatsApp on the phone (Linked devices).
+3. Ask for a code on the customer screen ("Entrar com código por WhatsApp").
+
+Use a dedicated number: the QR (Baileys) link is not an official WhatsApp API and a
+number that sends codes to strangers can be banned. With a verified company
+(CNPJ), create the instance with the *WhatsApp Business* (Cloud API) integration
+instead - the app's call (`EvolutionOtpSender`) doesn't change. A send that fails
+answers 503 and the customer can try again right away.
+
+On Render: a paid **Private Service** from the image `evoapicloud/evolution-api`
+(same variables as `evolution.yaml`, no public URL), a paid PostgreSQL, and
+`EVOLUTION_URL` pointing at the private service address. The free plan sleeps
+after 15 minutes and drops the WhatsApp session.
 
 ## Backup
 
