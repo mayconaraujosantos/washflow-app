@@ -80,9 +80,9 @@ public final class TestDatabase {
                   """
                   INSERT INTO estabelecimentos (id, slug, nome, hora_abertura, hora_fechamento,
                     abre_domingo, max_veiculos_hora, ativo)
-                  VALUES (:tenant, :slug, 'Lava Teste', 8, 18, FALSE, 3, TRUE)
+                  VALUES (:establishmentId, :slug, 'Lava Teste', 8, 18, FALSE, 3, TRUE)
                   """)
-              .bind("tenant", ESTABLISHMENT_ID)
+              .bind("establishmentId", ESTABLISHMENT_ID)
               .bind("slug", ESTABLISHMENT_SLUG)
               .execute();
           user(
@@ -107,18 +107,18 @@ public final class TestDatabase {
               .createUpdate(
                   """
                   INSERT INTO veiculos (id, estabelecimento_id, cliente_id, placa, modelo, cor)
-                  VALUES ('22222222-2222-2222-2222-222222222222', :tenant,
+                  VALUES ('22222222-2222-2222-2222-222222222222', :establishmentId,
                           '11111111-1111-1111-1111-111111111111', 'ABC1D23', 'Onix', 'Prata')
                   """)
-              .bind("tenant", ESTABLISHMENT_ID)
+              .bind("establishmentId", ESTABLISHMENT_ID)
               .execute();
           handle
               .createUpdate(
                   """
                   INSERT INTO servicos_preco (id, estabelecimento_id, nome, preco, comissao_lavador)
-                  VALUES (1, :tenant, 'Lavagem Completa', 60.00, 20.00)
+                  VALUES (1, :establishmentId, 'Lavagem Completa', 60.00, 20.00)
                   """)
-              .bind("tenant", ESTABLISHMENT_ID)
+              .bind("establishmentId", ESTABLISHMENT_ID)
               .execute();
         });
     TenantContext.set(ESTABLISHMENT_ID);
@@ -131,10 +131,10 @@ public final class TestDatabase {
         .createUpdate(
             """
             INSERT INTO usuarios (id, estabelecimento_id, nome, telefone, perfil)
-            VALUES (CAST(:id AS UUID), :tenant, :name, :phone, :profile)
+            VALUES (CAST(:id AS UUID), :establishmentId, :name, :phone, :profile)
             """)
         .bind("id", id)
-        .bind("tenant", ESTABLISHMENT_ID)
+        .bind("establishmentId", ESTABLISHMENT_ID)
         .bind("name", name)
         .bind("phone", phone)
         .bind("profile", profile)
