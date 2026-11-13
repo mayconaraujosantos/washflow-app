@@ -41,6 +41,27 @@ restarting (`make db-up`; the kind node usually needs a full
 `make cluster-down && make cluster-up` since its clock skews across the
 suspend and Kubernetes' certs start rejecting requests).
 
+## Whole app with WhatsApp (Compose)
+
+For a round of manual tests without the cluster, `docker-compose.yml` runs the
+app, PostgreSQL, Mailpit and the Evolution API together, with each lava-jato's
+WhatsApp already on:
+
+```
+podman compose up -d --build   # app http://localhost:7000, e-mails http://localhost:8025
+podman compose logs -f washflow
+podman compose down            # data stays in the postgres-data volume
+```
+
+`EVOLUTION_API_KEY` and `WHATSAPP_WEBHOOK_TOKEN` come from the git-ignored `.env`
+(development defaults otherwise). Evolution reaches the app at
+`http://washflow:7000/api/whatsapp/webhook` inside the compose network and keeps
+its sessions in the `evolution_api` schema of the same database. The manager links
+the lava-jato's number on "Estabelecimento" › "WhatsApp do lava-jato"; the
+Evolution manager is at http://localhost:8082/manager. Login codes by WhatsApp go
+to the app log (`OTP_CHANNEL=log`); set `ANTHROPIC_API_KEY` in `.env` for free
+text in the assistant.
+
 ## Database (Postgres)
 
 `docker-compose.yml` has a `postgres` service (talks to Podman through its
