@@ -14,6 +14,7 @@ import com.washflow.domain.usecases.serviceorder.CompleteServiceOrder;
 import com.washflow.domain.usecases.whatsapp.ReceiveWhatsappMessage;
 import com.washflow.domain.usecases.whatsapp.SendScheduleReminders;
 import com.washflow.domain.usecases.whatsapp.WhatsappConnection;
+import com.washflow.infra.ai.ClaudeMessageInterpreter;
 import com.washflow.infra.db.jdbi.serviceorder.AgendaJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.db.jdbi.whatsapp.ConversationJdbiRepository;
@@ -112,9 +113,13 @@ public final class WhatsappModule {
         interpreter(appConfig));
   }
 
-  /** Null (numbered menus only) until the AI interpreter is configured. */
+  /** Claude reads free text when ANTHROPIC_API_KEY is set; null keeps the numbered menus only. */
   static MessageInterpreter interpreter(AppConfig appConfig) {
-    return null;
+    if (!appConfig.assistantAi().enabled()) {
+      return null;
+    }
+    return new ClaudeMessageInterpreter(
+        appConfig.assistantAi().apiKey(), appConfig.assistantAi().model());
   }
 
   /** One instance per server: it serializes each phone's messages. */
