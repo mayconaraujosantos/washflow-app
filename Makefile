@@ -235,8 +235,11 @@ hooks:
 
 ## End-to-end journey (web/e2e, Playwright): two lava-jatos set up from
 ## scratch, managers, washers (PIN and badge QR) and customers (app and
-## ticket), each on its own phone. Runs against a throwaway pod on :7100
-## (scripts/e2e-env.sh) - never the dev app on :7000 or its database.
+## ticket), each on its own phone, and a customer who schedules through the
+## lava-jato's WhatsApp (fake Evolution API in the pod). Runs against a
+## throwaway pod on :7100 (scripts/e2e-env.sh) - never the dev app on :7000 or
+## its database. On Windows it reaches the pod on the Podman VM's IP. First
+## time on a machine: `cd web && bunx playwright install chromium`.
 ## `make e2e` shows the browser, slowed down; videos per person end up in
 ## web/test-results/people and the report opens with `cd web && bun run e2e:report`.
 e2e:
