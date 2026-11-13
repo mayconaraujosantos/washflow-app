@@ -92,6 +92,68 @@ class ConcurrencyIntegrationTest {
   }
 
   @Test
+  void oneWasherStartingTwoCarsAtOnceWashesOnlyOne() throws Exception {
+    Jdbi jdbi = TestDatabase.prepare();
+    ServiceOrderJdbiRepository orders = new ServiceOrderJdbiRepository(jdbi);
+    com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository yard =
+        new com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository(jdbi);
+    DbStartServiceOrder start = new DbStartServiceOrder(orders, orders, yard);
+
+    // Several rounds: in some of them both requests pass the "already washing?" read before
+    // either writes, and only the unique index stops the second one.
+    String[][] plates = {{"AAA1A11", "BBB2B22"}, {"CCC3C33", "DDD4D44"}, {"EEE5E55", "FFF6F66"}};
+    for (String[] pair : plates) {
+      UUID first = registerWalkIn(jdbi, pair[0]).id();
+      UUID second = registerWalkIn(jdbi, pair[1]).id();
+
+      List<Object> results =
+          race(
+              List.of(
+                  () -> start.start(new StartServiceOrder.Params(first, WASHER_A)),
+                  () -> start.start(new StartServiceOrder.Params(second, WASHER_A))));
+
+      assertEquals(
+          1,
+          results.stream().filter(ServiceOrder.class::isInstance).count(),
+          "the washer gets exactly one car: " + results);
+      assertEquals(
+          1,
+          results.stream()
+              .filter(com.washflow.domain.errors.serviceorder.WasherBusyError.class::isInstance)
+              .count(),
+          "the other start is a 409 WASHER_BUSY: " + results);
+      assertEquals(1, yard.loadByWasherId(WASHER_A).size(), "one open wash in the database");
+
+      // Finish it, so the next round starts from a free washer.
+      ServiceOrder washing = yard.loadByWasherId(WASHER_A).get(0);
+      orders.updateStatus(
+          washing.id(), ServiceOrderStatus.WASHING, ServiceOrderStatus.READY, WASHER_A);
+    }
+  }
+
+  @Test
+  void theDatabaseRefusesASecondOpenWashForTheSameWasher() throws Exception {
+    Jdbi jdbi = TestDatabase.prepare();
+    ServiceOrderJdbiRepository orders = new ServiceOrderJdbiRepository(jdbi);
+    UUID first = registerWalkIn(jdbi, "AAA1A11").id();
+    UUID second = registerWalkIn(jdbi, "BBB2B22").id();
+    orders.updateStatus(
+        first, ServiceOrderStatus.WAITING_IN_YARD, ServiceOrderStatus.WASHING, WASHER_A);
+
+    // Straight to the repository, skipping the use case's check: the index still holds.
+    com.washflow.data.protocols.db.shared.DuplicateKeyError error =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            com.washflow.data.protocols.db.shared.DuplicateKeyError.class,
+            () ->
+                orders.updateStatus(
+                    second,
+                    ServiceOrderStatus.WAITING_IN_YARD,
+                    ServiceOrderStatus.WASHING,
+                    WASHER_A));
+    assertEquals("ux_atendimentos_lavador_em_andamento", error.constraint());
+  }
+
+  @Test
   void simultaneousBookingsNeverOverfillTheHour() throws Exception {
     Jdbi jdbi = TestDatabase.prepare(); // capacity 3 per hour
     Instant slot = Instant.parse("2026-11-04T14:00:00Z"); // Wed 10:00 Manaus

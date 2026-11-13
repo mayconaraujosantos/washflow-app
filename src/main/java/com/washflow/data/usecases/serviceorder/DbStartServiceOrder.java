@@ -2,6 +2,7 @@ package com.washflow.data.usecases.serviceorder;
 
 import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
 import com.washflow.data.protocols.db.serviceorder.UpdateServiceOrderStatusRepository;
+import com.washflow.data.protocols.db.shared.DuplicateKeyError;
 import com.washflow.data.protocols.db.yard.LoadWashingByWasherRepository;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
@@ -16,9 +17,13 @@ import com.washflow.domain.usecases.serviceorder.StartServiceOrder;
  * JDBI, Postgres, or anything else concrete.
  *
  * <p>A car the manager reserved ({@code lavador_id} set while waiting) is started only by that
- * washer, and a washer starts a new car only with no wash in progress or paused.
+ * washer, and a washer starts a new car only with no wash in progress or paused. The database holds
+ * the last rule too ({@value #ONE_WASH_PER_WASHER}): two starts by the same washer on two cars at
+ * the same instant both pass the check here, and only one of them is written.
  */
 public class DbStartServiceOrder implements StartServiceOrder {
+
+  static final String ONE_WASH_PER_WASHER = "ux_atendimentos_lavador_em_andamento";
 
   private final LoadServiceOrderByIdRepository loadServiceOrderByIdRepository;
   private final UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository;
@@ -52,14 +57,22 @@ public class DbStartServiceOrder implements StartServiceOrder {
       throw new WasherBusyError();
     }
 
-    // Compare-and-set: a concurrent request may have moved the order since it was loaded.
-    return updateServiceOrderStatusRepository
-        .updateStatus(
-            params.serviceOrderId(),
-            ServiceOrderStatus.WAITING_IN_YARD,
-            ServiceOrderStatus.WASHING,
-            params.washerId())
-        .orElseThrow(() -> changedConcurrently(params.serviceOrderId()));
+    try {
+      // Compare-and-set: a concurrent request may have moved the order since it was loaded.
+      return updateServiceOrderStatusRepository
+          .updateStatus(
+              params.serviceOrderId(),
+              ServiceOrderStatus.WAITING_IN_YARD,
+              ServiceOrderStatus.WASHING,
+              params.washerId())
+          .orElseThrow(() -> changedConcurrently(params.serviceOrderId()));
+    } catch (DuplicateKeyError e) {
+      if (e.is(ONE_WASH_PER_WASHER)) {
+        // The same washer started another car a moment ago.
+        throw new WasherBusyError();
+      }
+      throw e;
+    }
   }
 
   private InvalidServiceOrderStatusError changedConcurrently(java.util.UUID id) {
