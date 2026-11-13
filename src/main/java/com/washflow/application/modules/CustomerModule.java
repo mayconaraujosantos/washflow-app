@@ -44,7 +44,7 @@ public final class CustomerModule {
         access,
         whatsappSender(appConfig),
         emailSender(appConfig),
-        new HmacTokenHasher(appConfig.tokenSecret()),
+        new HmacTokenHasher(appConfig.tokenSecret().value()),
         users,
         users,
         access,
@@ -59,13 +59,11 @@ public final class CustomerModule {
    * logs, "none" hides the option.
    */
   private static OtpSender whatsappSender(AppConfig appConfig) {
-    if ("evolution".equals(appConfig.otpChannel())) {
-      return new EvolutionOtpSender(appConfig.evolution());
-    }
-    if ("log".equals(appConfig.otpChannel()) && !appConfig.isProduction()) {
-      return new LoggingOtpSender();
-    }
-    return new UnavailableOtpSender();
+    return switch (appConfig.otp().channel()) {
+      case EVOLUTION -> new EvolutionOtpSender(appConfig.otp().evolution());
+      case LOG -> appConfig.isProduction() ? new UnavailableOtpSender() : new LoggingOtpSender();
+      case NONE -> new UnavailableOtpSender();
+    };
   }
 
   /** E-mail codes go through the app's single e-mail channel (EMAIL_CHANNEL + SMTP_*). */

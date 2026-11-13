@@ -110,7 +110,7 @@ public final class UserModule {
         users,
         new AccessJdbiRepository(jdbi),
         new BCryptPasswordHasher(),
-        new HmacTokenHasher(appConfig.tokenSecret()),
+        new HmacTokenHasher(appConfig.tokenSecret().value()),
         Clock.systemUTC());
   }
 
@@ -194,19 +194,19 @@ public final class UserModule {
         new BCryptPasswordHasher(),
         emailSender(appConfig),
         new PasswordResetCodes(
-            resets, new HmacTokenHasher(appConfig.tokenSecret()), Clock.systemUTC()));
+            resets, new HmacTokenHasher(appConfig.tokenSecret().value()), Clock.systemUTC()));
   }
 
   /**
-   * The app's single e-mail channel (EMAIL_CHANNEL, see AppConfig.Smtp), shared by the customer
-   * access code and the password-reset code. The log stand-in never runs in production.
+   * The app's single e-mail channel (EMAIL_CHANNEL, see EmailConfig), shared by the customer access
+   * code and the password-reset code. The log stand-in never runs in production.
    */
   static EmailSender emailSender(AppConfig appConfig) {
-    return switch (appConfig.emailChannel()) {
-      case "smtp" -> new SmtpEmailSender(appConfig.smtp());
-      case "log" ->
+    return switch (appConfig.email().channel()) {
+      case SMTP -> new SmtpEmailSender(appConfig.email().smtp());
+      case LOG ->
           appConfig.isProduction() ? new UnavailableEmailSender() : new LoggingEmailSender();
-      default -> new UnavailableEmailSender();
+      case NONE -> new UnavailableEmailSender();
     };
   }
 }

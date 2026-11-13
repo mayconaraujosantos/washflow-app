@@ -75,7 +75,7 @@ public final class EstablishmentRoutes {
         SETUP,
         JavalinRouteAdapter.adaptAuthenticated(
             new SetupEstablishmentController(EstablishmentModule.setup(jdbi, appConfig)),
-            new AuthTokenService(appConfig.tokenSecret())));
+            new AuthTokenService(appConfig.tokenSecret().value())));
   }
 
   @OpenApi(

@@ -29,7 +29,7 @@ public final class UserRoutes {
 
   /** Called from inside {@code config.routes.apiBuilder(...)} in Application. */
   public static void register(Jdbi jdbi, AppConfig appConfig) {
-    AuthTokenService tokenService = new AuthTokenService(appConfig.tokenSecret());
+    AuthTokenService tokenService = new AuthTokenService(appConfig.tokenSecret().value());
     registerAuthenticateCustomer(jdbi, appConfig, tokenService);
     registerAuthenticateWasher(jdbi, appConfig, tokenService);
     registerAuthenticateManager(jdbi, appConfig, tokenService);

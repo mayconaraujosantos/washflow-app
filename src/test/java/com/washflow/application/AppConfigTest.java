@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.washflow.application.config.ConfigError;
+import com.washflow.application.config.EmailConfig;
+import com.washflow.application.config.OtpConfig;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +21,7 @@ class AppConfigTest {
             Map.of("PORT", "7001", "DB_PASSWORD", "dotenv-secret"));
 
     assertEquals(8081, config.port());
-    assertEquals("process-secret", config.databasePassword());
+    assertEquals("process-secret", config.database().password());
   }
 
   @Test
@@ -34,7 +37,7 @@ class AppConfigTest {
 
     assertEquals("development", config.environment());
     assertEquals(7001, config.port());
-    assertEquals("localhost", config.databaseHost());
+    assertEquals("localhost", config.database().host());
     assertEquals(5, config.maxVehiclesPerHour());
     assertFalse(config.isProduction());
   }
@@ -42,7 +45,7 @@ class AppConfigTest {
   @Test
   void productionDoesNotReadDotenvAndRequiresDatabaseConfiguration() {
     assertThrows(
-        IllegalStateException.class,
+        ConfigError.class,
         () ->
             AppConfig.load(
                 Map.of(
@@ -67,15 +70,14 @@ class AppConfigTest {
             Map.of());
 
     assertTrue(config.isProduction());
-    assertEquals("postgres://user:password@db:5432/washflow", config.databaseUrl());
+    assertEquals("postgres://user:password@db:5432/washflow", config.database().url());
   }
 
   @Test
   void invalidIntegerConfigurationFailsWithSettingName() {
-    IllegalArgumentException error =
+    ConfigError error =
         assertThrows(
-            IllegalArgumentException.class,
-            () -> AppConfig.load(Map.of("PORT", "not-a-port"), Map.of()));
+            ConfigError.class, () -> AppConfig.load(Map.of("PORT", "not-a-port"), Map.of()));
 
     assertTrue(error.getMessage().contains("PORT"));
   }
@@ -83,7 +85,7 @@ class AppConfigTest {
   @Test
   void emailChannelFollowsSmtpHostUnlessSetAndNeedsTheSender() {
     AppConfig dev = AppConfig.load(Map.of("APP_ENV", "development"), Map.of());
-    assertEquals("log", dev.emailChannel());
+    assertEquals(EmailConfig.Channel.LOG, dev.email().channel());
 
     AppConfig prod =
         AppConfig.load(
@@ -92,7 +94,7 @@ class AppConfigTest {
                 "DATABASE_URL", "postgres://u:p@db/x",
                 "AUTH_TOKEN_SECRET", "0123456789abcdef0123456789abcdef"),
             Map.of());
-    assertEquals("none", prod.emailChannel());
+    assertEquals(EmailConfig.Channel.NONE, prod.email().channel());
 
     AppConfig brevo =
         AppConfig.load(
@@ -102,12 +104,12 @@ class AppConfigTest {
                 "SMTP_PASSWORD", "segredo",
                 "SMTP_FROM", "nao-responda@washflow.app"),
             Map.of());
-    assertEquals("smtp", brevo.emailChannel());
-    assertEquals("smtp-relay.brevo.com", brevo.smtp().host());
-    assertEquals(587, brevo.smtp().port());
-    assertEquals("starttls", brevo.smtp().security());
-    assertEquals("Washflow", brevo.smtp().fromName());
-    assertFalse(brevo.smtp().toString().contains("segredo"));
+    assertEquals(EmailConfig.Channel.SMTP, brevo.email().channel());
+    assertEquals("smtp-relay.brevo.com", brevo.email().smtp().host());
+    assertEquals(587, brevo.email().smtp().port());
+    assertEquals("starttls", brevo.email().smtp().security());
+    assertEquals("Washflow", brevo.email().smtp().fromName());
+    assertFalse(brevo.email().smtp().toString().contains("segredo"));
 
     AppConfig mailpit =
         AppConfig.load(
@@ -117,20 +119,18 @@ class AppConfigTest {
                 "SMTP_SECURITY", "NONE",
                 "SMTP_FROM", "teste@washflow.test"),
             Map.of());
-    assertEquals("none", mailpit.smtp().security());
+    assertEquals("none", mailpit.email().smtp().security());
 
     AppConfig logged =
         AppConfig.load(Map.of("EMAIL_CHANNEL", "log", "SMTP_HOST", "127.0.0.1"), Map.of());
-    assertEquals("log", logged.emailChannel());
+    assertEquals(EmailConfig.Channel.LOG, logged.email().channel());
 
     assertThrows(
-        IllegalStateException.class,
-        () -> AppConfig.load(Map.of("SMTP_HOST", "smtp.example.com"), Map.of()));
+        ConfigError.class, () -> AppConfig.load(Map.of("SMTP_HOST", "smtp.example.com"), Map.of()));
     assertThrows(
-        IllegalStateException.class,
-        () -> AppConfig.load(Map.of("EMAIL_CHANNEL", "pombo"), Map.of()));
+        ConfigError.class, () -> AppConfig.load(Map.of("EMAIL_CHANNEL", "pombo"), Map.of()));
     assertThrows(
-        IllegalStateException.class,
+        ConfigError.class,
         () ->
             AppConfig.load(
                 Map.of("SMTP_HOST", "h", "SMTP_FROM", "a@b.co", "SMTP_SECURITY", "tls"), Map.of()));
@@ -147,13 +147,59 @@ class AppConfigTest {
                 "EVOLUTION_INSTANCE", "washflow"),
             Map.of());
 
-    assertEquals("evolution", config.otpChannel());
-    assertEquals("http://evolution:8080", config.evolution().url());
+    assertEquals(OtpConfig.Channel.EVOLUTION, config.otp().channel());
+    assertEquals("http://evolution:8080", config.otp().evolution().url());
     assertFalse(config.toString().contains("secret-key"));
     assertThrows(
-        IllegalStateException.class,
-        () -> AppConfig.load(Map.of("OTP_CHANNEL", "evolution"), Map.of()));
+        ConfigError.class, () -> AppConfig.load(Map.of("OTP_CHANNEL", "evolution"), Map.of()));
+    assertThrows(ConfigError.class, () -> AppConfig.load(Map.of("OTP_CHANNEL", "zapi"), Map.of()));
+  }
+
+  @Test
+  void productionNeverFallsBackToTheDevelopmentDatabaseDefaults() {
+    ConfigError error =
+        assertThrows(
+            ConfigError.class,
+            () ->
+                AppConfig.load(
+                    Map.of(
+                        "APP_ENV", "production",
+                        "DB_HOST", "db",
+                        "AUTH_TOKEN_SECRET", "0123456789abcdef0123456789abcdef"),
+                    Map.of()));
+
+    assertTrue(error.getMessage().contains("DB_USER"));
+  }
+
+  @Test
+  void appEnvFromTheDotenvFileTurnsOnProductionAndStopsReadingTheFile() {
     assertThrows(
-        IllegalStateException.class, () -> AppConfig.load(Map.of("OTP_CHANNEL", "zapi"), Map.of()));
+        ConfigError.class,
+        () ->
+            AppConfig.load(
+                Map.of("AUTH_TOKEN_SECRET", "0123456789abcdef0123456789abcdef"),
+                Map.of(
+                    "APP_ENV", "production",
+                    "DATABASE_URL", "postgres://user:password@db:5432/washflow")));
+  }
+
+  @Test
+  void developmentDefaultsNeedNoVariables() {
+    AppConfig config = AppConfig.load(Map.of(), Map.of());
+
+    assertEquals("development", config.environment());
+    assertEquals(OtpConfig.Channel.LOG, config.otp().channel());
+    assertEquals(EmailConfig.Channel.LOG, config.email().channel());
+    assertFalse(config.tokenSecret().value().isBlank());
+    assertFalse(config.toString().contains(config.tokenSecret().value()));
+  }
+
+  @Test
+  void channelsAreCaseInsensitiveAndTrimmed() {
+    AppConfig config =
+        AppConfig.load(Map.of("OTP_CHANNEL", " None ", "EMAIL_CHANNEL", " LOG "), Map.of());
+
+    assertEquals(OtpConfig.Channel.NONE, config.otp().channel());
+    assertEquals(EmailConfig.Channel.LOG, config.email().channel());
   }
 }
