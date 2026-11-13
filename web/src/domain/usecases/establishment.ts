@@ -3,6 +3,7 @@ import type {
   EstablishmentModel,
   ScheduleDayModel,
   SetupStatusModel,
+  WhatsappConnectionModel,
 } from '@/domain/models/establishment-model'
 
 export type EstablishmentParams = {
@@ -29,4 +30,8 @@ export interface Establishment {
   update: (params: EstablishmentParams) => Promise<EstablishmentModel>
   /** Bookable hours of a 'YYYY-MM-DD' shop-local date, with remaining capacity. */
   availability: (date: string) => Promise<ScheduleDayModel>
+  whatsappStatus: () => Promise<WhatsappConnectionModel>
+  /** Starts linking the number: resolves with the QR code to scan (a fresh one on every call). */
+  connectWhatsapp: () => Promise<WhatsappConnectionModel>
+  disconnectWhatsapp: () => Promise<WhatsappConnectionModel>
 }

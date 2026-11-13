@@ -11,6 +11,15 @@ import org.junit.jupiter.params.provider.CsvSource;
 class RoutePermissionMatcherTest {
 
   @Test
+  void onlyManagersLinkTheWhatsappNumber() {
+    for (String method : new String[] {"GET", "POST", "DELETE"}) {
+      assertEquals(
+          UserProfile.MANAGER,
+          RoutePermissionMatcher.requiredProfile(method, "/api/whatsapp/connection"));
+    }
+  }
+
+  @Test
   void onlyManagersReadTheAuditTrail() {
     assertEquals(UserProfile.MANAGER, RoutePermissionMatcher.requiredProfile("GET", "/api/audit"));
   }

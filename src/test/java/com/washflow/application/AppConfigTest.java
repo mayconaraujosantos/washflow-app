@@ -202,4 +202,43 @@ class AppConfigTest {
     assertEquals(OtpConfig.Channel.NONE, config.otp().channel());
     assertEquals(EmailConfig.Channel.LOG, config.email().channel());
   }
+
+  @Test
+  void whatsappNeedsTheWebhookAndTheEvolutionServer() {
+    String token = "a-webhook-token-long-enough";
+    AppConfig off = AppConfig.load(Map.of(), Map.of());
+    assertFalse(off.whatsapp().enabled());
+
+    AppConfig on =
+        AppConfig.load(
+            Map.of(
+                "WHATSAPP_WEBHOOK_URL", "http://washflow-api/api/whatsapp/webhook",
+                "WHATSAPP_WEBHOOK_TOKEN", token,
+                "EVOLUTION_URL", "http://evolution:8080",
+                "EVOLUTION_API_KEY", "global-key"),
+            Map.of());
+    assertTrue(on.whatsapp().enabled());
+    assertFalse(on.toString().contains(token));
+
+    assertThrows(
+        ConfigError.class,
+        () -> AppConfig.load(Map.of("WHATSAPP_WEBHOOK_URL", "http://api/hook"), Map.of()));
+    assertThrows(
+        ConfigError.class,
+        () ->
+            AppConfig.load(
+                Map.of("WHATSAPP_WEBHOOK_URL", "http://api/hook", "WHATSAPP_WEBHOOK_TOKEN", token),
+                Map.of()));
+  }
+
+  @Test
+  void theAssistantUnderstandsFreeTextOnlyWithAnApiKey() {
+    assertFalse(AppConfig.load(Map.of(), Map.of()).assistantAi().enabled());
+
+    AppConfig config = AppConfig.load(Map.of("ANTHROPIC_API_KEY", "sk-ant-test"), Map.of());
+
+    assertTrue(config.assistantAi().enabled());
+    assertEquals("claude-opus-5-5", config.assistantAi().model());
+    assertFalse(config.toString().contains("sk-ant-test"));
+  }
 }

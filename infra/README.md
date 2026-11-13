@@ -139,30 +139,47 @@ Other access settings:
 
 ## WhatsApp (Evolution API)
 
-The customer's access code goes out through a self-hosted
-[Evolution API](https://docs.evolutionfoundation.com.br) (Apache 2.0). On the kind
-cluster it runs next to the app (`infra/gitops/apps/washflow/evolution.yaml`),
-internal only, with its own `evolution` database on the washflow PostgreSQL; the
-`washflow` secret sets `OTP_CHANNEL=evolution` and the `EVOLUTION_*` variables.
+Two uses, both through a self-hosted
+[Evolution API](https://docs.evolutionfoundation.com.br) (Apache 2.0):
 
-Link the sending number once (the session is kept in the database):
+* **Each lava-jato's own number** (status notices and the scheduling assistant):
+  the manager links it on the screen "Estabelecimento" › "WhatsApp do lava-jato"
+  by scanning a QR code; the app creates the instance `washflow-<establishment id>`.
+* **The platform's number** for customer login codes (`OTP_CHANNEL=evolution`,
+  instance `EVOLUTION_INSTANCE`, linked once in the Evolution manager).
+
+On the kind cluster Evolution runs next to the app
+(`infra/gitops/apps/washflow/evolution.yaml`), internal only, with its own
+`evolution` database on the washflow PostgreSQL; the `washflow` secret sets
+everything below.
+
+| Variable | Purpose |
+| --- | --- |
+| `EVOLUTION_URL` / `EVOLUTION_API_KEY` | Evolution server and its global `AUTHENTICATION_API_KEY`. |
+| `WHATSAPP_WEBHOOK_URL` | Where Evolution posts received messages: the API's `/api/whatsapp/webhook` as Evolution reaches it (`http://washflow-api/api/whatsapp/webhook` on kind). Empty turns the lava-jato numbers off. |
+| `WHATSAPP_WEBHOOK_TOKEN` | Shared secret (24+ characters) Evolution sends in `X-Washflow-Token`; generate one per environment. |
+| `ANTHROPIC_API_KEY` | Optional: the assistant understands free text with Claude. Empty keeps numbered menus only. |
+| `WHATSAPP_AI_MODEL` | Claude model for the assistant (default `claude-opus-5-5`; `claude-haiku-5-5` costs less). |
+| `OTP_CHANNEL` / `EVOLUTION_INSTANCE` | Login codes by WhatsApp from the platform number (see the table above). |
+
+Link the platform number once (the session is kept in the database):
 
 1. `make evolution-port-forward` and open http://localhost:8082/manager; log in with
    the `EVOLUTION_API_KEY` of the secret.
 2. Create the instance **`washflow`** (same as `EVOLUTION_INSTANCE`), integration
    *Baileys*, and scan the QR code with WhatsApp on the phone (Linked devices).
-3. Ask for a code on the customer screen ("Entrar com código por WhatsApp").
 
-Use a dedicated number: the QR (Baileys) link is not an official WhatsApp API and a
-number that sends codes to strangers can be banned. With a verified company
-(CNPJ), create the instance with the *WhatsApp Business* (Cloud API) integration
-instead - the app's call (`EvolutionOtpSender`) doesn't change. A send that fails
-answers 503 and the customer can try again right away.
+Use dedicated numbers: the QR (Baileys) link is not an official WhatsApp API and a
+number that writes to strangers can be banned (the assistant only answers customers
+who wrote first, the safer pattern). With a verified company (CNPJ), the
+*WhatsApp Business* (Cloud API) integration works the same for the app. A send that
+fails is logged; a notice never fails the operation that triggered it.
 
 On Render: a paid **Private Service** from the image `evoapicloud/evolution-api`
-(same variables as `evolution.yaml`, no public URL), a paid PostgreSQL, and
-`EVOLUTION_URL` pointing at the private service address. The free plan sleeps
-after 15 minutes and drops the WhatsApp session.
+(same variables as `evolution.yaml`, no public URL), a paid PostgreSQL,
+`EVOLUTION_URL` pointing at the private service and `WHATSAPP_WEBHOOK_URL` at the
+API's private address. The free plan sleeps after 15 minutes and drops the
+WhatsApp sessions.
 
 ## Backup
 

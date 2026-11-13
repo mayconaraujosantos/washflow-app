@@ -34,7 +34,7 @@ public final class ServiceOrderRoutes {
     registerSchedule(jdbi, appConfig);
     registerCheckIn(jdbi);
     registerStart(jdbi);
-    registerComplete(jdbi);
+    registerComplete(jdbi, appConfig);
     registerFinalize(jdbi);
     registerGetById(jdbi);
     registerListByCustomer(jdbi);
@@ -115,10 +115,11 @@ public final class ServiceOrderRoutes {
         @OpenApiResponse(status = "404", description = "Service order not found"),
         @OpenApiResponse(status = "409", description = "Service order not in EM_LAVAGEM status")
       })
-  private static void registerComplete(Jdbi jdbi) {
+  private static void registerComplete(Jdbi jdbi, AppConfig appConfig) {
     patch(
         BY_ID_PATH + "/complete",
-        JavalinRouteAdapter.adapt(ServiceOrderModule.completeServiceOrderController(jdbi)));
+        JavalinRouteAdapter.adapt(
+            ServiceOrderModule.completeServiceOrderController(jdbi, appConfig)));
   }
 
   @OpenApi(

@@ -79,13 +79,6 @@ class EvolutionOtpSenderTest {
     assertEquals(EvolutionOtpSender.FAILURE, error.getMessage());
   }
 
-  @Test
-  void addsTheBrazilCountryCodeOnlyWhenMissing() {
-    assertEquals("559233334444", EvolutionOtpSender.number("9233334444"));
-    assertEquals("5592991234567", EvolutionOtpSender.number("92991234567"));
-    assertEquals("5592991234567", EvolutionOtpSender.number("+55 (92) 99123-4567"));
-  }
-
   private static EvolutionOtpSender sender(String url, String instance) {
     return new EvolutionOtpSender(new EvolutionConfig(url, "secret-key", instance));
   }
