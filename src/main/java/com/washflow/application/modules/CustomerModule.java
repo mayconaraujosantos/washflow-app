@@ -16,6 +16,7 @@ import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.identity.GoogleTokeninfoVerifier;
 import com.washflow.infra.messaging.EmailOtpSender;
+import com.washflow.infra.messaging.EvolutionOtpSender;
 import com.washflow.infra.messaging.LoggingOtpSender;
 import com.washflow.infra.messaging.UnavailableOtpSender;
 import com.washflow.infra.security.HmacTokenHasher;
@@ -53,12 +54,15 @@ public final class CustomerModule {
   }
 
   /**
-   * Only the development log channel exists today; plug a WhatsApp provider here (Twilio, Meta
-   * Cloud API, Z-API...) selected by OTP_CHANNEL. The log channel is refused in production so codes
-   * never end up in production logs.
+   * WhatsApp codes by OTP_CHANNEL: "evolution" sends through the Evolution API (EVOLUTION_*), "log"
+   * writes them to the server log and is refused in production so codes never end up in production
+   * logs, "none" hides the option.
    */
   private static OtpSender whatsappSender(AppConfig appConfig) {
-    if ("log".equalsIgnoreCase(appConfig.otpChannel()) && !appConfig.isProduction()) {
+    if ("evolution".equals(appConfig.otpChannel())) {
+      return new EvolutionOtpSender(appConfig.evolution());
+    }
+    if ("log".equals(appConfig.otpChannel()) && !appConfig.isProduction()) {
       return new LoggingOtpSender();
     }
     return new UnavailableOtpSender();

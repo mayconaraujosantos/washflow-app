@@ -1,6 +1,6 @@
 # washflow on the local cluster: the Javalin API (which also serves the React
 # PWA built into the same image - one Deployment), its PostgreSQL, and the
-# observability wiring:
+# Evolution API (WhatsApp access codes), and the observability wiring:
 #   logs    -> stdout, shipped to Loki by the Alloy DaemonSet (no sidecar needed)
 #   traces  -> OpenTelemetry Java agent injected by an init container -> Tempo
 #   metrics -> GET /api/metrics scraped by Prometheus via the ServiceMonitor
@@ -13,6 +13,7 @@ labels:
 resources:
   - secret.yaml
   - postgres.yaml
+  - evolution.yaml
   - backup.yaml
   - deployment.yaml
   - service.yaml
