@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.establishment;
 
-import com.washflow.domain.errors.establishment.EstablishmentNotFoundError;
 import com.washflow.domain.usecases.establishment.ManagePlatform;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -30,8 +29,6 @@ public class ResetManagerPasswordController implements Controller {
       return HttpHelper.ok(platform.resetManagerPassword(id, BodyValues.text(body, "password")));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (EstablishmentNotFoundError e) {
-      return HttpHelper.notFound(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

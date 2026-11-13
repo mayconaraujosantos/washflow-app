@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.establishment;
 
-public class EstablishmentNotFoundError extends Exception {
+import com.washflow.domain.errors.common.NotFoundError;
+
+public class EstablishmentNotFoundError extends NotFoundError {
 
   public EstablishmentNotFoundError() {
-    super("Lava-jato não encontrado");
+    super("ESTABLISHMENT_NOT_FOUND", "Lava-jato não encontrado");
   }
 }

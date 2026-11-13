@@ -16,7 +16,7 @@ public class DbCreateCashTransaction implements CreateCashTransaction {
   }
 
   @Override
-  public CashTransaction create(Params params) throws InvalidTransactionTypeError {
+  public CashTransaction create(Params params) {
     if (params.type() == null) {
       throw new InvalidTransactionTypeError(null);
     }

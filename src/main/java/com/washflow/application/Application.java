@@ -7,6 +7,8 @@ import com.washflow.application.adapters.SpaFallbackHandler;
 import com.washflow.application.adapters.StaticCachePolicy;
 import com.washflow.application.audit.AuditTrail;
 import com.washflow.application.idempotency.IdempotencyGuard;
+import com.washflow.application.jobs.ScheduleReminderJob;
+import com.washflow.application.modules.WhatsappModule;
 import com.washflow.application.observability.RequestTracing;
 import com.washflow.application.routes.AccessRoutes;
 import com.washflow.application.routes.AuditRoutes;
@@ -22,10 +24,12 @@ import com.washflow.application.routes.ServicePriceRoutes;
 import com.washflow.application.routes.SystemRoutes;
 import com.washflow.application.routes.UserRoutes;
 import com.washflow.application.routes.VehicleRoutes;
+import com.washflow.application.routes.WhatsappRoutes;
 import com.washflow.application.security.AccountSecurityGateway;
 import com.washflow.application.security.AuthTokenService;
 import com.washflow.application.security.AuthorizationMiddleware;
 import com.washflow.application.security.LoginThrottle;
+import com.washflow.domain.usecases.whatsapp.SendScheduleReminders;
 import com.washflow.infra.db.jdbi.JdbiAuditStore;
 import com.washflow.infra.db.jdbi.JdbiFactory;
 import com.washflow.infra.db.jdbi.JdbiIdempotencyStore;
@@ -47,7 +51,7 @@ public class Application {
     AccountSecurityGateway securityGateway = new JdbiAccountSecurityGateway(jdbi);
     AuthorizationMiddleware authorizationMiddleware =
         new AuthorizationMiddleware(
-            new AuthTokenService(appConfig.tokenSecret()), securityGateway, jdbi);
+            new AuthTokenService(appConfig.tokenSecret().value()), securityGateway, jdbi);
 
     RequestTracing tracing = new RequestTracing(Metrics.registry());
     IdempotencyGuard idempotency =
@@ -148,12 +152,18 @@ public class Application {
                     ObservabilityRoutes.register(appConfig);
                     PlatformRoutes.register(jdbi, appConfig);
                     AuditRoutes.register(auditStore);
+                    WhatsappRoutes.register(jdbi, appConfig);
                   });
 
               config.routes.error(404, SpaFallbackHandler::handle);
             });
 
     app.start(appConfig.port());
+
+    SendScheduleReminders reminders = WhatsappModule.scheduleReminders(jdbi, appConfig);
+    if (reminders != null) {
+      ScheduleReminderJob.start(reminders, WhatsappModule.housekeeping(jdbi));
+    }
   }
 
   private static void addStaticFiles(

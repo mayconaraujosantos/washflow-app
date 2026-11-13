@@ -89,7 +89,8 @@ class DbAuthenticateUserTest {
         new User(
             UUID.randomUUID(), "Cliente Demo", params.phone(), UserProfile.CUSTOMER, Instant.now());
     when(loadUserByPhoneRepository.loadByPhone(params.phone()))
-        .thenReturn(Optional.empty(), Optional.of(createdByOther));
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(createdByOther));
     when(passwordHasher.hash(anyString())).thenReturn("bcrypt-hash");
     when(createUserRepository.create(any(), anyString()))
         .thenThrow(new DuplicateKeyError("usuarios_telefone", null));
@@ -106,7 +107,8 @@ class DbAuthenticateUserTest {
         new User(
             UUID.randomUUID(), "Outra Pessoa", params.phone(), UserProfile.CUSTOMER, Instant.now());
     when(loadUserByPhoneRepository.loadByPhone(params.phone()))
-        .thenReturn(Optional.empty(), Optional.of(createdByOther));
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(createdByOther));
     when(passwordHasher.hash(anyString())).thenReturn("bcrypt-hash");
     when(createUserRepository.create(any(), anyString()))
         .thenThrow(new DuplicateKeyError("usuarios_telefone", null));

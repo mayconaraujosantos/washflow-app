@@ -1,7 +1,6 @@
 package com.washflow.presentation.controllers.serviceorder;
 
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.serviceorder.ServiceOrderNotRefundableError;
 import com.washflow.domain.usecases.serviceorder.RefundServiceOrder;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -46,8 +45,6 @@ public class RefundServiceOrderController implements Controller {
                   Boolean.TRUE.equals(body.get("reverseCommission")))));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (ServiceOrderNotRefundableError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

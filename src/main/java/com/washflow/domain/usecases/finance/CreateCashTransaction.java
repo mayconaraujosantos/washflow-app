@@ -2,14 +2,13 @@ package com.washflow.domain.usecases.finance;
 
 import com.washflow.domain.entities.finance.CashTransaction;
 import com.washflow.domain.entities.finance.CashTransaction.TransactionType;
-import com.washflow.domain.errors.finance.InvalidTransactionTypeError;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
 public interface CreateCashTransaction {
 
-  CashTransaction create(Params params) throws InvalidTransactionTypeError;
+  CashTransaction create(Params params);
 
   record Params(
       TransactionType type,

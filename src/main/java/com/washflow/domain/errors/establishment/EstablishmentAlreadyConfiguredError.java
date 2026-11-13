@@ -1,8 +1,10 @@
 package com.washflow.domain.errors.establishment;
 
-public class EstablishmentAlreadyConfiguredError extends Exception {
+import com.washflow.domain.errors.common.ConflictError;
+
+public class EstablishmentAlreadyConfiguredError extends ConflictError {
 
   public EstablishmentAlreadyConfiguredError() {
-    super("A plataforma já foi configurada");
+    super("PLATFORM_ALREADY_CONFIGURED", "A plataforma já foi configurada");
   }
 }

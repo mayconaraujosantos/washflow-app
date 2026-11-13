@@ -44,7 +44,7 @@ public final class SchedulingRules {
   }
 
   /** Inside the establishment's opening hours, shop time; Sundays only when it opens. */
-  public void checkBusinessHours(Instant scheduledAt) throws OutsideBusinessHoursError {
+  public void checkBusinessHours(Instant scheduledAt) {
     Hours current = hours.get();
     ZonedDateTime local = scheduledAt.atZone(STORE_ZONE);
     int hour = local.getHour();
@@ -56,8 +56,7 @@ public final class SchedulingRules {
     }
   }
 
-  public void checkLeadTime(Instant scheduledAt, Instant now, Duration minLeadTime)
-      throws InsufficientLeadTimeError {
+  public void checkLeadTime(Instant scheduledAt, Instant now, Duration minLeadTime) {
     if (scheduledAt.isBefore(now.plus(minLeadTime))) {
       throw new InsufficientLeadTimeError(scheduledAt, minLeadTime);
     }
@@ -67,7 +66,7 @@ public final class SchedulingRules {
    * At most {@code maxVehiclesPerHour} orders scheduled within the same shop-local hour. A quick
    * early check (before creating the vehicle); the booking itself goes through {@link #book}.
    */
-  public void checkCapacity(Instant scheduledAt) throws SlotFullyBookedError {
+  public void checkCapacity(Instant scheduledAt) {
     int maxVehiclesPerHour = hours.get().maxVehiclesPerHour();
     Instant slotStart = slotStart(scheduledAt);
     Instant slotEnd = slotStart.plus(1, ChronoUnit.HOURS);
@@ -80,8 +79,7 @@ public final class SchedulingRules {
    * Creates the scheduled order only if its hour still has room, counting and inserting atomically:
    * simultaneous bookings can't overfill the slot.
    */
-  public ServiceOrder book(CreateServiceOrderRepository repository, ServiceOrder serviceOrder)
-      throws SlotFullyBookedError {
+  public ServiceOrder book(CreateServiceOrderRepository repository, ServiceOrder serviceOrder) {
     int maxVehiclesPerHour = hours.get().maxVehiclesPerHour();
     Instant slotStart = slotStart(serviceOrder.scheduledAt());
     return repository

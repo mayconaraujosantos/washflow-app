@@ -3,7 +3,6 @@ package com.washflow.domain.usecases.serviceorder;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
-import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import java.util.UUID;
 
 /**
@@ -16,7 +15,13 @@ import java.util.UUID;
 public interface CheckInServiceOrder {
 
   ServiceOrder checkIn(Params params)
-      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError, VehicleAlreadyInYardError;
+      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError;
 
-  record Params(UUID serviceOrderId) {}
+  /** {@code washerId}: the washer the manager reserves the car for; null for the shared queue. */
+  record Params(UUID serviceOrderId, UUID washerId) {
+
+    public Params(UUID serviceOrderId) {
+      this(serviceOrderId, null);
+    }
+  }
 }

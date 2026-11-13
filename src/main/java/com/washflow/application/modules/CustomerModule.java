@@ -6,21 +6,19 @@ import com.washflow.data.usecases.customer.DbCustomerPasswordlessLogin;
 import com.washflow.data.usecases.customer.DbCustomerRecoveryEmail;
 import com.washflow.data.usecases.customer.DbListServiceOrdersByCustomer;
 import com.washflow.data.usecases.customer.DbServiceOrderTicket;
-import com.washflow.data.usecases.user.DbWasherBadge;
 import com.washflow.domain.usecases.customer.CustomerPasswordlessLogin;
 import com.washflow.domain.usecases.customer.CustomerRecoveryEmail;
 import com.washflow.domain.usecases.customer.ListServiceOrdersByCustomer;
 import com.washflow.domain.usecases.customer.ServiceOrderTicket;
-import com.washflow.domain.usecases.user.WasherBadge;
 import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
 import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.identity.GoogleTokeninfoVerifier;
 import com.washflow.infra.messaging.EmailOtpSender;
+import com.washflow.infra.messaging.EvolutionOtpSender;
 import com.washflow.infra.messaging.LoggingOtpSender;
 import com.washflow.infra.messaging.UnavailableOtpSender;
-import com.washflow.infra.security.BCryptPasswordHasher;
 import com.washflow.infra.security.HmacTokenHasher;
 import com.washflow.presentation.controllers.customer.ListServiceOrdersByCustomerController;
 import com.washflow.presentation.protocols.Controller;
@@ -35,17 +33,6 @@ public final class CustomerModule {
 
   private CustomerModule() {}
 
-  public static WasherBadge washerBadge(Jdbi jdbi, AppConfig appConfig) {
-    UserJdbiRepository users = new UserJdbiRepository(jdbi);
-    return new DbWasherBadge(
-        users,
-        users,
-        new AccessJdbiRepository(jdbi),
-        new BCryptPasswordHasher(),
-        new HmacTokenHasher(appConfig.tokenSecret()),
-        Clock.systemUTC());
-  }
-
   public static ServiceOrderTicket ticket(Jdbi jdbi) {
     return new DbServiceOrderTicket(new AccessJdbiRepository(jdbi));
   }
@@ -57,7 +44,7 @@ public final class CustomerModule {
         access,
         whatsappSender(appConfig),
         emailSender(appConfig),
-        new HmacTokenHasher(appConfig.tokenSecret()),
+        new HmacTokenHasher(appConfig.tokenSecret().value()),
         users,
         users,
         access,
@@ -67,15 +54,16 @@ public final class CustomerModule {
   }
 
   /**
-   * Only the development log channel exists today; plug a WhatsApp provider here (Twilio, Meta
-   * Cloud API, Z-API...) selected by OTP_CHANNEL. The log channel is refused in production so codes
-   * never end up in production logs.
+   * WhatsApp codes by OTP_CHANNEL: "evolution" sends through the Evolution API (EVOLUTION_*), "log"
+   * writes them to the server log and is refused in production so codes never end up in production
+   * logs, "none" hides the option.
    */
   private static OtpSender whatsappSender(AppConfig appConfig) {
-    if ("log".equalsIgnoreCase(appConfig.otpChannel()) && !appConfig.isProduction()) {
-      return new LoggingOtpSender();
-    }
-    return new UnavailableOtpSender();
+    return switch (appConfig.otp().channel()) {
+      case EVOLUTION -> new EvolutionOtpSender(appConfig.otp().evolution());
+      case LOG -> appConfig.isProduction() ? new UnavailableOtpSender() : new LoggingOtpSender();
+      case NONE -> new UnavailableOtpSender();
+    };
   }
 
   /** E-mail codes go through the app's single e-mail channel (EMAIL_CHANNEL + SMTP_*). */

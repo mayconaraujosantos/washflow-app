@@ -1,7 +1,5 @@
 package com.washflow.presentation.controllers.serviceorder;
 
-import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
-import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.usecases.serviceorder.CompleteServiceOrder;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -28,10 +26,6 @@ public class CompleteServiceOrderController implements Controller {
       return HttpHelper.ok(serviceOrder);
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (ServiceOrderNotFoundError e) {
-      return HttpHelper.notFound(e);
-    } catch (InvalidServiceOrderStatusError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

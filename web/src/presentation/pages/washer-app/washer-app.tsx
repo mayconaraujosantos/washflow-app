@@ -142,12 +142,17 @@ export function WasherApp({ operations }: Props) {
         <EmptyState
           icon="parking"
           title="Nenhum veículo aguardando."
-          accent="A fila segue a ordem de chegada no pátio."
+          accent="A fila segue a ordem de chegada; os carros reservados para você vêm primeiro."
         />
       ) : (
         <ul className="list">
           {queue.map((order, index) => (
             <OrderCard key={order.id} order={order} showCustomer={false}>
+              {order.washerId === user.id && (
+                <p className="notice-success">
+                  Reservado para você pelo gerente
+                </p>
+              )}
               <button
                 type="button"
                 className={index === 0 ? 'btn btn-accent' : 'btn btn-outline'}

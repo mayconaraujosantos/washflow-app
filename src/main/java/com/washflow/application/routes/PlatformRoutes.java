@@ -54,7 +54,8 @@ public final class PlatformRoutes {
     post(
         "/api/auth/admins",
         JavalinRouteAdapter.adaptAuthenticated(
-            new AdminSignInController(platform), new AuthTokenService(appConfig.tokenSecret())));
+            new AdminSignInController(platform),
+            new AuthTokenService(appConfig.tokenSecret().value())));
   }
 
   @OpenApi(

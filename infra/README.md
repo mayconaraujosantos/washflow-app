@@ -41,6 +41,27 @@ restarting (`make db-up`; the kind node usually needs a full
 `make cluster-down && make cluster-up` since its clock skews across the
 suspend and Kubernetes' certs start rejecting requests).
 
+## Whole app with WhatsApp (Compose)
+
+For a round of manual tests without the cluster, `docker-compose.yml` runs the
+app, PostgreSQL, Mailpit and the Evolution API together, with each lava-jato's
+WhatsApp already on:
+
+```
+podman compose up -d --build   # app http://localhost:7000, e-mails http://localhost:8025
+podman compose logs -f washflow
+podman compose down            # data stays in the postgres-data volume
+```
+
+`EVOLUTION_API_KEY` and `WHATSAPP_WEBHOOK_TOKEN` come from the git-ignored `.env`
+(development defaults otherwise). Evolution reaches the app at
+`http://washflow:7000/api/whatsapp/webhook` inside the compose network and keeps
+its sessions in the `evolution_api` schema of the same database. The manager links
+the lava-jato's number on "Estabelecimento" › "WhatsApp do lava-jato"; the
+Evolution manager is at http://localhost:8082/manager. Login codes by WhatsApp go
+to the app log (`OTP_CHANNEL=log`); set `ANTHROPIC_API_KEY` in `.env` for free
+text in the assistant.
+
 ## Database (Postgres)
 
 `docker-compose.yml` has a `postgres` service (talks to Podman through its
@@ -125,7 +146,8 @@ Other access settings:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `SETUP_CODE` | empty | Unlocks the one-time platform setup in production (wizard disabled while empty). |
-| `OTP_CHANNEL` | `log` (dev), `none` (prod) | Customer WhatsApp codes. `log` prints the code/magic link to the server log and is refused in production; plug a WhatsApp provider in `AccessFactory.otpSender`. |
+| `OTP_CHANNEL` | `log` (dev), `none` (prod) | Customer WhatsApp codes: `evolution` sends them through the Evolution API (see "WhatsApp" below), `log` prints the code/magic link to the server log and is refused in production, `none` hides the option. |
+| `EVOLUTION_URL` / `EVOLUTION_API_KEY` / `EVOLUTION_INSTANCE` | empty | Required with `OTP_CHANNEL=evolution`: Evolution server base URL, its global `AUTHENTICATION_API_KEY` and the instance (WhatsApp number) that sends the codes. |
 | `GOOGLE_CLIENT_ID` | empty | Google Identity Services client ID; empty hides "Entrar com Google". |
 | `APP_PUBLIC_URL` | empty | Public origin used in WhatsApp magic links (e.g. `https://app.lavajato.com`). |
 | `EMAIL_CHANNEL` | `smtp` when `SMTP_HOST` is set, else `log` (dev) / `none` (prod) | The app's single e-mail channel, used by the customer access code and by "Esqueci a senha" codes (customers by phone → their recovery e-mail; managers by login e-mail). `log` prints the e-mail to the server log and is refused in production; `none` hides both options. |
@@ -135,6 +157,50 @@ Other access settings:
 | `SMTP_USERNAME` / `SMTP_PASSWORD` | empty | Relay credentials; empty username sends without authentication (e.g. a local test inbox). |
 | `SMTP_FROM` | empty | Sender address, required with `EMAIL_CHANNEL=smtp`; use a domain the relay is allowed to send for (SPF/DKIM). |
 | `SMTP_FROM_NAME` | `Washflow` | Sender name shown in the inbox. |
+
+## WhatsApp (Evolution API)
+
+Two uses, both through a self-hosted
+[Evolution API](https://docs.evolutionfoundation.com.br) (Apache 2.0):
+
+* **Each lava-jato's own number** (status notices and the scheduling assistant):
+  the manager links it on the screen "Estabelecimento" › "WhatsApp do lava-jato"
+  by scanning a QR code; the app creates the instance `washflow-<establishment id>`.
+* **The platform's number** for customer login codes (`OTP_CHANNEL=evolution`,
+  instance `EVOLUTION_INSTANCE`, linked once in the Evolution manager).
+
+On the kind cluster Evolution runs next to the app
+(`infra/gitops/apps/washflow/evolution.yaml`), internal only, with its own
+`evolution` database on the washflow PostgreSQL; the `washflow` secret sets
+everything below.
+
+| Variable | Purpose |
+| --- | --- |
+| `EVOLUTION_URL` / `EVOLUTION_API_KEY` | Evolution server and its global `AUTHENTICATION_API_KEY`. |
+| `WHATSAPP_WEBHOOK_URL` | Where Evolution posts received messages: the API's `/api/whatsapp/webhook` as Evolution reaches it (`http://washflow-api/api/whatsapp/webhook` on kind). Empty turns the lava-jato numbers off. |
+| `WHATSAPP_WEBHOOK_TOKEN` | Shared secret (24+ characters) Evolution sends in `X-Washflow-Token`; generate one per environment. |
+| `ANTHROPIC_API_KEY` | Optional: the assistant understands free text with Claude. Empty keeps numbered menus only. |
+| `WHATSAPP_AI_MODEL` | Claude model for the assistant (default `claude-opus-5-5`; `claude-haiku-5-5` costs less). |
+| `OTP_CHANNEL` / `EVOLUTION_INSTANCE` | Login codes by WhatsApp from the platform number (see the table above). |
+
+Link the platform number once (the session is kept in the database):
+
+1. `make evolution-port-forward` and open http://localhost:8082/manager; log in with
+   the `EVOLUTION_API_KEY` of the secret.
+2. Create the instance **`washflow`** (same as `EVOLUTION_INSTANCE`), integration
+   *Baileys*, and scan the QR code with WhatsApp on the phone (Linked devices).
+
+Use dedicated numbers: the QR (Baileys) link is not an official WhatsApp API and a
+number that writes to strangers can be banned (the assistant only answers customers
+who wrote first, the safer pattern). With a verified company (CNPJ), the
+*WhatsApp Business* (Cloud API) integration works the same for the app. A send that
+fails is logged; a notice never fails the operation that triggered it.
+
+On Render: a paid **Private Service** from the image `evoapicloud/evolution-api`
+(same variables as `evolution.yaml`, no public URL), a paid PostgreSQL,
+`EVOLUTION_URL` pointing at the private service and `WHATSAPP_WEBHOOK_URL` at the
+API's private address. The free plan sleeps after 15 minutes and drops the
+WhatsApp sessions.
 
 ## Backup
 

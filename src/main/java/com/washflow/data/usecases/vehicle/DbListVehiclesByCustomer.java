@@ -24,7 +24,7 @@ public class DbListVehiclesByCustomer implements ListVehiclesByCustomer {
   }
 
   @Override
-  public List<Vehicle> list(Params params) throws UserNotFoundError {
+  public List<Vehicle> list(Params params) {
     loadUserByIdRepository
         .loadById(params.customerId())
         .orElseThrow(() -> new UserNotFoundError(params.customerId()));

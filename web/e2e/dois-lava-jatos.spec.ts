@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { mailbox } from './support/mailbox'
+import { whatsapp } from './support/whatsapp'
 import { cardWith, expectMessage, Phones } from './support/phones'
 
 /**
@@ -15,6 +16,9 @@ import { cardWith, expectMessage, Phones } from './support/phones'
  *     lavador entra lendo o QR do crachá.
  *  5. Isolamento: a conta de um lava-jato não entra no outro, e um pátio não
  *     vê os carros do outro.
+ *  8. WhatsApp do Lava Raio: a gerente liga o número pelo QR Code; um cliente
+ *     novo se cadastra, agenda, cancela e agenda de novo conversando com o
+ *     assistente, e recebe o aviso de carro pronto quando o lavador conclui.
  */
 
 const PASSWORD = 'senha-forte-123'
@@ -242,12 +246,27 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     )
   })
 
-  await test.step('gerente vê o agendamento e recebe o carro no pátio', async () => {
+  await test.step('gerente vê o lavador livre no quadro da tela inicial', async () => {
+    await manager.goto('/gerente')
+    const board = manager.getByRole('region', { name: 'Lavadores' })
+    await expect(board).toContainText(raio.washer.name)
+    await expect(board).toContainText('Livre')
+  })
+
+  await test.step('gerente recebe o carro no pátio e reserva para o lavador', async () => {
     await manager.getByRole('link', { name: 'Pátio' }).click()
     const order = cardWith(manager, customer.plate)
     await expect(order).toBeVisible()
     await order.getByRole('button', { name: 'Receber no pátio' }).click()
+    const sheet = manager.getByRole('dialog', { name: 'Receber no pátio' })
+    await sheet
+      .getByRole('button', { name: new RegExp(raio.washer.name) })
+      .click()
+    await sheet.getByRole('button', { name: 'Receber no pátio' }).click()
     await expectMessage(manager, `${customer.plate} recebido no pátio.`)
+    await expect(cardWith(manager, customer.plate)).toContainText(
+      raio.washer.name,
+    )
   })
 
   const washer = await phones.of(`lavador-${raio.slug}`)
@@ -259,10 +278,15 @@ test('3. Lava Raio: cliente agenda pelo app e acompanha até a retirada', async 
     await expect(washer).toHaveURL(/:\d+\/lavador$/)
   })
 
-  await test.step('lavador pega o carro da fila, lava e conclui', async () => {
+  await test.step('lavador pega o carro reservado para ele, lava e conclui', async () => {
     const queued = cardWith(washer, customer.plate)
+    await expect(queued).toContainText('Reservado para você')
     await queued.getByRole('button', { name: 'Iniciar lavagem' }).click()
     await expectMessage(washer, `Lavagem de ${customer.plate} iniciada.`)
+    await manager.goto('/gerente')
+    await expect(
+      manager.getByRole('region', { name: 'Lavadores' }),
+    ).toContainText(`Lavando ${customer.plate}`)
     await washer.getByRole('link', { name: 'Minhas lavagens' }).click()
     await cardWith(washer, customer.plate)
       .getByRole('button', { name: 'Concluir lavagem' })
@@ -669,5 +693,125 @@ test('7. sem balcão: o código chega por e-mail e a pessoa troca a senha', asyn
     await manager.getByRole('button', { name: 'Trocar senha' }).click()
     await expect(manager).toHaveURL(/:\d+\/gerente$/)
     await expect(manager.getByRole('link', { name: 'Pátio' })).toBeVisible()
+  })
+})
+
+test('8. WhatsApp do Lava Raio: cliente agenda conversando e recebe o aviso', async () => {
+  const manager = managerOf.get(raio)!
+  const zap = {
+    number: '5592999880011',
+    name: 'Bia Zap',
+    plate: 'ZAP1A23',
+    model: 'Gol',
+  }
+  let instance = ''
+  const chat = (text: string) => whatsapp.chat(instance, zap.number, text)
+  const yardCards = () => manager.locator('li').filter({ hasText: zap.plate })
+
+  await test.step('gerente liga o número do lava-jato pelo QR Code', async () => {
+    await manager.goto('/gerente/estabelecimento')
+    await manager.getByRole('button', { name: 'Conectar WhatsApp' }).click()
+    await expect(
+      manager.getByAltText('QR Code para conectar o WhatsApp'),
+    ).toBeVisible()
+    instance = await whatsapp.waitingInstance()
+    await whatsapp.scan(instance)
+    await expect(
+      manager.getByText('Conectado. O assistente está atendendo.'),
+    ).toBeVisible()
+  })
+
+  await test.step('número novo informa o nome e vira cliente', async () => {
+    expect(await chat('oi')).toContain('como podemos te chamar')
+    const welcome = await chat(zap.name)
+    expect(welcome).toContain('Prazer, Bia!')
+    expect(welcome).toContain('1. Agendar lavagem')
+  })
+
+  /** Walks the menus with the first day and hour offered; returns the confirmation. */
+  const schedule = async (pickCar: () => Promise<string>) => {
+    const services = await pickCar()
+    const completa = /(\d+)\. Lavagem Completa/.exec(services)?.[1]
+    expect(
+      completa,
+      `"Lavagem Completa" na lista:
+${services}`,
+    ).toBeTruthy()
+    expect(await chat(completa!)).toContain('Qual dia?')
+    expect(await chat('1')).toContain('Horários livres')
+    const confirm = await chat('1')
+    expect(confirm).toContain(`${zap.model} (${zap.plate})`)
+    expect(confirm).toContain('Lavagem Completa')
+    expect(await chat('1')).toContain('Agendado ✅')
+  }
+
+  await test.step('agenda cadastrando o carro na conversa', async () => {
+    expect(await chat('1')).toContain('Qual a placa do carro?')
+    expect(await chat(zap.plate)).toContain('qual o modelo')
+    await schedule(() => chat(zap.model))
+  })
+
+  await test.step('gerente vê o agendamento no pátio', async () => {
+    await manager.goto('/gerente')
+    await manager.getByRole('link', { name: 'Pátio' }).click()
+    await expect(yardCards().first()).toBeVisible()
+  })
+
+  await test.step('cliente cancela pelo WhatsApp e o pátio libera a vaga', async () => {
+    const orders = await chat('2')
+    expect(orders).toContain(`1. `)
+    expect(orders).toContain(zap.plate)
+    expect(await chat('1')).toContain('Cancelar')
+    expect(await chat('1')).toContain('Agendamento cancelado')
+    await manager.reload()
+    await expect(yardCards()).toHaveCount(0)
+  })
+
+  await test.step('agenda de novo, agora escolhendo o carro já cadastrado', async () => {
+    await schedule(async () => {
+      expect(await chat('1')).toContain(`1. ${zap.model} (${zap.plate})`)
+      return chat('1')
+    })
+  })
+
+  await test.step('lavador conclui e o cliente recebe "seu carro está pronto"', async () => {
+    await manager.reload()
+    await yardCards()
+      .first()
+      .getByRole('button', { name: 'Receber no pátio' })
+      .click()
+    // Shared queue (the default): any washer may take it.
+    await manager
+      .getByRole('dialog', { name: 'Receber no pátio' })
+      .getByRole('button', { name: 'Receber no pátio' })
+      .click()
+    await expectMessage(manager, `${zap.plate} recebido no pátio.`)
+
+    const washer = await phones.of(`lavador-${raio.slug}-whatsapp`)
+    await washer.goto('/login/lavador')
+    await washer.getByLabel('Telefone').fill(raio.washer.phone)
+    await washer.getByLabel('PIN').fill(raio.washer.pin!)
+    await washer.getByRole('button', { name: 'Entrar com PIN' }).click()
+    await cardWith(washer, zap.plate)
+      .getByRole('button', { name: 'Iniciar lavagem' })
+      .click()
+    await washer.getByRole('link', { name: 'Minhas lavagens' }).click()
+    await cardWith(washer, zap.plate)
+      .getByRole('button', { name: 'Concluir lavagem' })
+      .click()
+    await expectMessage(washer, 'Lavagem concluída.')
+
+    await whatsapp.expectMessage(
+      zap.number,
+      new RegExp(
+        String.raw`${zap.model} \(${zap.plate}\) está pronto para retirada no ${raio.name}`,
+      ),
+    )
+  })
+
+  await test.step('pede para falar com o lava-jato e o assistente fica quieto', async () => {
+    expect(await chat('3')).toContain(`Alguém do ${raio.name} vai responder`)
+    await whatsapp.chatWithoutReply(instance, zap.number, 'tem vaga pra hoje?')
+    expect(await chat('menu')).toContain('1. Agendar lavagem')
   })
 })

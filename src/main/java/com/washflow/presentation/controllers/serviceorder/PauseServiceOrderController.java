@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.serviceorder;
 
-import com.washflow.domain.errors.serviceorder.ServiceOrderNotPausedError;
 import com.washflow.domain.usecases.serviceorder.PauseServiceOrder;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -43,8 +42,6 @@ public class PauseServiceOrderController implements Controller {
 
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (ServiceOrderNotPausedError e) {
-      return new HttpResponse(409, Map.of("error", e.getMessage()));
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

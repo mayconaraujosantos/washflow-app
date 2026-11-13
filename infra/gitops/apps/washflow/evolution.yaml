@@ -1,0 +1,154 @@
+# Evolution API: sends the customer's WhatsApp access code (OTP_CHANNEL=evolution).
+# Internal only - no Ingress: the API reaches it at http://washflow-evolution:8080 and
+# whoever holds EVOLUTION_API_KEY controls the WhatsApp number. Open the manager to
+# link the number by QR code with `make evolution-port-forward` (see infra/README.md).
+#
+# It keeps its own database ("evolution") on the washflow PostgreSQL; the init
+# container creates it on the first start. The WhatsApp session is saved there, so a
+# restart does not ask for the QR code again. Messages, chats and contacts are not
+# stored: the app only sends codes.
+apiVersion: v1
+kind: Service
+metadata:
+  name: washflow-evolution
+  labels:
+    app.kubernetes.io/name: washflow-evolution
+spec:
+  selector:
+    app.kubernetes.io/name: washflow-evolution
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: washflow-evolution
+  labels:
+    app.kubernetes.io/name: washflow-evolution
+    app: washflow-evolution
+spec:
+  replicas: 1
+  # One WhatsApp session can't be shared by two pods: stop the old one first.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: washflow-evolution
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: washflow-evolution
+        app: washflow-evolution
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: create-database
+          image: postgres:16-alpine
+          env:
+            - name: PGHOST
+              value: washflow-postgres
+            - name: PGDATABASE
+              value: washflow
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: washflow
+                  key: DB_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: washflow
+                  key: DB_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready; do sleep 2; done
+              psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'evolution'" | grep -q 1 \
+                || psql -c "CREATE DATABASE evolution"
+      containers:
+        - name: evolution
+          image: evoapicloud/evolution-api:v2.3.7
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: washflow
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: washflow
+                  key: DB_PASSWORD
+            - name: AUTHENTICATION_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: washflow
+                  key: EVOLUTION_API_KEY
+            - name: SERVER_URL
+              value: http://washflow-evolution:8080
+            - name: SERVER_PORT
+              value: "8080"
+            - name: DATABASE_ENABLED
+              value: "true"
+            - name: DATABASE_PROVIDER
+              value: postgresql
+            - name: DATABASE_CONNECTION_URI
+              value: postgresql://$(DB_USER):$(DB_PASSWORD)@washflow-postgres:5432/evolution?schema=evolution_api
+            - name: DATABASE_CONNECTION_CLIENT_NAME
+              value: washflow
+            - name: DATABASE_SAVE_DATA_INSTANCE
+              value: "true"
+            - name: DATABASE_SAVE_DATA_NEW_MESSAGE
+              value: "false"
+            - name: DATABASE_SAVE_MESSAGE_UPDATE
+              value: "false"
+            - name: DATABASE_SAVE_DATA_CONTACTS
+              value: "false"
+            - name: DATABASE_SAVE_DATA_CHATS
+              value: "false"
+            - name: DATABASE_SAVE_DATA_LABELS
+              value: "false"
+            - name: DATABASE_SAVE_DATA_HISTORIC
+              value: "false"
+            # One number: the in-process cache is enough, no Redis.
+            - name: CACHE_REDIS_ENABLED
+              value: "false"
+            - name: CACHE_LOCAL_ENABLED
+              value: "true"
+            - name: DEL_INSTANCE
+              value: "false"
+            - name: CONFIG_SESSION_PHONE_CLIENT
+              value: Washflow
+            - name: TELEMETRY_ENABLED
+              value: "false"
+            - name: LOG_LEVEL
+              value: ERROR,WARN,INFO
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 768Mi
+          volumeMounts:
+            - name: instances
+              mountPath: /evolution/instances
+      volumes:
+        # Session files, if any, also live in the database; a restart is safe.
+        - name: instances
+          emptyDir: {}

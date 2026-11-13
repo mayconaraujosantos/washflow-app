@@ -12,6 +12,7 @@ public final class RoutePermissionMatcher {
   private static final String HTTP_PATCH = "PATCH";
   private static final String HTTP_DELETE = "DELETE";
   private static final String CASH_TRANSACTIONS = "/api/cash-transactions";
+  private static final String WHATSAPP_CONNECTION = "/api/whatsapp/connection";
 
   private RoutePermissionMatcher() {}
 
@@ -55,13 +56,14 @@ public final class RoutePermissionMatcher {
   private static boolean isManagerResource(String method, String path) {
     return switch (method) {
       case HTTP_GET ->
-          path.matches("/api/operations/(report|yard|agenda|vehicles)")
+          path.matches("/api/operations/(report|yard|agenda|vehicles|washers)")
               || path.equals("/api/users")
               || path.equals("/api/sales")
               || path.equals("/api/sales/refunds")
               || path.equals("/api/audit")
               || isFeatureResource(path)
-              || path.equals(CASH_TRANSACTIONS + "/report");
+              || path.equals(CASH_TRANSACTIONS + "/report")
+              || path.equals(WHATSAPP_CONNECTION);
 
       case HTTP_POST ->
           path.equals("/api/users")
@@ -71,17 +73,19 @@ public final class RoutePermissionMatcher {
               || path.equals("/api/services")
               || path.matches("/api/users/[^/]+/badge")
               || path.matches("/api/service-orders/[^/]+/ticket")
+              || path.equals(WHATSAPP_CONNECTION)
               || isFeatureResource(path);
 
       case HTTP_PATCH ->
           path.matches("/api/users/[^/]+/(profile|active|email|password)")
-              || path.matches("/api/service-orders/[^/]+/(check-in|finalize|cancel|refund)");
+              || path.matches("/api/service-orders/[^/]+/(check-in|washer|finalize|cancel|refund)");
 
       case "PUT" -> path.matches(CASH_TRANSACTIONS + "/[^/]+") || path.equals("/api/establishment");
 
       case HTTP_DELETE ->
           path.matches(CASH_TRANSACTIONS + "/[^/]+")
-              || path.matches("/api/service-orders/[^/]+/photos/[^/]+");
+              || path.matches("/api/service-orders/[^/]+/photos/[^/]+")
+              || path.equals(WHATSAPP_CONNECTION);
 
       default -> false;
     };

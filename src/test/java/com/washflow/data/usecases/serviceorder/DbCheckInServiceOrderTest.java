@@ -12,6 +12,8 @@ import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.serviceorder.WasherNotAssignableError;
+import com.washflow.domain.usecases.serviceorder.AssignWasher;
 import com.washflow.domain.usecases.serviceorder.CheckInServiceOrder;
 import java.time.Instant;
 import java.util.Optional;
@@ -31,6 +33,7 @@ class DbCheckInServiceOrderTest {
 
   @Mock private LoadServiceOrderByIdRepository loadServiceOrderByIdRepository;
   @Mock private UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository;
+  @Mock private AssignWasher assignWasher;
 
   private DbCheckInServiceOrder sut;
   private CheckInServiceOrder.Params params;
@@ -40,7 +43,7 @@ class DbCheckInServiceOrderTest {
   void setUp() {
     sut =
         new DbCheckInServiceOrder(
-            loadServiceOrderByIdRepository, updateServiceOrderStatusRepository);
+            loadServiceOrderByIdRepository, updateServiceOrderStatusRepository, assignWasher);
 
     UUID serviceOrderId = UUID.randomUUID();
     params = new CheckInServiceOrder.Params(serviceOrderId);
@@ -115,5 +118,47 @@ class DbCheckInServiceOrderTest {
 
     assertThrows(InvalidServiceOrderStatusError.class, () -> sut.checkIn(params));
     verifyNoInteractions(updateServiceOrderStatusRepository);
+  }
+
+  @Test
+  void reservesTheChosenWasherBeforeTheCarEnters() {
+    UUID washer = UUID.randomUUID();
+    org.mockito.Mockito.when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
+        .thenReturn(java.util.Optional.of(scheduledServiceOrder));
+    org.mockito.Mockito.when(
+            updateServiceOrderStatusRepository.updateStatus(
+                params.serviceOrderId(),
+                ServiceOrderStatus.SCHEDULED,
+                ServiceOrderStatus.WAITING_IN_YARD,
+                null))
+        .thenReturn(java.util.Optional.of(scheduledServiceOrder));
+
+    sut.checkIn(new CheckInServiceOrder.Params(params.serviceOrderId(), washer));
+
+    org.mockito.InOrder order =
+        org.mockito.Mockito.inOrder(assignWasher, updateServiceOrderStatusRepository);
+    order.verify(assignWasher).assign(new AssignWasher.Params(params.serviceOrderId(), washer));
+    order
+        .verify(updateServiceOrderStatusRepository)
+        .updateStatus(
+            params.serviceOrderId(),
+            ServiceOrderStatus.SCHEDULED,
+            ServiceOrderStatus.WAITING_IN_YARD,
+            null);
+  }
+
+  @Test
+  void anInvalidWasherKeepsTheCarOutOfTheYard() {
+    UUID washer = UUID.randomUUID();
+    org.mockito.Mockito.when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
+        .thenReturn(java.util.Optional.of(scheduledServiceOrder));
+    org.mockito.Mockito.when(
+            assignWasher.assign(new AssignWasher.Params(params.serviceOrderId(), washer)))
+        .thenThrow(new WasherNotAssignableError());
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        WasherNotAssignableError.class,
+        () -> sut.checkIn(new CheckInServiceOrder.Params(params.serviceOrderId(), washer)));
+    org.mockito.Mockito.verifyNoInteractions(updateServiceOrderStatusRepository);
   }
 }

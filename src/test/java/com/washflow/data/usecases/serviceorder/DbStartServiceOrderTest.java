@@ -8,10 +8,13 @@ import static org.mockito.Mockito.when;
 
 import com.washflow.data.protocols.db.serviceorder.LoadServiceOrderByIdRepository;
 import com.washflow.data.protocols.db.serviceorder.UpdateServiceOrderStatusRepository;
+import com.washflow.data.protocols.db.yard.LoadWashingByWasherRepository;
 import com.washflow.domain.entities.serviceorder.ServiceOrder;
 import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
+import com.washflow.domain.errors.serviceorder.ServiceOrderReservedError;
+import com.washflow.domain.errors.serviceorder.WasherBusyError;
 import com.washflow.domain.usecases.serviceorder.StartServiceOrder;
 import java.time.Instant;
 import java.util.Optional;
@@ -31,6 +34,7 @@ class DbStartServiceOrderTest {
 
   @Mock private LoadServiceOrderByIdRepository loadServiceOrderByIdRepository;
   @Mock private UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository;
+  @Mock private LoadWashingByWasherRepository loadWashingByWasherRepository;
 
   private DbStartServiceOrder sut;
   private StartServiceOrder.Params params;
@@ -39,7 +43,10 @@ class DbStartServiceOrderTest {
   @BeforeEach
   void setUp() {
     sut =
-        new DbStartServiceOrder(loadServiceOrderByIdRepository, updateServiceOrderStatusRepository);
+        new DbStartServiceOrder(
+            loadServiceOrderByIdRepository,
+            updateServiceOrderStatusRepository,
+            loadWashingByWasherRepository);
 
     UUID serviceOrderId = UUID.randomUUID();
     UUID washerId = UUID.randomUUID();
@@ -104,7 +111,8 @@ class DbStartServiceOrderTest {
             waitingServiceOrder.createdAt(),
             waitingServiceOrder.updatedAt());
     when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
-        .thenReturn(Optional.of(waitingServiceOrder), Optional.of(takenByOther));
+        .thenReturn(Optional.of(waitingServiceOrder))
+        .thenReturn(Optional.of(takenByOther));
     when(updateServiceOrderStatusRepository.updateStatus(
             params.serviceOrderId(),
             ServiceOrderStatus.WAITING_IN_YARD,
@@ -144,5 +152,70 @@ class DbStartServiceOrderTest {
 
     assertThrows(InvalidServiceOrderStatusError.class, () -> sut.start(params));
     verifyNoInteractions(updateServiceOrderStatusRepository);
+  }
+
+  @Test
+  void aCarReservedForAnotherWasherIsNotStarted() {
+    ServiceOrder reserved =
+        new ServiceOrder(
+            waitingServiceOrder.id(),
+            waitingServiceOrder.vehicleId(),
+            waitingServiceOrder.servicePriceId(),
+            UUID.randomUUID(),
+            ServiceOrderStatus.WAITING_IN_YARD,
+            waitingServiceOrder.scheduledAt(),
+            waitingServiceOrder.createdAt(),
+            waitingServiceOrder.updatedAt());
+    org.mockito.Mockito.when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
+        .thenReturn(java.util.Optional.of(reserved));
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        ServiceOrderReservedError.class, () -> sut.start(params));
+    org.mockito.Mockito.verifyNoInteractions(updateServiceOrderStatusRepository);
+  }
+
+  @Test
+  void aWasherWithAWashInProgressStartsNoOther() {
+    org.mockito.Mockito.when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
+        .thenReturn(java.util.Optional.of(waitingServiceOrder));
+    org.mockito.Mockito.when(loadWashingByWasherRepository.loadByWasherId(params.washerId()))
+        .thenReturn(java.util.List.of(waitingServiceOrder));
+
+    org.junit.jupiter.api.Assertions.assertThrows(WasherBusyError.class, () -> sut.start(params));
+    org.mockito.Mockito.verifyNoInteractions(updateServiceOrderStatusRepository);
+  }
+
+  @Test
+  void theDatabaseRefusingASecondOpenWashIsWasherBusy() {
+    org.mockito.Mockito.when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
+        .thenReturn(java.util.Optional.of(waitingServiceOrder));
+    org.mockito.Mockito.when(
+            updateServiceOrderStatusRepository.updateStatus(
+                params.serviceOrderId(),
+                ServiceOrderStatus.WAITING_IN_YARD,
+                ServiceOrderStatus.WASHING,
+                params.washerId()))
+        .thenThrow(
+            new com.washflow.data.protocols.db.shared.DuplicateKeyError(
+                DbStartServiceOrder.ONE_WASH_PER_WASHER, null));
+
+    org.junit.jupiter.api.Assertions.assertThrows(WasherBusyError.class, () -> sut.start(params));
+  }
+
+  @Test
+  void anotherUniqueViolationIsNotHidden() {
+    org.mockito.Mockito.when(loadServiceOrderByIdRepository.loadById(params.serviceOrderId()))
+        .thenReturn(java.util.Optional.of(waitingServiceOrder));
+    org.mockito.Mockito.when(
+            updateServiceOrderStatusRepository.updateStatus(
+                params.serviceOrderId(),
+                ServiceOrderStatus.WAITING_IN_YARD,
+                ServiceOrderStatus.WASHING,
+                params.washerId()))
+        .thenThrow(
+            new com.washflow.data.protocols.db.shared.DuplicateKeyError("other_index", null));
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        com.washflow.data.protocols.db.shared.DuplicateKeyError.class, () -> sut.start(params));
   }
 }

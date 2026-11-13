@@ -61,4 +61,23 @@ describe('RemoteEstablishment', () => {
       'Código de configuração inválido',
     )
   })
+
+  it('links the WhatsApp number through the connection resource', async () => {
+    const waiting = {
+      state: 'WAITING_QR_CODE',
+      qrCode: 'data:image/png;base64,QR',
+    }
+    const { request, sut } = make({ statusCode: 200, body: waiting })
+
+    await expect(sut.connectWhatsapp()).resolves.toEqual(waiting)
+    await sut.whatsappStatus()
+    await sut.disconnectWhatsapp()
+
+    const url = 'https://w.test/api/whatsapp/connection'
+    expect(request.mock.calls.map(([call]) => call)).toEqual([
+      { url, method: 'post', body: undefined },
+      { url, method: 'get', body: undefined },
+      { url, method: 'delete', body: undefined },
+    ])
+  })
 })

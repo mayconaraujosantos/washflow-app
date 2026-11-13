@@ -34,11 +34,11 @@ public final class AuthTokenService {
       UserProfile profile = UserProfile.fromDbValue(decoded.getClaim("profile").asString());
       return new Claims(userId, profile);
     } catch (JWTVerificationException | IllegalArgumentException e) {
-      throw new InvalidTokenException();
+      throw new InvalidTokenError();
     }
   }
 
   public record Claims(UUID userId, UserProfile profile) {}
 
-  public static final class InvalidTokenException extends RuntimeException {}
+  public static final class InvalidTokenError extends RuntimeException {}
 }

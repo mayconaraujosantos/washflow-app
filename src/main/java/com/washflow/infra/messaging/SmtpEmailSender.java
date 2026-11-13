@@ -1,6 +1,7 @@
 package com.washflow.infra.messaging;
 
-import com.washflow.application.AppConfig;
+import com.washflow.application.config.SmtpConfig;
+import com.washflow.data.protocols.messaging.EmailSendError;
 import com.washflow.data.protocols.messaging.EmailSender;
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
@@ -26,7 +27,7 @@ public class SmtpEmailSender implements EmailSender {
   private final Session session;
   private final InternetAddress from;
 
-  public SmtpEmailSender(AppConfig.Smtp smtp) {
+  public SmtpEmailSender(SmtpConfig smtp) {
     boolean auth = !smtp.username().isBlank();
     Properties props = properties(smtp, Security.parse(smtp.security()), auth);
     this.session =
@@ -61,7 +62,7 @@ public class SmtpEmailSender implements EmailSender {
       message.setSentDate(new Date());
       Transport.send(message);
     } catch (MessagingException e) {
-      throw new EmailDeliveryException("Could not send the e-mail", e);
+      throw new EmailSendError("Could not send the e-mail", e);
     }
   }
 
@@ -70,7 +71,7 @@ public class SmtpEmailSender implements EmailSender {
     return true;
   }
 
-  private static Properties properties(AppConfig.Smtp smtp, Security security, boolean auth) {
+  private static Properties properties(SmtpConfig smtp, Security security, boolean auth) {
     Properties props = new Properties();
     props.put("mail.transport.protocol", "smtp");
     props.put("mail.smtp.host", smtp.host());

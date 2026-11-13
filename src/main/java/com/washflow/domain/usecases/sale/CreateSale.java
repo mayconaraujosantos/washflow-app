@@ -3,8 +3,6 @@ package com.washflow.domain.usecases.sale;
 import com.washflow.domain.entities.sale.Sale;
 import com.washflow.domain.entities.sale.SaleType;
 import com.washflow.domain.entities.shared.PaymentMethod;
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
-import com.washflow.domain.errors.vehicle.VehicleNotFoundError;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +13,7 @@ import java.util.UUID;
  */
 public interface CreateSale {
 
-  Sale create(Params params) throws ServicePriceNotFoundError, VehicleNotFoundError;
+  Sale create(Params params);
 
   record Params(
       SaleType type,

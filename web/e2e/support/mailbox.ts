@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
+import { e2eHost, ports } from './host'
 
-const mailPort = process.env.E2E_MAIL_PORT ?? '7125'
-const api = `http://localhost:${mailPort}/api/v1`
+const api = `http://${e2eHost()}:${ports.mail}/api/v1`
 
 type Summary = { ID: string; Created: string }
 

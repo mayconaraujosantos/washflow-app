@@ -132,7 +132,7 @@ public final class JdbiFactory {
    * platforms. Otherwise, individual properties ({@code DB_HOST}, {@code DB_USER}, etc.) are used.
    */
   private static HikariDataSource createPostgresDataSource(AppConfig appConfig) {
-    String databaseUrl = appConfig.databaseUrl();
+    String databaseUrl = appConfig.database().url();
 
     if (databaseUrl == null || databaseUrl.isBlank()) {
       return createPostgresDataSourceFromProperties(appConfig);
@@ -144,7 +144,7 @@ public final class JdbiFactory {
   private static HikariDataSource createPostgresDataSourceFromProperties(AppConfig appConfig) {
     String jdbcUrl = buildFallbackJdbcUrl(appConfig);
     HikariConfig config =
-        createHikariConfig(jdbcUrl, appConfig.databaseUser(), appConfig.databasePassword());
+        createHikariConfig(jdbcUrl, appConfig.database().user(), appConfig.database().password());
     return new HikariDataSource(config);
   }
 
@@ -166,11 +166,11 @@ public final class JdbiFactory {
 
   private static String buildFallbackJdbcUrl(AppConfig appConfig) {
     return "jdbc:postgresql://"
-        + appConfig.databaseHost()
+        + appConfig.database().host()
         + ":"
-        + appConfig.databasePort()
+        + appConfig.database().port()
         + "/"
-        + appConfig.databaseName();
+        + appConfig.database().name();
   }
 
   /** Extracts username and password from the URI's userinfo component, URL-decoding each part. */

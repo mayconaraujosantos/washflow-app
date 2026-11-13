@@ -1,6 +1,5 @@
 package com.washflow.presentation.controllers.vehicle;
 
-import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.vehicle.ListVehiclesByCustomer;
 import com.washflow.presentation.helpers.HttpHelper;
 import com.washflow.presentation.protocols.Controller;
@@ -26,8 +25,6 @@ public class ListVehiclesByCustomerController implements Controller {
       return HttpHelper.ok(vehicles);
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (UserNotFoundError e) {
-      return HttpHelper.notFound(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

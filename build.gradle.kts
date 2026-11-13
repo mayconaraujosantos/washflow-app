@@ -64,6 +64,9 @@ dependencies {
     // E-mail (SMTP): código de acesso do cliente e códigos de troca de senha (Jakarta Mail / Angus).
     implementation("org.eclipse.angus:angus-mail:2.0.5")
 
+    // Assistente do WhatsApp: entende texto livre do cliente com o Claude (SDK oficial da Anthropic).
+    implementation("com.anthropic:anthropic-java:3.3.0")
+
     // Testes
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

@@ -1,11 +1,5 @@
 package com.washflow.presentation.controllers.yard;
 
-import com.washflow.domain.errors.finance.ServicePriceNotFoundError;
-import com.washflow.domain.errors.schedule.InsufficientLeadTimeError;
-import com.washflow.domain.errors.schedule.OutsideBusinessHoursError;
-import com.washflow.domain.errors.schedule.SlotFullyBookedError;
-import com.washflow.domain.errors.vehicle.InvalidPlateError;
-import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
 import com.washflow.domain.usecases.yard.RegisterVehicleEntry;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -53,15 +47,8 @@ public class RegisterVehicleEntryController implements Controller {
       return HttpHelper.ok(serviceOrder);
     } catch (DateTimeParseException e) {
       return HttpHelper.badRequest(new IllegalArgumentException("Data/hora inválida"));
-    } catch (IllegalArgumentException
-        | InvalidPlateError
-        | OutsideBusinessHoursError
-        | InsufficientLeadTimeError e) {
+    } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (ServicePriceNotFoundError e) {
-      return HttpHelper.notFound(e);
-    } catch (SlotFullyBookedError | VehicleAlreadyInYardError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

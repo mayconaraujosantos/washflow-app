@@ -1,5 +1,7 @@
 package com.washflow.application.modules;
 
+import com.washflow.application.AppConfig;
+import com.washflow.data.usecases.serviceorder.DbAssignWasher;
 import com.washflow.data.usecases.serviceorder.DbCancelServiceOrder;
 import com.washflow.data.usecases.serviceorder.DbCheckInServiceOrder;
 import com.washflow.data.usecases.serviceorder.DbCompleteServiceOrder;
@@ -14,6 +16,7 @@ import com.washflow.data.usecases.serviceorder.DbResumeServiceOrder;
 import com.washflow.data.usecases.serviceorder.DbSaveServiceOrderChecklist;
 import com.washflow.data.usecases.serviceorder.DbSaveServiceOrderPhoto;
 import com.washflow.data.usecases.serviceorder.DbStartServiceOrder;
+import com.washflow.domain.usecases.serviceorder.AssignWasher;
 import com.washflow.domain.usecases.serviceorder.CancelServiceOrder;
 import com.washflow.domain.usecases.serviceorder.CheckInServiceOrder;
 import com.washflow.domain.usecases.serviceorder.CompleteServiceOrder;
@@ -32,6 +35,9 @@ import com.washflow.infra.db.jdbi.pricing.ServicePriceJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.ChecklistJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.PhotoJdbiRepository;
 import com.washflow.infra.db.jdbi.serviceorder.ServiceOrderJdbiRepository;
+import com.washflow.infra.db.jdbi.serviceorder.YardJdbiRepository;
+import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
+import com.washflow.presentation.controllers.serviceorder.AssignWasherController;
 import com.washflow.presentation.controllers.serviceorder.CancelServiceOrderController;
 import com.washflow.presentation.controllers.serviceorder.CheckInServiceOrderController;
 import com.washflow.presentation.controllers.serviceorder.CompleteServiceOrderController;
@@ -70,7 +76,19 @@ public final class ServiceOrderModule {
    */
   public static CheckInServiceOrder checkInServiceOrder(Jdbi jdbi) {
     ServiceOrderJdbiRepository serviceOrderRepository = new ServiceOrderJdbiRepository(jdbi);
-    return new DbCheckInServiceOrder(serviceOrderRepository, serviceOrderRepository);
+    return new DbCheckInServiceOrder(
+        serviceOrderRepository, serviceOrderRepository, assignWasher(jdbi));
+  }
+
+  /** The manager reserves a car for a washer, or gives it back to the shared queue. */
+  public static AssignWasher assignWasher(Jdbi jdbi) {
+    ServiceOrderJdbiRepository serviceOrderRepository = new ServiceOrderJdbiRepository(jdbi);
+    return new DbAssignWasher(
+        serviceOrderRepository, serviceOrderRepository, new UserJdbiRepository(jdbi));
+  }
+
+  public static Controller assignWasherController(Jdbi jdbi) {
+    return new AssignWasherController(assignWasher(jdbi));
   }
 
   /**
@@ -160,7 +178,8 @@ public final class ServiceOrderModule {
    */
   public static StartServiceOrder startServiceOrder(Jdbi jdbi) {
     ServiceOrderJdbiRepository serviceOrderRepository = new ServiceOrderJdbiRepository(jdbi);
-    return new DbStartServiceOrder(serviceOrderRepository, serviceOrderRepository);
+    return new DbStartServiceOrder(
+        serviceOrderRepository, serviceOrderRepository, new YardJdbiRepository(jdbi));
   }
 
   public static Controller cancelServiceOrderController(Jdbi jdbi) {
@@ -171,8 +190,10 @@ public final class ServiceOrderModule {
     return new CheckInServiceOrderController(checkInServiceOrder(jdbi));
   }
 
-  public static Controller completeServiceOrderController(Jdbi jdbi) {
-    return new CompleteServiceOrderController(completeServiceOrder(jdbi));
+  /** The customer also gets a WhatsApp notice when the server has WhatsApp (WhatsappModule). */
+  public static Controller completeServiceOrderController(Jdbi jdbi, AppConfig appConfig) {
+    return new CompleteServiceOrderController(
+        WhatsappModule.notifying(completeServiceOrder(jdbi), jdbi, appConfig));
   }
 
   public static Controller deleteServiceOrderPhotoController(Jdbi jdbi) {

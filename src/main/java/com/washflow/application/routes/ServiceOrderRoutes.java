@@ -33,8 +33,9 @@ public final class ServiceOrderRoutes {
   public static void register(Jdbi jdbi, AppConfig appConfig) {
     registerSchedule(jdbi, appConfig);
     registerCheckIn(jdbi);
+    registerAssignWasher(jdbi);
     registerStart(jdbi);
-    registerComplete(jdbi);
+    registerComplete(jdbi, appConfig);
     registerFinalize(jdbi);
     registerGetById(jdbi);
     registerListByCustomer(jdbi);
@@ -82,6 +83,24 @@ public final class ServiceOrderRoutes {
   }
 
   @OpenApi(
+      path = BY_ID_PATH + "/washer",
+      methods = HttpMethod.PATCH,
+      summary = "Reserve the car for a washer, or give it back to the shared queue (manager)",
+      tags = {"Service Orders"},
+      pathParams = @OpenApiParam(name = "id", type = String.class, required = true),
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = ServiceOrder.class)),
+        @OpenApiResponse(status = "400", description = "Not an active washer of this lava-jato"),
+        @OpenApiResponse(status = "404", description = "Service order not found"),
+        @OpenApiResponse(status = "409", description = "The wash already started")
+      })
+  private static void registerAssignWasher(Jdbi jdbi) {
+    patch(
+        BY_ID_PATH + "/washer",
+        JavalinRouteAdapter.adapt(ServiceOrderModule.assignWasherController(jdbi)));
+  }
+
+  @OpenApi(
       path = BY_ID_PATH,
       methods = HttpMethod.PATCH,
       summary = "Assign a washer and start washing (AGUARDANDO_PATIO -> EM_LAVAGEM)",
@@ -115,10 +134,11 @@ public final class ServiceOrderRoutes {
         @OpenApiResponse(status = "404", description = "Service order not found"),
         @OpenApiResponse(status = "409", description = "Service order not in EM_LAVAGEM status")
       })
-  private static void registerComplete(Jdbi jdbi) {
+  private static void registerComplete(Jdbi jdbi, AppConfig appConfig) {
     patch(
         BY_ID_PATH + "/complete",
-        JavalinRouteAdapter.adapt(ServiceOrderModule.completeServiceOrderController(jdbi)));
+        JavalinRouteAdapter.adapt(
+            ServiceOrderModule.completeServiceOrderController(jdbi, appConfig)));
   }
 
   @OpenApi(

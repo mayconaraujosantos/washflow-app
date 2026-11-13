@@ -16,6 +16,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { TicketSheet } from './access-sheets'
 import { CancelSheet } from './cancel-sheet'
 import { MANAGER_NAV, PAYMENT_METHODS, useManager } from './manager-context'
+import { minutesSince, olderThan } from '@/presentation/helpers/washer-status'
+import { WasherPickerSheet } from './washer-picker-sheet'
+
+// A car waiting longer than this without a washer gets highlighted.
+const LONG_WAIT_MS = 20 * 60_000
+
+type Picking = { order: ServiceOrderModel; mode: 'checkIn' | 'assign' }
 
 const GROUPS: { title: string; statuses: ServiceOrderModel['status'][] }[] = [
   { title: 'Prontos para retirada', statuses: ['READY'] },
@@ -31,6 +38,7 @@ export function YardScreen({ mode }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [paying, setPaying] = useState<ServiceOrderModel | null>(null)
   const [cancelling, setCancelling] = useState<ServiceOrderModel | null>(null)
+  const [picking, setPicking] = useState<Picking | null>(null)
   const location = useLocation()
   const navigate = useNavigate()
   const [ticketFor, setTicketFor] = useState<ServiceOrderModel | null>(null)
@@ -93,13 +101,7 @@ export function YardScreen({ mode }: Props) {
             type="button"
             className="btn btn-brand"
             disabled={busy}
-            onClick={() =>
-              void run(
-                order,
-                () => operations.checkIn(order.id),
-                `${plateOf(order)} recebido no pátio.`,
-              )
-            }
+            onClick={() => setPicking({ order, mode: 'checkIn' })}
           >
             <UiIcon name="entry" size={18} />
             Receber no pátio
@@ -107,14 +109,30 @@ export function YardScreen({ mode }: Props) {
         )
       case 'WAITING_IN_YARD':
         return (
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => setChecklist({ orderId: order.id, type: 'ENTRY' })}
-          >
-            <UiIcon name="clipboard" size={18} />
-            Checklist de entrada
-          </button>
+          <>
+            {olderThan(order.updatedAt, LONG_WAIT_MS) && (
+              <p className="notice-warning">
+                Esperando lavador {minutesSince(order.updatedAt)}
+              </p>
+            )}
+            <button
+              type="button"
+              className="btn btn-brand"
+              disabled={busy}
+              onClick={() => setPicking({ order, mode: 'assign' })}
+            >
+              <UiIcon name="washer" size={18} />
+              {order.washerId ? 'Trocar lavador' : 'Escolher lavador'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setChecklist({ orderId: order.id, type: 'ENTRY' })}
+            >
+              <UiIcon name="clipboard" size={18} />
+              Checklist de entrada
+            </button>
+          </>
         )
       case 'READY':
         return (
@@ -218,6 +236,36 @@ export function YardScreen({ mode }: Props) {
             order,
             () => operations.finalize(order.id, method),
             `Pagamento registrado. ${plateOf(order)} finalizado.`,
+          )
+        }}
+      />
+      <WasherPickerSheet
+        key={picking?.order.id ?? 'closed'}
+        order={picking?.order ?? null}
+        title={
+          picking?.mode === 'checkIn' ? 'Receber no pátio' : 'Quem vai lavar'
+        }
+        confirmLabel={
+          picking?.mode === 'checkIn' ? 'Receber no pátio' : 'Salvar lavador'
+        }
+        onClose={() => setPicking(null)}
+        onConfirm={(order, washerId) => {
+          const mode = picking?.mode
+          setPicking(null)
+          void run(
+            order,
+            async () => {
+              if (mode === 'checkIn') {
+                await operations.checkIn(order.id, washerId)
+              } else {
+                await operations.assignWasher(order.id, washerId)
+              }
+            },
+            mode === 'checkIn'
+              ? `${plateOf(order)} recebido no pátio.`
+              : washerId
+                ? `${plateOf(order)} reservado para o lavador.`
+                : `${plateOf(order)} voltou para a fila geral.`,
           )
         }}
       />

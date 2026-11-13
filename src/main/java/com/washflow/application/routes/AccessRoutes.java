@@ -44,11 +44,11 @@ public final class AccessRoutes {
   private AccessRoutes() {}
 
   public static void register(Jdbi jdbi, AppConfig appConfig) {
-    WasherBadge badge = CustomerModule.washerBadge(jdbi, appConfig);
+    WasherBadge badge = UserModule.washerBadge(jdbi, appConfig);
     ServiceOrderTicket ticket = CustomerModule.ticket(jdbi);
     CustomerPasswordlessLogin customer = CustomerModule.customerLogin(jdbi, appConfig);
     ResetPasswordByEmail passwordReset = UserModule.resetPasswordByEmail(jdbi, appConfig);
-    AuthTokenService tokens = new AuthTokenService(appConfig.tokenSecret());
+    AuthTokenService tokens = new AuthTokenService(appConfig.tokenSecret().value());
     registerIssueBadge(badge);
     registerPinLogin(badge, tokens);
     registerBadgeLogin(badge, tokens);

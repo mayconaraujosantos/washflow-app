@@ -1,7 +1,6 @@
 package com.washflow.domain.usecases.vehicle;
 
 import com.washflow.domain.entities.vehicle.Vehicle;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,7 +10,7 @@ import java.util.UUID;
  */
 public interface ListVehiclesByCustomer {
 
-  List<Vehicle> list(Params params) throws UserNotFoundError;
+  List<Vehicle> list(Params params);
 
   record Params(UUID customerId) {}
 }

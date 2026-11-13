@@ -9,7 +9,6 @@ import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.entities.vehicle.Vehicle;
 import com.washflow.domain.errors.user.UserNotFoundError;
-import com.washflow.domain.errors.vehicle.InvalidPlateError;
 import com.washflow.domain.errors.vehicle.VehiclePlateAlreadyRegisteredError;
 import com.washflow.domain.usecases.vehicle.CreateVehicle;
 import java.util.UUID;
@@ -37,8 +36,7 @@ public class DbCreateVehicle implements CreateVehicle {
   }
 
   @Override
-  public Vehicle create(Params params)
-      throws UserNotFoundError, InvalidPlateError, VehiclePlateAlreadyRegisteredError {
+  public Vehicle create(Params params) {
     User customer =
         loadUserByIdRepository
             .loadById(params.customerId())

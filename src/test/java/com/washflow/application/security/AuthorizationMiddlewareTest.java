@@ -48,6 +48,16 @@ class AuthorizationMiddlewareTest {
   }
 
   @Test
+  void letsTheWhatsappProviderPostOnlyToTheWebhook() {
+    AuthorizationMiddleware middleware = createMiddleware();
+
+    // The route itself checks the webhook token.
+    assertTrue(middleware.authorize(mockContext("POST", "/api/whatsapp/webhook", null, null)));
+    assertFalse(middleware.authorize(mockContext("GET", "/api/whatsapp/webhook", null, null)));
+    assertFalse(middleware.authorize(mockContext("POST", "/api/whatsapp/connection", null, null)));
+  }
+
+  @Test
   void allowsPublicCatalogReadButNotCatalogWritesWithoutToken() {
     AuthorizationMiddleware middleware = createMiddleware();
 

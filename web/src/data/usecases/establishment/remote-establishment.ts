@@ -4,6 +4,7 @@ import type {
   EstablishmentModel,
   ScheduleDayModel,
   SetupStatusModel,
+  WhatsappConnectionModel,
 } from '@/domain/models/establishment-model'
 import type {
   Establishment,
@@ -12,6 +13,8 @@ import type {
 } from '@/domain/usecases/establishment'
 
 type ErrorBody = { error?: string }
+
+const WHATSAPP_CONNECTION = '/api/whatsapp/connection'
 
 export class RemoteEstablishment implements Establishment {
   constructor(
@@ -43,9 +46,21 @@ export class RemoteEstablishment implements Establishment {
     )
   }
 
+  whatsappStatus(): Promise<WhatsappConnectionModel> {
+    return this.request<WhatsappConnectionModel>(WHATSAPP_CONNECTION, 'get')
+  }
+
+  connectWhatsapp(): Promise<WhatsappConnectionModel> {
+    return this.request<WhatsappConnectionModel>(WHATSAPP_CONNECTION, 'post')
+  }
+
+  disconnectWhatsapp(): Promise<WhatsappConnectionModel> {
+    return this.request<WhatsappConnectionModel>(WHATSAPP_CONNECTION, 'delete')
+  }
+
   private async request<T>(
     path: string,
-    method: 'get' | 'post' | 'put',
+    method: 'get' | 'post' | 'put' | 'delete',
     body?: unknown,
   ): Promise<T> {
     const response = await this.httpClient.request({

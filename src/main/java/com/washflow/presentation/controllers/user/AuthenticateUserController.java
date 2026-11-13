@@ -1,10 +1,6 @@
 package com.washflow.presentation.controllers.user;
 
 import com.washflow.domain.entities.user.UserProfile;
-import com.washflow.domain.errors.user.InvalidCredentialsError;
-import com.washflow.domain.errors.user.ManagerSelfRegistrationNotAllowedError;
-import com.washflow.domain.errors.user.UserProfileMismatchError;
-import com.washflow.domain.errors.user.WasherSelfRegistrationNotAllowedError;
 import com.washflow.domain.usecases.user.AuthenticateUser;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -61,12 +57,6 @@ public class AuthenticateUserController implements Controller {
       return HttpHelper.ok(user);
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (InvalidCredentialsError e) {
-      return HttpHelper.unauthorized(e);
-    } catch (UserProfileMismatchError e) {
-      return HttpHelper.conflict(e);
-    } catch (ManagerSelfRegistrationNotAllowedError | WasherSelfRegistrationNotAllowedError e) {
-      return HttpHelper.forbidden(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }

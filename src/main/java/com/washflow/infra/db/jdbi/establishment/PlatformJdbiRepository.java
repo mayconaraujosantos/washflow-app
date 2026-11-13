@@ -21,6 +21,8 @@ import org.jdbi.v3.core.Jdbi;
 
 public class PlatformJdbiRepository implements PlatformRepository {
 
+  private static final String WHERE_E_ID_ID = " WHERE e.id = :id";
+
   private static final String CREATE_FIRST_ADMIN_INSERT_SQL =
       """
       INSERT INTO administradores (id, nome, email, senha_hash, criado_em)
@@ -47,7 +49,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
       INSERT INTO usuarios
         (id, estabelecimento_id, nome, telefone, email, senha_hash, perfil,
          criado_em, ativo)
-      VALUES (:id, :tenant, :name, :phone, :email, :hash, 'GERENTE', :createdAt, TRUE)
+      VALUES (:id, :establishmentId, :name, :phone, :email, :hash, 'GERENTE', :createdAt, TRUE)
       """;
 
   private static final String SEARCH_ACTIVE_SELECT_SQL =
@@ -60,7 +62,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
       """;
 
   private static final String EMAIL = "email";
-  private static final String TENANT = "tenant";
+  private static final String ESTABLISHMENT_ID = "establishmentId";
 
   /** Starter catalog of every new lava-jato; the manager edits prices afterwards. */
   private static final List<Object[]> STARTER_SERVICES =
@@ -223,7 +225,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
               .execute();
           handle
               .createUpdate(CREATE_ESTABLISHMENT_INSERT_USUARIOS_SQL)
-              .bind(TENANT, id)
+              .bind(ESTABLISHMENT_ID, id)
               .bind("id", manager.id())
               .bind("name", manager.name())
               .bind("phone", manager.phone())
@@ -233,7 +235,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
               .execute();
           seedCatalog(handle, id);
           return handle
-              .createQuery(SUMMARY_SQL + " WHERE e.id = :id")
+              .createQuery(SUMMARY_SQL + WHERE_E_ID_ID)
               .bind("id", id)
               .map((rs, ctx) -> summary(rs))
               .one();
@@ -245,9 +247,9 @@ public class PlatformJdbiRepository implements PlatformRepository {
       try (var update =
           handle.createUpdate(
               "INSERT INTO servicos_preco (estabelecimento_id, nome, preco, comissao_lavador)"
-                  + " VALUES (:tenant, :name, :price, :commission)")) {
+                  + " VALUES (:establishmentId, :name, :price, :commission)")) {
         update
-            .bind(TENANT, establishmentId)
+            .bind(ESTABLISHMENT_ID, establishmentId)
             .bind("name", (String) service[0])
             .bind("price", new BigDecimal((String) service[1]))
             .bind("commission", new BigDecimal((String) service[2]))
@@ -258,10 +260,10 @@ public class PlatformJdbiRepository implements PlatformRepository {
       try (var update =
           handle.createUpdate(
               "INSERT INTO expense_category (id, estabelecimento_id, nome, cor, criado_em)"
-                  + " VALUES (:id, :tenant, :name, :color, :now)")) {
+                  + " VALUES (:id, :establishmentId, :name, :color, :now)")) {
         update
             .bind("id", UUID.randomUUID())
-            .bind(TENANT, establishmentId)
+            .bind(ESTABLISHMENT_ID, establishmentId)
             .bind("name", category[0])
             .bind("color", category[1])
             .bind("now", Instant.now())
@@ -297,7 +299,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
             return Optional.empty();
           }
           return handle
-              .createQuery(SUMMARY_SQL + " WHERE e.id = :id")
+              .createQuery(SUMMARY_SQL + WHERE_E_ID_ID)
               .bind("id", id)
               .map((rs, ctx) -> summary(rs))
               .findOne();
@@ -319,7 +321,7 @@ public class PlatformJdbiRepository implements PlatformRepository {
             return Optional.empty();
           }
           return handle
-              .createQuery(SUMMARY_SQL + " WHERE e.id = :id")
+              .createQuery(SUMMARY_SQL + WHERE_E_ID_ID)
               .bind("id", establishmentId)
               .map((rs, ctx) -> summary(rs))
               .findOne();

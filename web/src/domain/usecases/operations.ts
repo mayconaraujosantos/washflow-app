@@ -1,3 +1,4 @@
+import type { WasherStatusModel } from '@/domain/models/washer-status-model'
 import { AuditEntryModel } from '@/domain/models/audit-entry-model'
 import {
   ServiceOrderModel,
@@ -78,7 +79,15 @@ export interface Operations {
   updateUserEmail: (userId: string, email: string | null) => Promise<UserModel>
   /** New password for a customer or washer who lost theirs (manager only). */
   resetUserPassword: (userId: string, password: string) => Promise<UserModel>
-  checkIn: (serviceOrderId: string) => Promise<void>
+  /** Into the yard: reserved for `washerId`, or for the shared queue when absent. */
+  checkIn: (serviceOrderId: string, washerId?: string | null) => Promise<void>
+  /** Reserve a car that hasn't started for a washer, or null for the shared queue. */
+  assignWasher: (
+    serviceOrderId: string,
+    washerId: string | null,
+  ) => Promise<ServiceOrderModel>
+  /** Active washers: free, washing or on a pause (manager). */
+  loadWasherBoard: () => Promise<WasherStatusModel[]>
   start: (serviceOrderId: string, washerId: string) => Promise<void>
   pause: (
     serviceOrderId: string,

@@ -8,6 +8,7 @@ import com.washflow.domain.entities.serviceorder.ServiceOrderStatus;
 import com.washflow.domain.errors.serviceorder.InvalidServiceOrderStatusError;
 import com.washflow.domain.errors.serviceorder.ServiceOrderNotFoundError;
 import com.washflow.domain.errors.vehicle.VehicleAlreadyInYardError;
+import com.washflow.domain.usecases.serviceorder.AssignWasher;
 import com.washflow.domain.usecases.serviceorder.CheckInServiceOrder;
 
 /**
@@ -18,17 +19,20 @@ public class DbCheckInServiceOrder implements CheckInServiceOrder {
 
   private final LoadServiceOrderByIdRepository loadServiceOrderByIdRepository;
   private final UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository;
+  private final AssignWasher assignWasher;
 
   public DbCheckInServiceOrder(
       LoadServiceOrderByIdRepository loadServiceOrderByIdRepository,
-      UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository) {
+      UpdateServiceOrderStatusRepository updateServiceOrderStatusRepository,
+      AssignWasher assignWasher) {
     this.loadServiceOrderByIdRepository = loadServiceOrderByIdRepository;
     this.updateServiceOrderStatusRepository = updateServiceOrderStatusRepository;
+    this.assignWasher = assignWasher;
   }
 
   @Override
   public ServiceOrder checkIn(Params params)
-      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError, VehicleAlreadyInYardError {
+      throws ServiceOrderNotFoundError, InvalidServiceOrderStatusError {
     ServiceOrder serviceOrder =
         loadServiceOrderByIdRepository
             .loadById(params.serviceOrderId())
@@ -36,6 +40,10 @@ public class DbCheckInServiceOrder implements CheckInServiceOrder {
 
     if (serviceOrder.status() != ServiceOrderStatus.SCHEDULED) {
       throw new InvalidServiceOrderStatusError(serviceOrder.status(), ServiceOrderStatus.SCHEDULED);
+    }
+    if (params.washerId() != null) {
+      // Reserved first, so an invalid washer never lets the car in half-done.
+      assignWasher.assign(new AssignWasher.Params(params.serviceOrderId(), params.washerId()));
     }
 
     try {

@@ -10,6 +10,8 @@ import com.washflow.data.usecases.user.DbResetPasswordByEmail;
 import com.washflow.data.usecases.user.DbResetUserPassword;
 import com.washflow.data.usecases.user.DbUpdateUserActive;
 import com.washflow.data.usecases.user.DbUpdateUserProfile;
+import com.washflow.data.usecases.user.DbWasherBadge;
+import com.washflow.data.usecases.user.PasswordResetCodes;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.usecases.user.AuthenticateUser;
 import com.washflow.domain.usecases.user.CreateWasher;
@@ -18,6 +20,8 @@ import com.washflow.domain.usecases.user.ResetPasswordByEmail;
 import com.washflow.domain.usecases.user.ResetUserPassword;
 import com.washflow.domain.usecases.user.UpdateUserActive;
 import com.washflow.domain.usecases.user.UpdateUserProfile;
+import com.washflow.domain.usecases.user.WasherBadge;
+import com.washflow.infra.db.jdbi.customer.AccessJdbiRepository;
 import com.washflow.infra.db.jdbi.user.PasswordResetJdbiRepository;
 import com.washflow.infra.db.jdbi.user.UserJdbiRepository;
 import com.washflow.infra.messaging.LoggingEmailSender;
@@ -99,6 +103,17 @@ public final class UserModule {
   /**
    * Backs the CLIENTE QR code - {@link UserProfile#CUSTOMER} is fixed here, never client-supplied.
    */
+  public static WasherBadge washerBadge(Jdbi jdbi, AppConfig appConfig) {
+    UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    return new DbWasherBadge(
+        users,
+        users,
+        new AccessJdbiRepository(jdbi),
+        new BCryptPasswordHasher(),
+        new HmacTokenHasher(appConfig.tokenSecret().value()),
+        Clock.systemUTC());
+  }
+
   public static Controller authenticateCustomerController(Jdbi jdbi, AppConfig appConfig) {
     Validation validation =
         new ValidationComposite(
@@ -170,27 +185,28 @@ public final class UserModule {
    */
   public static ResetPasswordByEmail resetPasswordByEmail(Jdbi jdbi, AppConfig appConfig) {
     UserJdbiRepository users = new UserJdbiRepository(jdbi);
+    PasswordResetJdbiRepository resets = new PasswordResetJdbiRepository(jdbi);
     return new DbResetPasswordByEmail(
         users,
         users,
-        new PasswordResetJdbiRepository(jdbi),
+        resets,
         users,
         new BCryptPasswordHasher(),
-        new HmacTokenHasher(appConfig.tokenSecret()),
         emailSender(appConfig),
-        Clock.systemUTC());
+        new PasswordResetCodes(
+            resets, new HmacTokenHasher(appConfig.tokenSecret().value()), Clock.systemUTC()));
   }
 
   /**
-   * The app's single e-mail channel (EMAIL_CHANNEL, see AppConfig.Smtp), shared by the customer
-   * access code and the password-reset code. The log stand-in never runs in production.
+   * The app's single e-mail channel (EMAIL_CHANNEL, see EmailConfig), shared by the customer access
+   * code and the password-reset code. The log stand-in never runs in production.
    */
   static EmailSender emailSender(AppConfig appConfig) {
-    return switch (appConfig.emailChannel()) {
-      case "smtp" -> new SmtpEmailSender(appConfig.smtp());
-      case "log" ->
+    return switch (appConfig.email().channel()) {
+      case SMTP -> new SmtpEmailSender(appConfig.email().smtp());
+      case LOG ->
           appConfig.isProduction() ? new UnavailableEmailSender() : new LoggingEmailSender();
-      default -> new UnavailableEmailSender();
+      case NONE -> new UnavailableEmailSender();
     };
   }
 }

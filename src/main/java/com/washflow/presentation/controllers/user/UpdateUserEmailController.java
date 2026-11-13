@@ -1,7 +1,5 @@
 package com.washflow.presentation.controllers.user;
 
-import com.washflow.domain.errors.user.EmailAlreadyRegisteredError;
-import com.washflow.domain.errors.user.UserNotFoundError;
 import com.washflow.domain.usecases.user.UpdateUserEmail;
 import com.washflow.presentation.helpers.BodyValues;
 import com.washflow.presentation.helpers.HttpHelper;
@@ -28,10 +26,6 @@ public class UpdateUserEmailController implements Controller {
       return HttpHelper.ok(updateUserEmail.update(userId, BodyValues.text(body, "email")));
     } catch (IllegalArgumentException e) {
       return HttpHelper.badRequest(e);
-    } catch (UserNotFoundError e) {
-      return HttpHelper.notFound(e);
-    } catch (EmailAlreadyRegisteredError e) {
-      return HttpHelper.conflict(e);
     } catch (Exception e) {
       return HttpHelper.serverError(e);
     }
