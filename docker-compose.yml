@@ -45,9 +45,22 @@ services:
       SMTP_PORT: 1025
       SMTP_SECURITY: none
       SMTP_FROM: nao-responda@washflow.local
+      # WhatsApp de cada lava-jato: o gerente liga o número pelo QR Code na tela
+      # "Estabelecimento". A Evolution chama o webhook pela rede do compose.
+      EVOLUTION_URL: http://evolution:8080
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-dev-local-evolution-api-key}
+      WHATSAPP_WEBHOOK_URL: http://washflow:7000/api/whatsapp/webhook
+      WHATSAPP_WEBHOOK_TOKEN: ${WHATSAPP_WEBHOOK_TOKEN:-dev-local-whatsapp-webhook-token}
+      # Código de login por WhatsApp no log do app (podman compose logs washflow).
+      OTP_CHANNEL: log
+      # Opcional: texto livre no assistente (sem chave, só menus numerados).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      WHATSAPP_AI_MODEL: ${WHATSAPP_AI_MODEL:-claude-opus-5-5}
     depends_on:
       postgres:
         condition: service_healthy
+      evolution:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:7000/api/health"]
@@ -55,6 +68,39 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+  # Evolution API: o WhatsApp de cada lava-jato (uma instância por número, ligada por QR
+  # Code). Guarda as sessões no mesmo PostgreSQL, no schema evolution_api; só a sessão,
+  # não as conversas. Painel em http://localhost:8082/manager (chave: EVOLUTION_API_KEY).
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.7
+    ports:
+      - "8082:8080"
+    environment:
+      SERVER_URL: http://localhost:8082
+      SERVER_PORT: 8080
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-dev-local-evolution-api-key}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://washflow:washflow@postgres:5432/washflow?schema=evolution_api
+      DATABASE_CONNECTION_CLIENT_NAME: washflow
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
+      DATABASE_SAVE_MESSAGE_UPDATE: "false"
+      DATABASE_SAVE_DATA_CONTACTS: "false"
+      DATABASE_SAVE_DATA_CHATS: "false"
+      DATABASE_SAVE_DATA_LABELS: "false"
+      DATABASE_SAVE_DATA_HISTORIC: "false"
+      CACHE_REDIS_ENABLED: "false"
+      CACHE_LOCAL_ENABLED: "true"
+      DEL_INSTANCE: "false"
+      CONFIG_SESSION_PHONE_CLIENT: Washflow
+      TELEMETRY_ENABLED: "false"
+      LOG_LEVEL: ERROR,WARN,INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres-data:
