@@ -14,17 +14,40 @@ public final class ContactRules {
 
   private ContactRules() {}
 
-  /** Digits only, without the +55 country code; {@code null} when blank. */
+  /**
+   * The one way a phone is stored and looked up: digits only, without the +55 country code, and a
+   * mobile always with its ninth digit ({@code 9286061046} and {@code +55 92 98606-1046} are both
+   * {@code 92986061046}). Two spellings of the same number are the same account. {@code null} when
+   * blank.
+   */
   public static String normalizePhone(String raw) {
     if (raw == null || raw.isBlank()) {
       return null;
     }
+    String digits = canonical(raw);
+    if (!PHONE.matcher(digits).matches()) {
+      throw new IllegalArgumentException("Telefone deve ter DDD + número (10 ou 11 dígitos)");
+    }
+    return digits;
+  }
+
+  /**
+   * {@link #normalizePhone} for sign-in lookups: a phone that isn't valid comes back as digits (it
+   * matches no account and the sign-in fails as wrong credentials) instead of a 400.
+   */
+  public static String lookupPhone(String raw) {
+    return raw == null || raw.isBlank() ? raw : canonical(raw);
+  }
+
+  private static String canonical(String raw) {
     String digits = raw.replaceAll("\\D", "");
     if (digits.startsWith("55") && digits.length() > 11) {
       digits = digits.substring(2);
     }
-    if (!PHONE.matcher(digits).matches()) {
-      throw new IllegalArgumentException("Telefone deve ter DDD + número (10 ou 11 dígitos)");
+    // Brazilian mobiles (subscriber starting with 6-9) gained the ninth digit; landlines (2-5)
+    // didn't.
+    if (digits.length() == 10 && digits.charAt(2) >= '6') {
+      digits = digits.substring(0, 2) + "9" + digits.substring(2);
     }
     return digits;
   }

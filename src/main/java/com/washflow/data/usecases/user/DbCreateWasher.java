@@ -4,6 +4,7 @@ import com.washflow.data.protocols.PasswordHasher;
 import com.washflow.data.protocols.db.shared.DuplicateKeyError;
 import com.washflow.data.protocols.db.user.CreateWasherRepository;
 import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
+import com.washflow.domain.entities.shared.ContactRules;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.user.PhoneAlreadyRegisteredError;
@@ -33,7 +34,10 @@ public class DbCreateWasher implements CreateWasher {
   @Override
   public User create(Params params) {
     String name = params.name() == null ? "" : params.name().trim();
-    String phone = params.phone() == null ? "" : params.phone().trim();
+    // Same spelling as every other account ("+55 92 8606-1046" is 92986061046), so the
+    // phone of an existing customer or washer is recognized however it was typed.
+    String normalized = ContactRules.normalizePhone(params.phone());
+    String phone = normalized == null ? "" : normalized;
     String password = params.password() == null ? "" : params.password();
 
     if (name.isBlank() || name.length() > 100 || phone.isBlank() || phone.length() > 20) {

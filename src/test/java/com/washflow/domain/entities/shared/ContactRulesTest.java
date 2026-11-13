@@ -51,4 +51,32 @@ class ContactRulesTest {
             assertThrows(
                 IllegalArgumentException.class, () -> ContactRules.normalizeEmail(hostile)));
   }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(
+      strings = {
+        "92986061046",
+        "+55 92 98606-1046",
+        "559286061046",
+        "(92) 8606-1046",
+        "5592986061046",
+        "92 98606 1046"
+      })
+  void everySpellingOfAMobileIsTheSameNumber(String phone) {
+    assertEquals("92986061046", ContactRules.normalizePhone(phone));
+  }
+
+  @org.junit.jupiter.api.Test
+  void landlinesKeepTenDigits() {
+    assertEquals("9233334444", ContactRules.normalizePhone("+55 92 3333-4444"));
+    assertEquals("1155554444", ContactRules.normalizePhone("1155554444"));
+  }
+
+  @org.junit.jupiter.api.Test
+  void aSignInLookupNeverRejectsTheInput() {
+    assertEquals("92986061046", ContactRules.lookupPhone("559286061046"));
+    // Too short to be a phone: no account matches it, so the sign-in just fails.
+    assertEquals("123", ContactRules.lookupPhone("1-2-3"));
+    assertThrows(IllegalArgumentException.class, () -> ContactRules.normalizePhone("1-2-3"));
+  }
 }

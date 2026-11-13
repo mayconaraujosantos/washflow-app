@@ -8,6 +8,7 @@ import com.washflow.data.protocols.db.user.LoadUserByEmailRepository;
 import com.washflow.data.protocols.db.user.LoadUserByPhoneRepository;
 import com.washflow.data.protocols.db.user.LoadUserPasswordHashRepository;
 import com.washflow.data.protocols.db.user.SaveUserPasswordHashRepository;
+import com.washflow.domain.entities.shared.ContactRules;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.user.InvalidCredentialsError;
@@ -76,6 +77,14 @@ public class DbAuthenticateUser implements AuthenticateUser {
           loadUserByEmailRepository.loadByEmail(email).orElseThrow(InvalidCredentialsError::new);
       return verifyExisting(user, params);
     }
+    // Looked up in the stored spelling (no +55, a mobile with its ninth digit).
+    params =
+        new Params(
+            ContactRules.lookupPhone(params.phone()),
+            params.name(),
+            params.password(),
+            params.expectedProfile(),
+            params.email());
     var existingUser = loadUserByPhoneRepository.loadByPhone(params.phone());
 
     if (existingUser.isPresent()) {
@@ -101,7 +110,7 @@ public class DbAuthenticateUser implements AuthenticateUser {
           new User(
               UUID.randomUUID(),
               params.name().trim(),
-              params.phone(),
+              ContactRules.normalizePhone(params.phone()),
               params.expectedProfile(),
               Instant.now()),
           passwordHasher.hash(params.password()));
