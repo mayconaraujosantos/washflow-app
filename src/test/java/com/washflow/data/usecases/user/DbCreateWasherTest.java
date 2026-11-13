@@ -114,4 +114,28 @@ class DbCreateWasherTest {
         java.time.Instant.now(),
         true);
   }
+
+  @Test
+  void aCustomersPhoneTypedAnotherWayIsStillTaken() {
+    // The customer signed up as 92986061046; the manager typed it with +55 and no ninth digit.
+    when(loadByPhoneRepository.loadByPhone("92986061046")).thenReturn(Optional.of(mockUser()));
+
+    CreateWasher.Params params =
+        new CreateWasher.Params("Maycon Santos", "+55 92 8606-1046", "password123");
+
+    assertThrows(PhoneAlreadyRegisteredError.class, () -> sut.create(params));
+    verifyNoInteractions(createRepository);
+  }
+
+  @Test
+  void aWasherIsStoredWithTheCanonicalPhone() throws Exception {
+    when(loadByPhoneRepository.loadByPhone("92992569437")).thenReturn(Optional.empty());
+    when(passwordHasher.hash("password123")).thenReturn("$2a$hashed");
+    when(createRepository.createWasher(any(), eq("$2a$hashed")))
+        .thenAnswer(inv -> inv.getArgument(0));
+
+    User washer = sut.create(new CreateWasher.Params("Maykon", "559292569437", "password123"));
+
+    assertEquals("92992569437", washer.phone());
+  }
 }

@@ -9,6 +9,7 @@ import com.washflow.data.protocols.db.user.LoadWashersByPhoneRepository;
 import com.washflow.data.protocols.db.user.StaffCredentialsRepository;
 import com.washflow.data.protocols.db.user.StaffCredentialsRepository.PinState;
 import com.washflow.data.usecases.shared.Secrets;
+import com.washflow.domain.entities.shared.ContactRules;
 import com.washflow.domain.entities.user.User;
 import com.washflow.domain.entities.user.UserProfile;
 import com.washflow.domain.errors.user.AccountLockedError;
@@ -119,7 +120,7 @@ public class DbWasherBadge implements WasherBadge {
 
   /** Active washer accounts on this phone that have a PIN, in the repository's order. */
   private List<Badge> badgesOnPhone(String phone) {
-    String digits = NON_DIGIT.matcher(phone).replaceAll("");
+    String digits = ContactRules.lookupPhone(phone);
     return loadWashersByPhoneRepository.loadWashersByPhone(digits).stream()
         .filter(User::active)
         .flatMap(

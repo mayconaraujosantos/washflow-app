@@ -37,6 +37,11 @@ public final class TestDatabase {
     return dataSource;
   }
 
+  /** A new, empty database with no migration applied (migration tests apply them). */
+  public static DataSource emptyDatabase() {
+    return server().getDatabase("postgres", createEmptyDatabase());
+  }
+
   /** Port of the embedded server (user {@code postgres}, no password). */
   public static int port() {
     return server().getPort();
