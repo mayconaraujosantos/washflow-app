@@ -6,8 +6,9 @@ import {
   type Page,
 } from '@playwright/test'
 
-const port = process.env.E2E_PORT ?? '7100'
-export const baseURL = `http://localhost:${port}`
+import { e2eHost, ports } from './host'
+
+export const baseURL = `http://${e2eHost()}:${ports.app}`
 
 /**
  * One person = one phone: its own browser context, so sessions, the
